@@ -9,7 +9,8 @@
 // ================================================================================ //
 
 .file "crt0.S"
-.section .text.crt0
+.section .text.crt0,"ax",@progbits
+.type _start,@function
 .balign 4
 .global _start
 _start:
@@ -108,26 +109,26 @@ __crt0_smp_primary:
 // ************************************************************************************************
 __crt0_data_copy:
   beq   x7, x8, __crt0_data_copy_end  // skip if src == dst
-  bge   x8, x9, __crt0_data_copy_end  // skip if empty section
+  bgeu  x8, x9, __crt0_data_copy_end  // skip if empty section
 
 __crt0_data_copy_loop:
   lw    x15, 0(x7)
   sw    x15, 0(x8)                    // word-wise operations; section begins and ends on word boundary
   addi  x7, x7, 4
   addi  x8, x8, 4
-  blt   x8, x9, __crt0_data_copy_loop
+  bltu  x8, x9, __crt0_data_copy_loop
 __crt0_data_copy_end:
 
 // ************************************************************************************************
 // Clear .bss section.
 // ************************************************************************************************
 __crt0_bss_clear:
-  bge   x10, x11, __crt0_bss_clear_end
+  bgeu  x10, x11, __crt0_bss_clear_end
 
 __crt0_bss_clear_loop:
   sw    zero, 0(x10)
   addi  x10, x10, 4 // word-wise operations; section begins and ends on word boundary
-  blt   x10, x11, __crt0_bss_clear_loop
+  bltu  x10, x11, __crt0_bss_clear_loop
 __crt0_bss_clear_end:
 
 // ************************************************************************************************
@@ -142,13 +143,13 @@ __crt0_constructors_primary:
   la    x9, __init_array_end
 
 __crt0_constructors:
-  bge   x8, x9, __crt0_constructors_end  // skip if empty
+  bgeu  x8, x9, __crt0_constructors_end  // skip if empty
 
 __crt0_constructors_loop:
   lw    x1, 0(x8)
   jalr  x1, 0(x1) // call constructor function; put return address in ra
   addi  x8, x8, 4
-  blt   x8, x9, __crt0_constructors_loop
+  bltu  x8, x9, __crt0_constructors_loop
 __crt0_constructors_end:
 #endif
 
@@ -183,17 +184,16 @@ __crt0_destructors_primary:
   csrr  x8, mhartid
   bnez  x8, __crt0_destructors_end // execute destructors only on core 0
 
-  la    x8, __fini_array_start
-  la    x9, __fini_array_end
-
-__crt0_destructors:
-  bge   x8, x9, __crt0_destructors_end
+  la    x8, __fini_array_end       // execute destructors in REVERSE order
+  la    x9, __fini_array_start
 
 __crt0_destructors_loop:
-  lw    x1, 0(x8)
-  jalr  x1, 0(x1)                  // call destructor function; put return address in ra
-  addi  x8, x8, 4
-  blt   x8, x9, __crt0_destructors_loop
+  beq   x8, x9, __crt0_destructors_end
+  addi  x8, x8, -4
+  lw    x5, 0(x8)
+  jalr  x1, 0(x5)                  // call destructor function; put return address in ra
+  j     __crt0_destructors_loop
+
 __crt0_destructors_end:
 #endif
 

@@ -41,7 +41,7 @@ entity neorv32_cpu_pmp is
     d_priv_i : in  std_ulogic; -- access privilege
     d_err_o  : out std_ulogic  -- PMP fault
   );
-end neorv32_cpu_pmp;
+end entity;
 
 architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
 
@@ -67,29 +67,29 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
   constant mode_napot_c : std_ulogic_vector(1 downto 0) := "11"; -- naturally aligned power-of-two region (> 4 bytes)
 
   -- configuration CSRs --
-  type pmpcfg_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(7 downto 0);
+  type pmpcfg_t is array (NUM_REGIONS-1 downto 0) of std_ulogic_vector(7 downto 0);
   signal pmpcfg    : pmpcfg_t;
   signal pmpcfg_we : std_ulogic_vector(3 downto 0);
 
   -- address CSRs --
-  type pmpaddr_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(31 downto pmp_alsb_c);
+  type pmpaddr_t is array (NUM_REGIONS-1 downto 0) of std_ulogic_vector(29 downto pmp_alsb_c);
   signal pmpaddr    : pmpaddr_t;
   signal pmpaddr_we : std_ulogic_vector(15 downto 0);
 
   -- CSR read-back --
-  type csr_cfg_rd_t   is array (0 to 15) of std_ulogic_vector(7 downto 0);
-  type csr_cfg_rd32_t is array (0 to 03) of std_ulogic_vector(31 downto 0);
-  type csr_addr_rd_t  is array (0 to 15) of std_ulogic_vector(31 downto 0);
+  type csr_cfg_rd_t   is array (15 downto 0) of std_ulogic_vector(7 downto 0);
+  type csr_cfg_rd32_t is array (03 downto 0) of std_ulogic_vector(31 downto 0);
+  type csr_addr_rd_t  is array (15 downto 0) of std_ulogic_vector(31 downto 0);
   signal cfg_rd   : csr_cfg_rd_t;
   signal cfg_rd32 : csr_cfg_rd32_t;
   signal addr_rd  : csr_addr_rd_t;
 
   -- address mask (NA4/NAPOT) --
-  type addr_mask_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(31 downto pmp_lsb_c);
+  type addr_mask_t is array (NUM_REGIONS-1 downto 0) of std_ulogic_vector(31 downto pmp_lsb_c);
   signal addr_mask_napot, addr_mask : addr_mask_t;
 
   -- address comparators, region-match and permission check --
-  type cmp_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(1 downto 0); -- 0 = instruction fetch, 1 = data access
+  type cmp_t is array (NUM_REGIONS-1 downto 0) of std_ulogic_vector(1 downto 0); -- 0 = instruction fetch, 1 = data access
   signal cmp_na, cmp_ge, match : cmp_t;
   signal cmp_lt : std_ulogic_vector(1 downto 0); -- 0 = instruction fetch, 1 = data access
 
@@ -109,7 +109,7 @@ begin
     if (ctrl_i.csr_addr(11 downto 2) = csr_pmpcfg0_c(11 downto 2)) and (ctrl_i.csr_we = '1') then
       pmpcfg_we(to_integer(unsigned(ctrl_i.csr_addr(1 downto 0)))) <= '1';
     end if;
-  end process csr_we_cfg;
+  end process;
 
   -- CSRs --
   csr_pmpcfg_gen:
@@ -147,7 +147,7 @@ begin
           pmpcfg(i)(cfg_l_c)  <= ctrl_i.csr_wdata((i mod 4)*8+cfg_l_c);
         end if;
       end if;
-    end process csr_pmpcfg;
+    end process;
   end generate;
 
 
@@ -159,7 +159,7 @@ begin
     if (ctrl_i.csr_addr(11 downto 4) = csr_pmpaddr0_c(11 downto 4)) and (ctrl_i.csr_we = '1') then
       pmpaddr_we(to_integer(unsigned(ctrl_i.csr_addr(3 downto 0)))) <= '1';
     end if;
-  end process csr_we_addr;
+  end process;
 
   -- CSRs --
   csr_pmpaddr_gen:
@@ -172,14 +172,14 @@ begin
         if (pmpaddr_we(i) = '1') and (pmpcfg(i)(cfg_l_c) = '0') then -- unlocked write access
           if (i < NUM_REGIONS-1) then
             if (pmpcfg(i+1)(cfg_l_c) = '0') or (pmpcfg(i+1)(cfg_ah_c downto cfg_al_c) /= mode_tor_c) then -- pmpcfg(i+1) not "LOCKED TOR"
-              pmpaddr(i) <= ctrl_i.csr_wdata(31 downto pmp_alsb_c);
+              pmpaddr(i) <= ctrl_i.csr_wdata(29 downto pmp_alsb_c);
             end if;
           else -- very last entry
-            pmpaddr(i) <= ctrl_i.csr_wdata(31 downto pmp_alsb_c);
+            pmpaddr(i) <= ctrl_i.csr_wdata(29 downto pmp_alsb_c);
           end if;
         end if;
       end if;
-    end process csr_pmpaddr;
+    end process;
   end generate;
 
 
@@ -196,7 +196,7 @@ begin
     else
       csr_o <= (others => '0');
     end if;
-  end process csr_read_access;
+  end process;
 
   -- CSR read-back --
   csr_read_back_gen:
@@ -204,7 +204,7 @@ begin
     address_read_back: process(pmpaddr, pmpcfg)
     begin
       addr_rd(i) <= (others => '0');
-      addr_rd(i)(31 downto pmp_alsb_c) <= pmpaddr(i)(31 downto pmp_alsb_c);
+      addr_rd(i)(29 downto pmp_alsb_c) <= pmpaddr(i)(29 downto pmp_alsb_c);
       if (pmp_lsb_c > 2) then -- G >= 1
         if (pmpcfg(i)(cfg_ah_c) = '0') then -- TOR/OFF mode
           addr_rd(i)(pmp_lsb_c-3 downto 0) <= (others => '0'); -- [G-1:0] read as zero
@@ -214,7 +214,7 @@ begin
           end if;
         end if;
       end if;
-    end process address_read_back;
+    end process;
     cfg_rd(i) <= pmpcfg(i);
   end generate;
 
@@ -253,12 +253,10 @@ begin
       addr_mask_napot(r)(i) <= addr_mask_napot(r)(i-1) or (not pmpaddr(r)(i-3));
     end generate;
 
-    -- NAPOT address mask select --
-    addr_masking: process(rstn_i, clk_i)
+    -- NAPOT address mask buffer --
+    addr_masking: process(clk_i)
     begin
-      if (rstn_i = '0') then
-        addr_mask(r) <= (others => '0');
-      elsif rising_edge(clk_i) then
+      if rising_edge(clk_i) then
         if NAP_EN then
           if (pmpcfg(r)(cfg_al_c) = '1') then -- NAPOT
             addr_mask(r) <= addr_mask_napot(r);
@@ -269,7 +267,7 @@ begin
           addr_mask(r) <= (others => '0');
         end if;
       end if;
-    end process addr_masking;
+    end process;
 
   end generate;
 
@@ -309,7 +307,7 @@ begin
       else -- OFF or mode not supported
         match(r) <= (others => '0');
       end if;
-    end process match_gen;
+    end process;
 
   end generate;
 
@@ -350,7 +348,6 @@ begin
       i_err_o <= (not ctrl_i.cpu_debug) and fail_ex(0);
       d_err_o <= (not ctrl_i.cpu_debug) and fail_rw(0);
     end if;
-  end process fault_check;
+  end process;
 
-
-end neorv32_cpu_pmp_rtl;
+end architecture;

@@ -37,8 +37,9 @@ entity neorv32_cpu_alu is
     RISCV_ISA_Zmmul  : boolean; -- multiply-only M sub-extension
     RISCV_ISA_Xcfu   : boolean; -- custom (instr.) functions unit
     -- Tuning Options --
-    FAST_MUL_EN      : boolean; -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN    : boolean  -- use barrel shifter for shift operations
+    FAST_MUL_EN      : boolean;              -- use DSPs for M extension's multiplier
+    FAST_MUL_REGS    : natural range 1 to 3; -- number of fast multiplier register stages
+    FAST_SHIFT_EN    : boolean               -- use barrel shifter for shift operations
   );
   port (
     -- global control --
@@ -56,29 +57,32 @@ entity neorv32_cpu_alu is
     -- status --
     done_o : out std_ulogic -- co-processor operation done?
   );
-end neorv32_cpu_alu;
+end entity;
 
 architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
 
   -- Zibi ISA extension: compare with immediate --
-  function zibi_cmp_f(sel : std_ulogic_vector(4 downto 0); cmp : std_ulogic_vector) return std_ulogic is
+  function zibi_cmp_f(sel : std_ulogic_vector(4 downto 0); cmp : std_ulogic_vector(31 downto 0)) return std_ulogic is
     variable imm_v : std_ulogic_vector(31 downto 0);
   begin
     if (sel = "00000") then
-      imm_v := (others => '1');
+      imm_v := (others => '1'); -- minus 1
     else
-      imm_v := replicate_f('0', 27) & sel;
+      imm_v := x"000000" & "000" & sel;
     end if;
-    return bool_to_ulogic_f(imm_v = cmp);
-  end function zibi_cmp_f;
+    if (imm_v = cmp) then
+      return '1';
+    else
+      return '0';
+    end if;
+  end function;
 
-  -- wiring --
-  signal opa, opb, cp_res : std_ulogic_vector(31 downto 0);
-  signal cmp_rs1, cmp_rs2, opa_x, opb_x, addsub : std_ulogic_vector(32 downto 0);
-  signal cmp : std_ulogic_vector(1 downto 0);
+  -- ALU core --
+  signal cmp_rs1, cmp_rs2, opa, opb, slt_opb, addsub, cp_res : std_ulogic_vector(31 downto 0);
+  signal cmp_eq, cmp_lt, slt : std_ulogic;
 
   -- co-processor interface --
-  type cp_data_t  is array (0 to 6) of std_ulogic_vector(31 downto 0);
+  type cp_data_t  is array (6 downto 0) of std_ulogic_vector(31 downto 0);
   signal cp_result : cp_data_t;
   signal cp_valid : std_ulogic_vector(6 downto 0);
   signal cfu_inst : std_ulogic_vector(31 downto 0);
@@ -89,50 +93,52 @@ begin
 
   -- Comparator Unit ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  cmp_rs1 <= (rs1_i(rs1_i'left) and (not ctrl_i.alu_unsigned)) & rs1_i; -- sign-extend
-  cmp_rs2 <= (rs2_i(rs2_i'left) and (not ctrl_i.alu_unsigned)) & rs2_i; -- sign-extend
-  cmp(0) <= '1' when (rs1_i = rs2_i) else '0';
-  cmp(1) <= '1' when (signed(cmp_rs1) < signed(cmp_rs2)) else '0'; -- signed or unsigned comparison
+  cmp_rs1 <= (rs1_i(31) xnor ctrl_i.alu_unsigned) & rs1_i(30 downto 0); -- invert MSB for signed comparison
+  cmp_rs2 <= (rs2_i(31) xnor ctrl_i.alu_unsigned) & rs2_i(30 downto 0); -- invert MSB for signed comparison
+  cmp_lt  <= '1' when (unsigned(cmp_rs1) < unsigned(cmp_rs2)) else '0';
+  cmp_eq  <= '1' when (rs1_i = rs2_i) else '0';
 
   zibi_enabled:
   if RISCV_ISA_Zibi generate
-    cmp_o(0) <= zibi_cmp_f(ctrl_i.rf_rs2, rs1_i) when (ctrl_i.ir_funct3(2 downto 1) = "01") else cmp(0);
-    cmp_o(1) <= cmp(1);
+    cmp_o(0) <= zibi_cmp_f(ctrl_i.rf_rs2, rs1_i) when (ctrl_i.ir_funct3(2 downto 1) = "01") else cmp_eq;
+    cmp_o(1) <= cmp_lt;
   end generate;
 
   zibi_disabled:
   if not RISCV_ISA_Zibi generate
-    cmp_o <= cmp;
+    cmp_o <= cmp_lt & cmp_eq;
   end generate;
 
   -- ALU Core -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  alu_core: process(ctrl_i, addsub, cp_res, opb, rs1_i)
+  alu_core: process(ctrl_i, addsub, cp_res, slt, opb, rs1_i)
   begin
     res_o <= (others => '0');
     case ctrl_i.alu_op is
       when alu_op_zero_c => res_o <= (others => '0');
-      when alu_op_add_c  => res_o <= addsub(31 downto 0);
+      when alu_op_add_c  => res_o <= addsub;
       when alu_op_cp_c   => res_o <= cp_res;
-      when alu_op_slt_c  => res_o(0) <= addsub(addsub'left); -- carry/borrow
+      when alu_op_slt_c  => res_o <= x"0000000" & "000" & slt;
       when alu_op_movb_c => res_o <= opb;
       when alu_op_xor_c  => res_o <= opb xor rs1_i;
       when alu_op_or_c   => res_o <= opb or  rs1_i;
       when alu_op_and_c  => res_o <= opb and rs1_i;
-      when others        => res_o <= (others => '0');
+      when others        => res_o <= (others => 'X'); -- undefined
     end case;
-  end process alu_core;
+  end process;
 
   -- operands --
-  opa   <= ctrl_i.pc_cur  when (ctrl_i.alu_opa_mux = '1') else rs1_i;
-  opb   <= ctrl_i.alu_imm when (ctrl_i.alu_opb_mux = '1') else rs2_i;
-  opa_x <= (opa(opa'left) and (not ctrl_i.alu_unsigned)) & opa; -- sign-extend
-  opb_x <= (opb(opb'left) and (not ctrl_i.alu_unsigned)) & opb; -- sign-extend
+  opa <= ctrl_i.pc_cur  when (ctrl_i.alu_opa_mux = '1') else rs1_i;
+  opb <= ctrl_i.alu_imm when (ctrl_i.alu_opb_mux = '1') else rs2_i;
 
   -- adder/subtractor
-  add_o  <= addsub(31 downto 0); -- direct output
-  addsub <= std_ulogic_vector(unsigned(opa_x) - unsigned(opb_x)) when (ctrl_i.alu_sub = '1') else
-            std_ulogic_vector(unsigned(opa_x) + unsigned(opb_x));
+  addsub <= std_ulogic_vector(unsigned(opa) - unsigned(opb)) when (ctrl_i.alu_sub = '1') else
+            std_ulogic_vector(unsigned(opa) + unsigned(opb));
+  add_o  <= addsub; -- direct output
+
+  -- set-on-less-than --
+  slt_opb <= (opb(31) xnor ctrl_i.alu_unsigned) & opb(30 downto 0);
+  slt     <= '1' when unsigned(cmp_rs1) < unsigned(slt_opb) else '0';
 
   -- **************************************************************************************************************************
   -- Co-Processors
@@ -167,8 +173,9 @@ begin
   if RISCV_ISA_M or RISCV_ISA_Zmmul generate
     neorv32_cpu_alu_muldiv_inst: entity neorv32.neorv32_cpu_alu_muldiv
     generic map (
-      FAST_MUL_EN => FAST_MUL_EN, -- use DSPs for faster multiplication
-      DIVISION_EN => RISCV_ISA_M  -- implement divider hardware
+      FAST_MUL_EN   => FAST_MUL_EN,   -- use DSPs for faster multiplication
+      FAST_MUL_REGS => FAST_MUL_REGS, -- number of fast multiplier register stages
+      DIVISION_EN   => RISCV_ISA_M    -- implement divider hardware
     )
     port map (
       -- global control --
@@ -211,7 +218,7 @@ begin
       rstn_i  => rstn_i,          -- global reset, low-active, async
       ctrl_i  => ctrl_i,          -- main control bus
       -- data input --
-      less_i  => cmp(1),          -- compare less
+      less_i  => cmp_lt,          -- compare less
       rs1_i   => rs1_i,           -- register source 1
       rs2_i   => rs2_i,           -- register source 2
       shamt_i => opb(4 downto 0), -- shift amount
@@ -243,8 +250,8 @@ begin
       csr_wdata_i => ctrl_i.csr_wdata,            -- write data
       csr_rdata_o => fpu_csr_rd,                  -- read data
       -- data input --
-      equal_i     => cmp(0),                      -- compare equal
-      less_i      => cmp(1),                      -- compare less
+      equal_i     => cmp_eq,                      -- compare equal
+      less_i      => cmp_lt,                      -- compare less
       rs1_i       => rs1_i,                       -- register source 1
       rs2_i       => rs2_i,                       -- register source 2
       -- result and status --
@@ -309,7 +316,7 @@ begin
           cp_result(4) <= (others => '0');
         end if;
       end if;
-    end process cfu_proxy;
+    end process;
     cp_valid(4) <= cfu_done and (ctrl_i.alu_cp_cfu or cfu_busy);
   end generate;
 
@@ -331,7 +338,6 @@ begin
     port map (
       -- global control --
       clk_i   => clk_i,        -- global clock, rising edge
-      rstn_i  => rstn_i,       -- global reset, low-active, async
       ctrl_i  => ctrl_i,       -- main control bus
       -- data input --
       rs1_i   => rs1_i,        -- register source 1
@@ -380,4 +386,4 @@ begin
     cp_valid(6)  <= '0';
   end generate;
 
-end neorv32_cpu_alu_rtl;
+end architecture;

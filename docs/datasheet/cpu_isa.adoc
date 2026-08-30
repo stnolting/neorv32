@@ -29,6 +29,7 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_zbs_isa_extension,`Zbs`>>             | Single-bit bit manipulation instructions                     | <<_processor_top_entity_generics, `RISCV_ISA_Zbs`>>
 | <<_c_isa_extension,`Zca`>> (an alias)    | Compressed instruction without floating-point operations     | Implicitly enabled via <<_processor_top_entity_generics, `RISCV_ISA_C`>>
 | <<_zcb_isa_extension,`Zcb`>>             | Additional code size reduction instructions (build upon `C`) | <<_processor_top_entity_generics, `RISCV_ISA_Zcb`>>
+| <<_zcmop_isa_extension,`Zcmop`>>         | Compressed may-be-operation (build upon `C` + `Zimop`)       | <<_processor_top_entity_generics, `RISCV_ISA_Zcmop`>>
 | <<_zfinx_isa_extension,`Zfinx`>>         | Floating-point instructions using integer registers          | <<_processor_top_entity_generics, `RISCV_ISA_Zfinx`>>
 | <<_zibi_isa_extension,`Zibi`>>           | Branches with immediate-comparison                           | <<_processor_top_entity_generics, `RISCV_ISA_Zibi`>>
 | <<_zicntr_isa_extension,`Zicntr`>>       | Base counters extension                                      | <<_processor_top_entity_generics, `RISCV_ISA_Zicntr`>>
@@ -58,6 +59,12 @@ This chapter gives a brief overview of all available ISA extensions.
 For more information regarding the RISC-V ISA extensions please refer to the official specification at riscv.org:
 https://docs.riscv.org/reference/home/
 
+.Illegal Instructions
+[NOTE]
+The NEORV32 instruction-decoding logic follows a strict illegal instruction detection scheme:
+All reserved, unavailable, or unsupported instructions always raise an illegal instruction exception when executed.
+See <<_full_virtualization>> for more information.
+
 .Discovering ISA Extensions
 [TIP]
 Software can discover available ISA extensions via the <<_misa>> and <<_mxisah>> CSRs or by executing an instruction
@@ -85,9 +92,11 @@ uncached accesses via the <<_processor_external_bus_interface_xbus>> may have ad
 2 for accessing the default processor-internal peripherals; +
 uncached accesses via the <<_processor_external_bus_interface_xbus>> may have additional wait states; +
 branches to an unaligned address require additional `2 x T_inst_latency` cycles
-| `T_mul_latency` | 1 if <<_cpu_fast_mul_en>> is `true`; 32 otherwise
+| `T_mul_latency` | <<_cpu_fast_mul_regs>> if <<_cpu_fast_mul_en>> is `true`; 32 otherwise
 | `T_cust_latency` | latency is defined by the custom <<_custom_functions_unit_cfu>> logic; +
 however, the minimum is 1 and the maximum is 512
+| `T_cache_sync` | cycles required to clear/flush the CPU cache(s) (D$ and/or I$); +
+depends on actual cache configuration and main memory latency
 |=======================
 
 
@@ -166,17 +175,17 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 taken: 5 + `T_inst_latency`
 | Jump/call      | `jal[r]`                                                                  | 5 + `T_inst_latency`
 | Load/store     | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 4 + `T_data_latency`
-| Data fence     | `fence`                                                                   | 2
+| Data fence     | `fence`                                                                   | 2 + `T_cache_sync`
 | System         | `ecall` `ebreak` `mret`                                                   | 7 + `T_inst_latency`
 | System         | `wfi`                                                                     | 3
 |=======================
 
 .`fence` Instruction
 [NOTE]
-Analogous to the `fence.i` instruction (<<_zifencei_isa_extension>>) the `fence` instruction triggers
-a load/store memory synchronization operation by flushing the CPU's data cache. See section
-<<_memory_coherence>> for more information. NEORV32 ignores the predecessor and successor fields and
-always executes a conservative fence on all operations.
+The `fence` instruction triggers a load/store memory ordering operation by setting the CPU's
+<<_cpu_top_entity_signals, `dfence_o`>> signal for exactly one cycle. See section
+<<_memory_coherence>> for more information. If both the predecessor (`PREC`) and successor (`SUCC`)
+fields are zero, the instruction is executed as a NOP without triggering any memory ordering.
 
 .`wfi` Instruction
 [NOTE]
@@ -294,9 +303,8 @@ Example: `MARCH=rv32imc_zca_zcb_...`
 ==== `Zifencei` ISA Extension
 
 This instruction is the only standard mechanism to ensure that stores visible to a hart will also be visible to
-its instruction fetches. When executed, the CPU flushes the data cache (if enabled) to main memory, clears the
-instruction prefetch buffer and invalidates the instruction cache (if enabled). The next instruction fetch request
-from the CPU will result in an instruction cache miss that will return up-to-date data from main memory.
+its instruction fetch. When executed, the CPU sets its <<_cpu_top_entity_signals, `ifence_o`>> signal for
+exactly one cycle and flushes its instruction prefetch buffer and.
 See section <<_memory_coherence>> for more information.
 
 .Instructions and Timing
@@ -304,7 +312,7 @@ See section <<_memory_coherence>> for more information.
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| Instruction fence | `fence.i` | 2
+| Instruction fence | `fence.i` | 2 + `T_cache_sync`
 |=======================
 
 
@@ -414,9 +422,9 @@ However, access privileges are still enforced so these instruction variants _do_
 ==== `Zihpm` ISA Extension
 
 In additions to the base counters the NEORV32 CPU provides up to 29 hardware performance monitors (HPM; <<_mhpmcounterh>>
-and <<_hpmcounterh>>), which can be used to benchmark applications. Each HPM consists of a counter and a corresponding event
-configuration CSR (<<_mhpmeventh>>). Bothc CRSs are split into a high-word and a low-word CSR. The effective counter width can
-be defined via the top's `HPM_CNT_WIDTH` generic.
+and <<_hpmcounterh>>), which can be used to benchmark applications. Each HPM consists of a counter (up to 64-bit) and a
+corresponding 32-bit event configuration CSR (<<_mhpmevent>>). The counter CRSs are split into a high-word and a low-word
+CSR. The effective counter width can be defined via the top's `HPM_CNT_WIDTH` generic.
 
 The event configuration CSR defines the architectural events that lead to an increment of the associated HPM counter.
 See section <<_hardware_performance_monitors_hpm_csrs>> for a list of all HPM-related CSRs and event configurations.
@@ -443,6 +451,21 @@ Without the `Zimop` extension, any `mop.r*` instruction will raise an illegal in
 |=======================
 | Class | Instructions | Execution cycles
 | System | `mop.r.[0..31]` `mop.rr.[0..7]` | 3
+|=======================
+
+
+==== `Zcmop` ISA Extension
+
+The `Zcmop` ISA extension build up upon the <<_zimop_isa_extension>> by adding compressed may-be-operation that
+decompress into their 32-bit counterparts (i.e. `c.mop.n -> mop.r.n` with `r = x0`).
+Note that this extensions requires the <<_zimop_isa_extension>> & <<_c_isa_extension>>.
+
+.Instructions and Timing
+[cols="<2,<5,<4"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| System | `c.mop.n` | 3
 |=======================
 
 

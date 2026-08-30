@@ -41,13 +41,13 @@ entity neorv32_prim_fifo is
     rdata_o : out std_ulogic_vector(DWIDTH-1 downto 0); -- read data
     avail_o : out std_ulogic                            -- data available when set
   );
-end neorv32_prim_fifo;
+end entity;
 
 architecture neorv32_prim_fifo_rtl of neorv32_prim_fifo is
 
-  -- memory core --
+  -- memory core; the actual RAM signal is declared per generate-branch as a shared
+  -- architecture-scope signal would defeat RAM extraction on some synthesis tools --
   type ram_t is array ((2**AWIDTH)-1 downto 0) of std_ulogic_vector(DWIDTH-1 downto 0);
-  signal fifo : ram_t;
 
   -- local signals --
   signal rdata : std_ulogic_vector(DWIDTH-1 downto 0);
@@ -67,7 +67,7 @@ begin
       w_pnt <= w_nxt;
       r_pnt <= r_nxt;
     end if;
-  end process pointer_reg;
+  end process;
 
   -- access control --
   re <= re_i and (not empty); -- read only if data available
@@ -86,14 +86,12 @@ begin
     full  <= '1' when (r_pnt(AWIDTH) /= w_pnt(AWIDTH)) and (match = '1') else '0';
     empty <= '1' when (r_pnt(AWIDTH)  = w_pnt(AWIDTH)) and (match = '1') else '0';
     -- [important] 'avail' is synchronized to the read port --
-    status_reg: process(rstn_i, clk_i)
+    status_reg: process(clk_i)
     begin
-      if (rstn_i = '0') then
-        avail <= '0';
-      elsif rising_edge(clk_i) then
+      if rising_edge(clk_i) then
         avail <= not empty;
       end if;
-    end process status_reg;
+    end process;
   end generate;
 
   -- just 1 FIFO entry --
@@ -115,37 +113,39 @@ begin
   -- more than 1 FIFO entry --
   memory_large:
   if (AWIDTH > 0) generate
+    signal fifo : ram_t;
+  begin
     memory_core: process(clk_i) -- simple dual-port RAM
     begin
       if rising_edge(clk_i) then
-        if (we = '1') and (clear_i = '0') then
+        if (we = '1') then
           fifo(to_integer(unsigned(w_pnt(AWIDTH-1 downto 0)))) <= wdata_i;
         end if;
         rdata <= fifo(to_integer(unsigned(r_pnt(AWIDTH-1 downto 0))));
       end if;
-    end process memory_core;
+    end process;
   end generate;
 
   -- just 1 FIFO entry --
   memory_small:
   if (AWIDTH = 0) generate
-    memory_core: process(rstn_i, clk_i) -- single register
+    signal fifo : ram_t;
+  begin
+    memory_core: process(clk_i) -- single register
     begin
-      if (rstn_i = '0') then
-        fifo(0) <= (others => '0');
-      elsif rising_edge(clk_i) then
-        if (we = '1') and (clear_i = '0') then
+      if rising_edge(clk_i) then
+        if (we = '1') then
           fifo(0) <= wdata_i;
         end if;
       end if;
-    end process memory_core;
+    end process;
     rdata <= fifo(0);
   end generate;
 
   -- output gate: output zero if no data available --
   rdata_o <= (others => '0') when OUTGATE and (avail = '0') else rdata;
 
-end neorv32_prim_fifo_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -169,7 +169,7 @@ entity neorv32_prim_spram is
   generic (
     AWIDTH : natural; -- address width (number of bits)
     DWIDTH : natural; -- data width (number of bits)
-    OUTREG : natural  -- add output register stage when 1
+    OUTREG : boolean  -- add output register stage when true
   );
   port (
     -- global control --
@@ -181,12 +181,13 @@ entity neorv32_prim_spram is
     data_i : in  std_ulogic_vector(DWIDTH-1 downto 0); -- write data
     data_o : out std_ulogic_vector(DWIDTH-1 downto 0)  -- read data
   );
-end neorv32_prim_spram;
+end entity;
 
 architecture neorv32_prim_spram_rtl of neorv32_prim_spram is
 
+  -- memory core; the actual RAM signal is declared per generate-branch as a shared
+  -- architecture-scope signal would defeat RAM extraction on some synthesis tools --
   type ram_t is array ((2**AWIDTH)-1 downto 0) of std_ulogic_vector(DWIDTH-1 downto 0);
-  signal spram : ram_t;
   signal rdata : std_ulogic_vector(DWIDTH-1 downto 0);
 
 begin
@@ -195,6 +196,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   memory_large:
   if (AWIDTH > 0) generate
+    signal spram : ram_t;
+  begin
     memory_core: process(clk_i)
     begin
       if rising_edge(clk_i) then
@@ -205,12 +208,14 @@ begin
           rdata <= spram(to_integer(unsigned(addr_i)));
         end if;
       end if;
-    end process memory_core;
+    end process;
   end generate;
 
   -- single entry only --
   memory_small:
   if (AWIDTH = 0) generate
+    signal spram : ram_t;
+  begin
     memory_core: process(clk_i)
     begin
       if rising_edge(clk_i) then
@@ -218,33 +223,35 @@ begin
           spram(0) <= data_i;
         end if;
       end if;
-    end process memory_core;
+    end process;
     rdata <= spram(0);
   end generate;
 
   -- Output Register ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   output_register_enabled:
-  if (OUTREG = 1) generate -- might improve FPGA mapping and/or timing results
+  if OUTREG generate -- might improve FPGA mapping and/or timing results
     read_outreg: process(clk_i)
     begin
       if rising_edge(clk_i) then
         data_o <= rdata;
       end if;
-    end process read_outreg;
+    end process;
   end generate;
 
   -- no output register --
   output_register_disabled:
-  if (OUTREG = 0) generate
+  if not OUTREG generate
     data_o <= rdata;
   end generate;
 
-end neorv32_prim_spram_rtl;
+end architecture;
 
 
 -- ================================================================================ --
--- NEORV32 Primitives - Generic 2-Cycle Signed/Unsigned Integer Multiplier (MUL)    --
+-- NEORV32 Primitives - Generic Signed/Unsigned Integer Multiplier (MUL)            --
+-- -------------------------------------------------------------------------------- --
+-- The result is valid NUM_REGS+1 cycles after en_i.                                --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -259,57 +266,117 @@ use ieee.numeric_std.all;
 
 entity neorv32_prim_mul is
   generic (
-    DWIDTH : natural -- operand width
+    DWIDTH   : natural;                   -- operand width
+    NUM_REGS : natural range 1 to 3 := 1  -- number of multiplier register stages
   );
   port (
     -- global control --
-    clk_i    : in  std_ulogic;                              -- clock, rising edge
-    rstn_i   : in  std_ulogic;                              -- reset, low-active, async
+    clk_i  : in  std_ulogic;                              -- clock, rising edge
     -- data path --
-    en_i     : in  std_ulogic;                              -- enable input operand registers
-    opa_i    : in  std_ulogic_vector(DWIDTH-1 downto 0);    -- operand A
-    opa_sn_i : in  std_ulogic;                              -- operand A is a signed number
-    opb_i    : in  std_ulogic_vector(DWIDTH-1 downto 0);    -- operand B
-    opb_sn_i : in  std_ulogic;                              -- operand B is a signed number
-    res_o    : out std_ulogic_vector((2*DWIDTH)-1 downto 0) -- resulting product
+    en_i   : in  std_ulogic;                              -- enable input operand registers
+    opa_i  : in  std_ulogic_vector(DWIDTH-1 downto 0);    -- operand A
+    opas_i : in  std_ulogic;                              -- operand A is a signed number
+    opb_i  : in  std_ulogic_vector(DWIDTH-1 downto 0);    -- operand B
+    opbs_i : in  std_ulogic;                              -- operand B is a signed number
+    res_o  : out std_ulogic_vector((2*DWIDTH)-1 downto 0) -- resulting product
   );
-end neorv32_prim_mul;
+end entity;
 
 architecture neorv32_prim_mul_rtl of neorv32_prim_mul is
 
   signal opa, opb : signed(DWIDTH downto 0);
-  signal res : signed((2*DWIDTH)+1 downto 0);
+  signal res      : signed((2*DWIDTH)+1 downto 0);
 
 begin
 
   -- Input Registers ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  in_reg: process(rstn_i, clk_i)
+  in_reg: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      opa <= (others => '0');
-      opb <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (en_i = '1') then
-        opa <= signed((opa_i(opa_i'left) and opa_sn_i) & opa_i);
-        opb <= signed((opb_i(opb_i'left) and opb_sn_i) & opb_i);
+        opa <= signed((opa_i(opa_i'left) and opas_i) & opa_i);
+        opb <= signed((opb_i(opb_i'left) and opbs_i) & opb_i);
       end if;
     end if;
-  end process in_reg;
+  end process;
 
-  -- Output Register ------------------------------------------------------------------------
+  -- Multiplier -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  out_reg: process(clk_i)
+  one_reg:
+  if (NUM_REGS = 1) generate
+    mul_reg: process(clk_i)
+    begin
+      if rising_edge(clk_i) then -- no reset to improve multiplier mapping
+        res <= opa * opb;
+      end if;
+    end process;
+  end generate;
+
+  two_regs:
+  if (NUM_REGS = 2) generate
+    signal mul_res : signed((2*DWIDTH)+1 downto 0);
   begin
-    if rising_edge(clk_i) then -- no reset to improve DSP mapping
-      res <= opa * opb;
-    end if;
-  end process out_reg;
+    mul_reg: process(clk_i)
+    begin
+      if rising_edge(clk_i) then -- no reset to improve multiplier mapping
+        mul_res <= opa * opb;
+      end if;
+    end process;
+
+    result_reg: process(clk_i)
+    begin
+      if rising_edge(clk_i) then -- no reset to improve multiplier mapping
+        res <= mul_res;
+      end if;
+    end process;
+  end generate;
+
+  three_regs:
+  if (NUM_REGS = 3) generate
+    constant lo_width_c : natural := DWIDTH / 2;
+    constant hi_width_c : natural := (DWIDTH + 1) - lo_width_c;
+    constant pp_width_c : natural := 2 * hi_width_c;
+    constant pr_width_c : natural := (2 * DWIDTH) + 2;
+
+    signal q_ll, q_lh, q_hl, q_hh : signed(pp_width_c-1 downto 0);
+    signal q_sum_lo, q_sum_hi     : signed(pr_width_c-1 downto 0);
+  begin
+    partial_product_reg: process(clk_i)
+    begin
+      if rising_edge(clk_i) then -- no reset to improve multiplier mapping
+        q_ll <= resize(signed('0' & std_ulogic_vector(opa(lo_width_c-1 downto 0))) *
+                       signed('0' & std_ulogic_vector(opb(lo_width_c-1 downto 0))), pp_width_c);
+        q_lh <= resize(signed('0' & std_ulogic_vector(opa(lo_width_c-1 downto 0))) *
+                       resize(opb(opb'left downto lo_width_c), hi_width_c), pp_width_c);
+        q_hl <= resize(resize(opa(opa'left downto lo_width_c), hi_width_c) *
+                       signed('0' & std_ulogic_vector(opb(lo_width_c-1 downto 0))), pp_width_c);
+        q_hh <= resize(resize(opa(opa'left downto lo_width_c), hi_width_c) *
+                       resize(opb(opb'left downto lo_width_c), hi_width_c), pp_width_c);
+      end if;
+    end process;
+
+    partial_sum_reg: process(clk_i)
+    begin
+      if rising_edge(clk_i) then -- no reset to improve multiplier mapping
+        q_sum_lo <= resize(q_ll, pr_width_c) + shift_left(resize(q_lh, pr_width_c), lo_width_c);
+        q_sum_hi <= shift_left(resize(q_hl, pr_width_c), lo_width_c) +
+                    shift_left(resize(q_hh, pr_width_c), 2*lo_width_c);
+      end if;
+    end process;
+
+    result_reg: process(clk_i)
+    begin
+      if rising_edge(clk_i) then -- no reset to improve multiplier mapping
+        res <= q_sum_lo + q_sum_hi;
+      end if;
+    end process;
+  end generate;
 
   -- result --
   res_o <= std_ulogic_vector(res((2*DWIDTH)-1 downto 0));
 
-end neorv32_prim_mul_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -345,7 +412,7 @@ entity neorv32_prim_cnt is
     oe_i   : in  std_ulogic;                     -- output enable
     cnt_o  : out std_ulogic_vector(63 downto 0)  -- trimmed counter output
   );
-end neorv32_prim_cnt;
+end entity;
 
 architecture neorv32_prim_cnt_rtl of neorv32_prim_cnt is
 
@@ -381,7 +448,7 @@ begin
         count(63 downto 32) <= inc_hi(31 downto 0);
       end if;
     end if;
-  end process counter_core;
+  end process;
 
   -- increments --
   inc_lo <= std_ulogic_vector(unsigned('0' & count(31 downto  0)) + unsigned(incen));
@@ -395,6 +462,6 @@ begin
     if (oe_i = '1') and (CWIDTH > 0) then
       cnt_o(CWIDTH-1 downto 0) <= count(CWIDTH-1 downto 0);
     end if;
-  end process trim;
+  end process;
 
-end neorv32_prim_cnt_rtl;
+end architecture;

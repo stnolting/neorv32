@@ -55,8 +55,7 @@ ocd_park_loop:
 ocd_resume:
   sb   zero, (DM_SREG_BASE+SREG_RES)(zero) // send resume-acknowledge
   csrr x8, dscratch0                       // restore x8 from dscratch0
-  fence                                    // synchronize d-cache and main memory
-  fence.i                                  // synchronize i-cache and main memory
+  fence.i                                  // synchronize I$/D$ and main memory
   dret                                     // exit debug mode
 
 // execute program buffer (implicit ebreak at the to go back to entry_park after execution)
@@ -67,4 +66,5 @@ ocd_execute:
 
 // cause a debug-mode-internal exception if we ever reach this
 ocd_terminate:
-  ecall
+  nop                                      // fill remaining ROM space with NOPs
+  ecall                                    // very last ROM entry: raise exception

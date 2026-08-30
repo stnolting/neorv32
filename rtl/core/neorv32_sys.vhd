@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -29,7 +29,7 @@ entity neorv32_sys_reset is
     xrstn_wdt_o : out std_ulogic; -- reset from watchdog, low-active, sync
     xrstn_ocd_o : out std_ulogic  -- reset from on-chip debugger, low-active, sync
   );
-end neorv32_sys_reset;
+end entity;
 
 architecture neorv32_sys_reset_rtl of neorv32_sys_reset is
 
@@ -57,7 +57,7 @@ begin
       end if;
       rstn_sys_o <= and_reduce_f(sreg_sys);
     end if;
-  end process sequencer;
+  end process;
 
   -- output synchronizer --
   synchronizer: process(rstn_ext_i, clk_i)
@@ -69,9 +69,9 @@ begin
       xrstn_wdt_o <= rstn_wdt_i;
       xrstn_ocd_o <= rstn_dbg_i;
     end if;
-  end process synchronizer;
+  end process;
 
-end neorv32_sys_reset_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -82,7 +82,7 @@ end neorv32_sys_reset_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -98,14 +98,13 @@ entity neorv32_sys_clock is
   port (
     clk_i    : in  std_ulogic;                   -- global clock, rising edge
     rstn_i   : in  std_ulogic;                   -- global reset, low-active, async
-    enable_i : in  std_ulogic;                   -- generator enable
     clk_en_o : out std_ulogic_vector(7 downto 0) -- prescaled clock-enables
   );
-end neorv32_sys_clock;
+end entity;
 
 architecture neorv32_sys_clock_rtl of neorv32_sys_clock is
 
-  signal cnt, cnt2, edge : std_ulogic_vector(11 downto 0);
+  signal cnt, cnt2, en : std_ulogic_vector(11 downto 0);
 
 begin
 
@@ -116,26 +115,22 @@ begin
       cnt  <= (others => '0');
       cnt2 <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (enable_i = '1') then
-        cnt <= std_ulogic_vector(unsigned(cnt) + 1);
-      else
-        cnt <= (others => '0'); -- reset if disabled
-      end if;
+      cnt  <= std_ulogic_vector(unsigned(cnt) + 1);
       cnt2 <= cnt;
     end if;
-  end process ticker;
+  end process;
 
   -- rising-edge detector --
-  edge <= cnt and (not cnt2);
+  en <= cnt and (not cnt2);
 
   -- clock enables: clk_en_o signals are high for one cycle --
-  clk_en_o(clk_div2_c)    <= edge(0);  -- clk_i / 2
-  clk_en_o(clk_div4_c)    <= edge(1);  -- clk_i / 4
-  clk_en_o(clk_div8_c)    <= edge(2);  -- clk_i / 8
-  clk_en_o(clk_div64_c)   <= edge(5);  -- clk_i / 64
-  clk_en_o(clk_div128_c)  <= edge(6);  -- clk_i / 128
-  clk_en_o(clk_div1024_c) <= edge(9);  -- clk_i / 1024
-  clk_en_o(clk_div2048_c) <= edge(10); -- clk_i / 2048
-  clk_en_o(clk_div4096_c) <= edge(11); -- clk_i / 4096
+  clk_en_o(clk_div2_c)    <= en(0);  -- clk_i / 2
+  clk_en_o(clk_div4_c)    <= en(1);  -- clk_i / 4
+  clk_en_o(clk_div8_c)    <= en(2);  -- clk_i / 8
+  clk_en_o(clk_div64_c)   <= en(5);  -- clk_i / 64
+  clk_en_o(clk_div128_c)  <= en(6);  -- clk_i / 128
+  clk_en_o(clk_div1024_c) <= en(9);  -- clk_i / 1024
+  clk_en_o(clk_div2048_c) <= en(10); -- clk_i / 2048
+  clk_en_o(clk_div4096_c) <= en(11); -- clk_i / 4096
 
-end neorv32_sys_clock_rtl;
+end architecture;

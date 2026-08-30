@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -28,7 +28,7 @@ entity neorv32_neoled is
     irq_o     : out std_ulogic;                    -- interrupt request
     neoled_o  : out std_ulogic                     -- serial async data line
   );
-end neorv32_neoled;
+end entity;
 
 architecture neorv32_neoled_rtl of neorv32_neoled is
 
@@ -52,6 +52,10 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
   -- helpers --
   constant log2_fifo_size_c : natural := index_size_f(FIFO_DEPTH);
 
+  -- bus interface --
+  signal bus_ack, bus_rden : std_ulogic;
+  signal bus_rdata : std_ulogic_vector(31 downto 0);
+
   -- control register --
   type ctrl_t is record
     enable   : std_ulogic;
@@ -74,60 +78,75 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
   type serial_t is record
     state : std_ulogic_vector(2 downto 0); -- FSM state
     mode  : std_ulogic; -- 24-bit / 32-bit mode
-    busy  : std_ulogic; -- serial engine busy
     bcnt  : std_ulogic_vector(5 downto 0); -- bit counter
     sreg  : std_ulogic_vector(31 downto 0); -- data shift register
-    sbit  : std_ulogic; -- next data bit to send
     clken : std_ulogic; -- serial clock-enable
     pcnt  : std_ulogic_vector(4 downto 0); -- pulse counter
     thigh : std_ulogic_vector(4 downto 0); -- number of clock pulses for high-time
     scnt  : std_ulogic_vector(6 downto 0); -- strobe counter
   end record;
   signal serial : serial_t;
+  signal busy : std_ulogic; -- serial engine busy
+  signal sbit : std_ulogic; -- next data bit to send
 
 begin
 
   -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_access: process(rstn_i, clk_i)
+  bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o     <= rsp_terminate_c;
+      bus_ack  <= '0';
+      bus_rden <= '0';
+    elsif rising_edge(clk_i) then
+      bus_ack  <= bus_req_i.stb;
+      bus_rden <= bus_req_i.stb and (not bus_req_i.rw);
+    end if;
+  end process;
+
+  -- write access --
+  bus_write: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
       ctrl.enable   <= '0';
       ctrl.clk_prsc <= (others => '0');
       ctrl.t_total  <= (others => '0');
       ctrl.t0_high  <= (others => '0');
       ctrl.t1_high  <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- bus handshake --
-      bus_rsp_o.ack  <= bus_req_i.stb;
-      bus_rsp_o.err  <= '0';
-      bus_rsp_o.data <= (others => '0');
-      -- bus access --
-      if (bus_req_i.stb = '1') then
-        if (bus_req_i.rw = '1') then -- write access
-          if (bus_req_i.addr(2) = '0') then
-            ctrl.enable   <= bus_req_i.data(ctrl_en_c);
-            ctrl.clk_prsc <= bus_req_i.data(ctrl_clksel2_c downto ctrl_clksel0_c);
-            ctrl.t_total  <= bus_req_i.data(ctrl_t_tot4_c downto ctrl_t_tot0_c);
-            ctrl.t0_high  <= bus_req_i.data(ctrl_t_0h4_c downto ctrl_t_0h0_c);
-            ctrl.t1_high  <= bus_req_i.data(ctrl_t_1h4_c downto ctrl_t_1h0_c);
-          end if;
-        else -- read access
-          bus_rsp_o.data(ctrl_en_c)                            <= ctrl.enable;
-          bus_rsp_o.data(ctrl_clksel2_c downto ctrl_clksel0_c) <= ctrl.clk_prsc;
-          bus_rsp_o.data(ctrl_t_tot4_c downto ctrl_t_tot0_c)   <= ctrl.t_total;
-          bus_rsp_o.data(ctrl_t_0h4_c downto ctrl_t_0h0_c)     <= ctrl.t0_high;
-          bus_rsp_o.data(ctrl_t_1h4_c downto ctrl_t_1h0_c)     <= ctrl.t1_high;
-          --
-          bus_rsp_o.data(ctrl_fifo3_c downto ctrl_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
-          bus_rsp_o.data(ctrl_tx_empty_c)                  <= not tx_fifo.avail;
-          bus_rsp_o.data(ctrl_tx_full_c)                   <= not tx_fifo.free;
-          bus_rsp_o.data(ctrl_tx_busy_c)                   <= serial.busy or tx_fifo.avail;
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
+        if (bus_req_i.addr(2) = '0') then
+          ctrl.enable   <= bus_req_i.data(ctrl_en_c);
+          ctrl.clk_prsc <= bus_req_i.data(ctrl_clksel2_c downto ctrl_clksel0_c);
+          ctrl.t_total  <= bus_req_i.data(ctrl_t_tot4_c downto ctrl_t_tot0_c);
+          ctrl.t0_high  <= bus_req_i.data(ctrl_t_0h4_c downto ctrl_t_0h0_c);
+          ctrl.t1_high  <= bus_req_i.data(ctrl_t_1h4_c downto ctrl_t_1h0_c);
         end if;
       end if;
     end if;
-  end process bus_access;
+  end process;
+
+  -- read access (asynchronous) --
+  bus_read: process(bus_rden, ctrl, tx_fifo, busy)
+  begin
+    bus_rdata <= (others => '0');
+    if (bus_rden = '1') then -- output gating
+      bus_rdata(ctrl_en_c)                            <= ctrl.enable;
+      bus_rdata(ctrl_clksel2_c downto ctrl_clksel0_c) <= ctrl.clk_prsc;
+      bus_rdata(ctrl_t_tot4_c downto ctrl_t_tot0_c)   <= ctrl.t_total;
+      bus_rdata(ctrl_t_0h4_c downto ctrl_t_0h0_c)     <= ctrl.t0_high;
+      bus_rdata(ctrl_t_1h4_c downto ctrl_t_1h0_c)     <= ctrl.t1_high;
+      bus_rdata(ctrl_fifo3_c downto ctrl_fifo0_c)     <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
+      bus_rdata(ctrl_tx_empty_c)                      <= not tx_fifo.avail;
+      bus_rdata(ctrl_tx_full_c)                       <= not tx_fifo.free;
+      bus_rdata(ctrl_tx_busy_c)                       <= busy or tx_fifo.avail;
+    end if;
+  end process;
+
+  -- bus response --
+  bus_rsp_o.ack  <= bus_ack;
+  bus_rsp_o.err  <= '0'; -- no access errors supported
+  bus_rsp_o.data <= bus_rdata;
 
 
   -- TX Buffer (FIFO) -----------------------------------------------------------------------
@@ -159,14 +178,12 @@ begin
   tx_fifo.clr   <= not ctrl.enable;
 
   -- IRQ generator --
-  irq_generator: process(rstn_i, clk_i)
+  irq_generator: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      irq_o <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       irq_o <= ctrl.enable and (not tx_fifo.avail); -- IRQ if FIFO is empty
     end if;
-  end process irq_generator;
+  end process;
 
 
   -- Serial TX Engine -----------------------------------------------------------------------
@@ -174,14 +191,14 @@ begin
   serial_engine: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      serial.clken <= '0';
       serial.state <= (others => '0');
-      serial.pcnt  <= (others => '0');
-      serial.scnt  <= (others => '0');
-      serial.sreg  <= (others => '0');
       serial.mode  <= '0';
       serial.bcnt  <= (others => '0');
+      serial.sreg  <= (others => '0');
+      serial.clken <= '0';
+      serial.pcnt  <= (others => '0');
       serial.thigh <= (others => '0');
+      serial.scnt  <= (others => '0');
       neoled_o     <= '0';
     elsif rising_edge(clk_i) then
       -- clock generator --
@@ -217,7 +234,7 @@ begin
           serial.sreg <= serial.sreg(serial.sreg'left-1 downto 0) & '0';
           serial.bcnt <= std_ulogic_vector(unsigned(serial.bcnt) - 1);
           serial.pcnt <= (others => '0');
-          if (serial.sbit = '0') then -- send zero-bit
+          if (sbit = '0') then -- send zero-bit
             serial.thigh <= ctrl.t0_high;
           else -- send one-bit
             serial.thigh <= ctrl.t1_high;
@@ -266,13 +283,12 @@ begin
 
       end case;
     end if;
-  end process serial_engine;
+  end process;
 
   -- SREG's TX data: bit 23 for RGB mode (24-bit), bit 31 for RGBW mode (32-bit) --
-  serial.sbit <= serial.sreg(23) when (serial.mode = '0') else serial.sreg(31);
+  sbit <= serial.sreg(23) when (serial.mode = '0') else serial.sreg(31);
 
   -- TX engine status --
-  serial.busy <= '0' when (serial.state(1 downto 0) = "00") else '1';
+  busy <= '0' when (serial.state(1 downto 0) = "00") else '1';
 
-
-end neorv32_neoled_rtl;
+end architecture;

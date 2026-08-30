@@ -51,6 +51,7 @@ entity neorv32_vivado_ip is
     RISCV_ISA_Zbkx        : boolean                        := false;
     RISCV_ISA_Zbs         : boolean                        := false;
     RISCV_ISA_Zcb         : boolean                        := false;
+    RISCV_ISA_Zcmop       : boolean                        := false;
     RISCV_ISA_Zfinx       : boolean                        := false;
     RISCV_ISA_Zibi        : boolean                        := false;
     RISCV_ISA_Zicntr      : boolean                        := false;
@@ -68,6 +69,7 @@ entity neorv32_vivado_ip is
     -- Tuning Options --
     CPU_CONSTT_BR_EN      : boolean                        := false;
     CPU_FAST_MUL_EN       : boolean                        := false;
+    CPU_FAST_MUL_REGS     : natural range 1 to 3           := 1;
     CPU_FAST_SHIFT_EN     : boolean                        := false;
     CPU_RF_ARCH_SEL       : natural range 0 to 3           := 1; -- map to distributed RAM
     -- Physical Memory Protection (PMP) --
@@ -96,6 +98,9 @@ entity neorv32_vivado_ip is
     CACHE_BLOCK_SIZE      : natural range 4 to 1024        := 64;
     CACHE_BURSTS_EN       : boolean                        := true;
     CACHE_UC_BASE         : std_ulogic_vector(31 downto 0) := x"F0000000";
+    -- Serial Memory Controller (SMC) --
+    SMC_EN                : boolean                        := false;
+    SMC_BASE              : std_ulogic_vector(31 downto 0) := x"E0000000";
     -- External Bus Interface (XBUS) --
     XBUS_EN               : boolean                        := false;
     XBUS_TIMEOUT          : natural                        := 2048;
@@ -231,6 +236,14 @@ entity neorv32_vivado_ip is
     jtag_tdi_i     : in  std_logic := '0';
     jtag_tdo_o     : out std_logic := '0';
     jtag_tms_i     : in  std_logic := '0';
+    -- ------------------------------------------------------------
+    -- Serial memory controller interface
+    -- ------------------------------------------------------------
+    smc_ioen_o     : out std_logic;
+    smc_sck_o      : out std_logic;
+    smc_csn_o      : out std_logic_vector(1 downto 0);
+    smc_sdo_o      : out std_logic;
+    smc_sdi_i      : in  std_logic := '0';
     -- ------------------------------------------------------------
     -- Processor IO
     -- ------------------------------------------------------------
@@ -369,8 +382,10 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal cfs_out_aux : std_ulogic_vector(255 downto 0);
   signal neoled_aux : std_ulogic;
   signal mtime_time_aux : std_ulogic_vector(63 downto 0);
+  signal smc_ioen_aux, smc_sck_aux, smc_sdo_aux : std_ulogic;
+  signal smc_csn_aux : std_ulogic_vector(1 downto 0);
 
-  -- constrained size ports --
+  -- constrained-size ports --
   signal gpio_dir_o_aux, gpio_o_aux, gpio_i_aux, pwm_o_aux : std_ulogic_vector(31 downto 0);
 
   -- internal xbus --
@@ -409,6 +424,7 @@ begin
     RISCV_ISA_Zbkx      => RISCV_ISA_Zbkx,
     RISCV_ISA_Zbs       => RISCV_ISA_Zbs,
     RISCV_ISA_Zcb       => RISCV_ISA_Zcb,
+    RISCV_ISA_Zcmop     => RISCV_ISA_Zcmop,
     RISCV_ISA_Zfinx     => RISCV_ISA_Zfinx,
     RISCV_ISA_Zibi      => RISCV_ISA_Zibi,
     RISCV_ISA_Zicntr    => RISCV_ISA_Zicntr,
@@ -426,6 +442,7 @@ begin
     -- Extension Options --
     CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
     CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
+    CPU_FAST_MUL_REGS   => CPU_FAST_MUL_REGS,
     CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
     CPU_RF_ARCH_SEL     => CPU_RF_ARCH_SEL,
     -- Physical Memory Protection --
@@ -453,6 +470,9 @@ begin
     DCACHE_NUM_BLOCKS   => DCACHE_NUM_BLOCKS,
     CACHE_BLOCK_SIZE    => CACHE_BLOCK_SIZE,
     CACHE_BURSTS_EN     => burst_en_c,
+    -- Serial Memory Controller (SMC) --
+    SMC_EN              => SMC_EN,
+    SMC_BASE            => SMC_BASE,
     -- External Bus Interface (XBUS) --
     XBUS_EN             => XBUS_EN,
     XBUS_TIMEOUT        => XBUS_TIMEOUT,
@@ -522,6 +542,12 @@ begin
     jtag_tdi_i     => std_ulogic(jtag_tdi_i),
     jtag_tdo_o     => jtag_tdo_aux,
     jtag_tms_i     => std_ulogic(jtag_tms_i),
+    -- Serial memory controller interface (available if SMC_EN = true) --
+    smc_ioen_o     => smc_ioen_aux,
+    smc_sck_o      => smc_sck_aux,
+    smc_csn_o      => smc_csn_aux,
+    smc_sdo_o      => smc_sdo_aux,
+    smc_sdi_i      => std_ulogic(smc_sdi_i),
     -- External bus interface (available if XBUS_EN = true) --
     xbus_adr_o     => xbus_req.addr,
     xbus_dat_o     => xbus_req.data,
@@ -635,6 +661,11 @@ begin
 
   mtime_time_o <= std_logic_vector(mtime_time_aux);
 
+  smc_ioen_o <= std_logic(smc_ioen_aux);
+  smc_sck_o  <= std_logic(smc_sck_aux);
+  smc_csn_o  <= std_logic_vector(smc_csn_aux);
+  smc_sdo_o  <= std_logic(smc_sdo_aux);
+
 
   -- Mapping for Constrained-Size Ports -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -646,7 +677,7 @@ begin
     for i in 0 to IO_GPIO_IN_NUM-1 loop
       gpio_i_aux(i) <= std_ulogic(gpio_i(i));
     end loop;
-  end process gpio_in_mapping;
+  end process;
 
   -- GPIO output --
   gpio_out_mapping:
@@ -728,4 +759,4 @@ begin
     );
   end generate;
 
-end architecture neorv32_vivado_ip_rtl;
+end architecture;

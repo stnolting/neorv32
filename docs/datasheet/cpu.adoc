@@ -46,7 +46,6 @@ for the protocol and type documentation.
 | `mtime_i`    | 64             | in  | System time from the <<_core_local_interruptor_clint>> (MTIME).
 | `trace_o`    | `trace_port_t` | out | <<_execution_trace_port>>.
 | `sleep_o`    | 1              | out | Set while the CPU is in <<_sleep_mode>>.
-| `fence_o`    | 2              | out | <<_memory_coherence>> / ordering: `[1]` = instruction fence, `[0]` = data fence.
 4+^| **Interrupts (<<_traps_exceptions_and_interrupts>>)**
 | `msi_i`      | 1              | in  | RISC-V machine software interrupt.
 | `mei_i`      | 1              | in  | RISC-V machine external interrupt.
@@ -54,9 +53,11 @@ for the protocol and type documentation.
 | `firq_i`     | 16             | in  | Custom fast interrupt request signals.
 | `dbi_i`      | 1              | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>).
 4+^| **Instruction <<_bus_interface>>**
+| `ifence_o`   | 1              | out | Instruction fence / memory ordering.
 | `ibus_req_o` | `bus_req_t`    | out | Instruction fetch bus request.
 | `ibus_rsp_i` | `bus_rsp_t`    | in  | Instruction fetch bus response.
 4+^| **Data <<_bus_interface>>**
+| `dfence_o`   | 1              | out | Data fence / memory ordering.
 | `dbus_req_o` | `bus_req_t`    | out | Data access (load/store) bus request.
 | `dbus_rsp_i` | `bus_rsp_t`    | in  | Data access (load/store) bus response.
 |=======================
@@ -126,6 +127,7 @@ The CPU does not support resolving unaligned memory access by the hardware. Any 
 unaligned memory access will raise an exception to allow a software-based emulation.
 See section <<_application_context_handling>> for more information.
 
+
 :sectnums:
 ==== CPU Front-End
 
@@ -138,6 +140,7 @@ to the CPU back-end for execution.
 The IPB allows the front-end to do "speculative" instruction fetches as it keeps fetching the next consecutive
 instruction all the time. This also allows to decouple instruction fetch and instruction execution so both stages
 can operate in parallel to increase performance.
+
 
 :sectnums:
 ==== CPU Back-End
@@ -152,6 +155,7 @@ The division into individual micro-operations not only allows for small hardware
 cycles (e.g., the ALU: for arithmetic/logical calculations and also for calculating the next program counter). It also
 allows for precise monitoring of execution and the generation of precise traps. Hence, the back-end also includes
 <<_control_and_status_registers_csrs>>, the<<_traps_exceptions_and_interrupts>> logic and the <<_cpu_debug_mode>> controller.
+
 
 :sectnums:
 ==== CPU Register File
@@ -287,7 +291,7 @@ package file (`neorv32_package.vhd`).
 | Signal      | Width | RVFI Equivalent  | Description
 | `valid`     |     1 | `rvfi_valid`     | All others signals are valid when set; high for one cycle
 4+^| **Instruction Metadata**
-| `order`     |    32 | `rvfi_order`     | Instruction index (linear incrementing counter; resets to zero on overflow)
+| `order`     |    64 | `rvfi_order`     | Instruction index (linear incrementing counter; resets to zero on overflow); bits `63:32` are hardwired to all-zero
 | `insn`      |    32 | `rvfi_insn`      | Instruction word; for compressed instructions the upper 16-bit are set to zero
 | `trap`      |     1 | `rvfi_trap`      | Set if the current instruction causes a synchronous exception
 | `halt`      |     1 | `rvfi_halt`      | Set if the current instruction is last instruction before halting
@@ -384,6 +388,25 @@ result bit in every cycle. Multiplication operations always require 32 clock cyc
 
 {empty} +
 [discrete]
+===== **`CPU_FAST_MUL_REGS`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | Fast multiplier register stages
+| Type        | `natural` (1..3)
+| Default     | 1
+| Description | Only effective together with <<_cpu_fast_mul_en>>. This option selects the number of register stages in the fast
+multiplier. The multiplier result is valid `CPU_FAST_MUL_REGS + 1` cycles after the operation trigger, including input operand capture;
+`T_mul_latency` equals `CPU_FAST_MUL_REGS`.
+|             | A value of 1 uses a single inferred multiplier stage. A value of 2 adds an output register that synthesis may retime
+into a DSP cascade. A value of 3 decomposes the product into four half-word multiplications with explicitly registered partial
+products, partial sums, and final result. This provides deterministic pipeline boundaries and avoids multi-DSP multiplier cascades.
+|=======================
+
+
+{empty} +
+[discrete]
 ===== **`CPU_FAST_SHIFT_EN`**
 
 [cols="<1,<8"]
@@ -418,6 +441,7 @@ can be implemented most efficiently for the target platform/technology. see sect
 |=======================
 
 
+:sectnums:
 ==== Sleep Mode
 
 The NEORV32 CPU provides a single sleep mode that can be entered to power-down the core reducing
@@ -432,15 +456,25 @@ source becomes _pending_ or if a debug session is started.
 When executed in debug-mode or during single-stepping, `wfi` will behave as simple `nop` without entering sleep mode.
 
 
+:sectnums:
+==== CPU Reset
+
+See <<_reset_implementation>>.
+
+
+:sectnums:
 ==== Full Virtualization
 
 Just like the RISC-V ISA, the NEORV32 aims to provide _maximum virtualization_ capabilities on CPU and SoC level to
-allow a high standard of **execution safety**. The CPU supports **all** traps specified by the official RISC-V
+allow a high level of **execution safety**. The CPU supports **all** traps specified by the official RISC-V
 specifications. Thus, the CPU provides defined hardware fall-backs via traps for any expected and unexpected situations
 (e.g. executing a malformed or not supported instruction or accessing a non-allocated memory address). For any kind
 of trap the core is always in a defined and fully synchronized state throughout the whole system (i.e. there are no
 out-of-order operations that might have to be reverted). This allows a defined and predictable execution behavior
 at any time improving overall execution safety.
+
+All reserved, unsupported, unavailable, or illegal instructions always raise a precise exception, which, for example,
+also allows for software-based emulation of additional ISA extensions or system features.
 
 
 <<<
@@ -509,7 +543,7 @@ The figure below shows three exemplary single-access bus transactions:
 . A failing read access to address `C_addr` (slow response; `ERR` arrives after several cycles).
 
 .Three Exemplary **Single-Access** Transactions
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 {signal: [
   {name: 'clk', wave: 'p..|.......|..'},
@@ -550,7 +584,7 @@ The following figure shows a simplified read-followed-by-write transaction imple
 exclusive bus access and a 4-word incrementing-address read burst.
 
 .**Atomic Access** Transfer (left) and 4-Word Incrementing-Address **Burst Read** Transfer (right)
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 {signal: [
   {name: 'clk', wave: 'p................'},

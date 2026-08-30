@@ -19,21 +19,21 @@ SIMULATOR ?= iverilog
 BUILD ?= build
 
 # NEORV32 VHDL sources
-NEORV32_HOME ?= ../..
-NEORV32_FFILE = $(shell cat $(NEORV32_HOME)/rtl/file_list_soc.f)
-NEORV32_SRCS = $(subst NEORV32_RTL_PATH_PLACEHOLDER, $(NEORV32_HOME)/rtl, $(NEORV32_FFILE))
+NEORV32_HOME  ?= ../..
+NEORV32_FFILE := $(shell cat $(NEORV32_HOME)/rtl/file_list_core.f)
+NEORV32_SRCS  := $(subst $$NEORV32_HOME,$(NEORV32_HOME),$(NEORV32_FFILE))
 
 # VHDL conversion wrapper entity/file name
 WRAPPER ?= neorv32_verilog_wrapper
 
-# Exclude default core files (to replace them by custom Verilog IP)
+# Exclude default core files (to replace them by custom Verilog modules)
 VHDL_EXCLUDE ?=
-VHDL_SRCS = $(filter-out $(addprefix %,$(VHDL_EXCLUDE)), $(NEORV32_SRCS))
+VHDL_SRC = $(filter-out $(addprefix %,$(VHDL_EXCLUDE)),$(NEORV32_SRCS))
 
 # Verilog sources
-VERILOG_IP ?=
+VERILOG_SRC ?=
 VERILOG_TB ?= testbench.v
-VERILOG_SRCS = $(VERILOG_TB) $(WRAPPER).v $(VERILOG_IP)
+VERILOG_SRCS = $(VERILOG_TB) $(WRAPPER).v $(VERILOG_SRC)
 
 # Simulation
 VERILATOR_ARGS = -Wno-fatal --binary --Mdir $(BUILD)
@@ -54,10 +54,10 @@ $(WRAPPER).v:
 	@echo "Converting to Verilog: $(WRAPPER).vhd -> $(WRAPPER).v"
 	@mkdir -p $(BUILD)
 	@echo "NEORV32 VHDL source files:"
-	@echo $(VHDL_SRCS)
+	@echo $(VHDL_SRC)
 	@echo "Excluded NEORV32 VHDL core files:"
 	@echo $(VHDL_EXCLUDE)
-	@$(GHDL) -i --std=08 --work=neorv32 --workdir=$(BUILD) -Pbuild $(VHDL_SRCS) $(WRAPPER).vhd
+	@$(GHDL) -i --std=08 --work=neorv32 --workdir=$(BUILD) -Pbuild $(VHDL_SRC) $(WRAPPER).vhd
 	@$(GHDL) -m --std=08 --work=neorv32 --workdir=$(BUILD) $(WRAPPER)
 	@$(GHDL) synth --std=08 --work=neorv32 --workdir=$(BUILD) -Pbuild --out=verilog $(WRAPPER) > $(WRAPPER).v
 
@@ -113,7 +113,7 @@ help:
 	@echo "  GHDL          GHDL executable; default = $(GHDL)"
 	@echo "  WRAPPER       VHDL conversion wrapper; default = $(WRAPPER)"
 	@echo "  VHDL_EXCLUDE  Default NEORV32 VHDL core files to exclude from conversion"
-	@echo "  VERILOG_IP    Custom Verilog IPs (for simulation)"
+	@echo "  VERILOG_SRC   Custom Verilog (substitution) modules"
 	@echo "  SIMULATOR     Verilog simulator; 'iverilog' or 'verilator'; default = $(SIMULATOR)"
 	@echo "  DUMP_WAVE     Dump waveform data to 'wave.fst' when 1; default = $(DUMP_WAVE)"
 	@echo ""
@@ -122,11 +122,11 @@ help:
 	@echo ""
 	@echo "Default NEORV32 VHDL files can be excluded from the VHDL-to-Verilog conversion,"
 	@echo "leaving them as black box instances in the resulting all-Verilog netlist. These"
-	@echo "black box instances can be bind to custom Verilog IPs. Note that the substituted"
-	@echo "Verilog IPs must provide identical interfaces (parameters and ports)."
+	@echo "black box instances can be bind to custom Verilog moduless. Note that the substituted"
+	@echo "Verilog modules must provide identical interfaces (parameters and ports)."
 	@echo ""
-	@echo "Example: Replace the default NEORV32 DMEM RAM primitive by a custom Verilog IP."
-	@echo "  make VHDL_EXCLUDE=neorv32_dmem_ram.vhd VERILOG_IP=ip/neorv32_dmem_ram.v clean convert sim"
+	@echo "Example: Replace the default NEORV32 DMEM RAM component by a custom Verilog module."
+	@echo "  make VHDL_EXCLUDE=neorv32_dmem.vhd VERILOG_SRC=modules/neorv32_dmem.v clean convert sim"
 
 # -----------------------------------------------------------------------------
 # Clean up

@@ -31,7 +31,7 @@ entity neorv32_twd is
     twd_scl_i : in  std_ulogic;                    -- serial clock line input
     irq_o     : out std_ulogic                     -- interrupt
   );
-end neorv32_twd;
+end entity;
 
 architecture neorv32_twd_rtl of neorv32_twd is
 
@@ -64,12 +64,15 @@ architecture neorv32_twd_rtl of neorv32_twd is
   constant rx_size_c : natural := index_size_f(TWD_RX_FIFO);
   constant tx_size_c : natural := index_size_f(TWD_TX_FIFO);
 
-  -- access helpers --
-  signal acc_we, acc_re : std_ulogic;
+  -- bus interface --
+  signal bus_ack, bus_rden : std_ulogic;
+  signal bus_rdata : std_ulogic_vector(31 downto 0);
 
   -- control register --
   type ctrl_t is record
     enable       : std_ulogic;
+    clr_rx       : std_ulogic;
+    clr_tx       : std_ulogic;
     fsel         : std_ulogic;
     device_addr  : std_ulogic_vector(6 downto 0);
     irq_rx_avail : std_ulogic;
@@ -82,18 +85,15 @@ architecture neorv32_twd_rtl of neorv32_twd is
   signal ctrl : ctrl_t;
 
   -- bus sampling logic --
-  type smp_t is record
-    clk_en   : std_ulogic; -- sample clock
-    valid    : std_ulogic; -- valid sample
-    sda_sreg : std_ulogic_vector(2 downto 0); -- SDA synchronizer
-    scl_sreg : std_ulogic_vector(2 downto 0); -- SCL synchronizer
-    sda      : std_ulogic; -- current SDA state
-    scl_rise : std_ulogic; -- SCL rising edge
-    scl_fall : std_ulogic; -- SCL falling edge
-    start    : std_ulogic; -- start condition
-    stop     : std_ulogic; -- stop condition
-  end record;
-  signal smp : smp_t;
+  signal smp_clk_en   : std_ulogic; -- sample clock
+  signal smp_valid    : std_ulogic; -- valid sample
+  signal smp_sda_sreg : std_ulogic_vector(2 downto 0); -- SDA synchronizer
+  signal smp_scl_sreg : std_ulogic_vector(2 downto 0); -- SCL synchronizer
+  signal smp_sda      : std_ulogic; -- current SDA state
+  signal smp_scl_rise : std_ulogic; -- SCL rising edge
+  signal smp_scl_fall : std_ulogic; -- SCL falling edge
+  signal smp_start    : std_ulogic; -- start condition
+  signal smp_stop     : std_ulogic; -- stop condition
 
   -- FIFO interface --
   type fifo_t is record
@@ -128,11 +128,24 @@ begin
 
   -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_access: process(rstn_i, clk_i)
+  bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o         <= rsp_terminate_c;
+      bus_ack  <= '0';
+      bus_rden <= '0';
+    elsif rising_edge(clk_i) then
+      bus_ack  <= bus_req_i.stb;
+      bus_rden <= bus_req_i.stb and (not bus_req_i.rw);
+    end if;
+  end process;
+
+  -- write access --
+  bus_write: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
       ctrl.enable       <= '0';
+      ctrl.clr_rx       <= '0';
+      ctrl.clr_tx       <= '0';
       ctrl.fsel         <= '0';
       ctrl.device_addr  <= (others => '0');
       ctrl.irq_rx_avail <= '0';
@@ -142,13 +155,12 @@ begin
       ctrl.irq_com_beg  <= '0';
       ctrl.irq_com_end  <= '0';
     elsif rising_edge(clk_i) then
-      -- bus defaults --
-      bus_rsp_o.ack  <= bus_req_i.stb;
-      bus_rsp_o.err  <= '0';
-      bus_rsp_o.data <= (others => '0');
-      -- write access --
-      if (acc_we = '1') and (bus_req_i.addr(2) = '0') then -- control register
+      ctrl.clr_rx <= '0'; -- auto clear
+      ctrl.clr_tx <= '0'; -- auto clear
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '0') then -- control register
         ctrl.enable       <= bus_req_i.data(ctrl_en_c);
+        ctrl.clr_rx       <= bus_req_i.data(ctrl_clr_rx_c);
+        ctrl.clr_tx       <= bus_req_i.data(ctrl_clr_tx_c);
         ctrl.fsel         <= bus_req_i.data(ctrl_fsel_c);
         ctrl.device_addr  <= bus_req_i.data(ctrl_addr6_c downto ctrl_addr0_c);
         ctrl.irq_rx_avail <= bus_req_i.data(ctrl_irq_rx_avail_c);
@@ -158,37 +170,43 @@ begin
         ctrl.irq_com_beg  <= bus_req_i.data(ctrl_irq_com_beg_c);
         ctrl.irq_com_end  <= bus_req_i.data(ctrl_irq_com_end_c);
       end if;
-      -- read access --
-      if (acc_re = '1') then
-        if (bus_req_i.addr(2) = '0') then -- control register
-          bus_rsp_o.data(ctrl_en_c)                              <= ctrl.enable;
-          bus_rsp_o.data(ctrl_fsel_c)                            <= ctrl.fsel;
-          bus_rsp_o.data(ctrl_addr6_c downto ctrl_addr0_c)       <= ctrl.device_addr;
-          bus_rsp_o.data(ctrl_irq_rx_avail_c)                    <= ctrl.irq_rx_avail;
-          bus_rsp_o.data(ctrl_irq_rx_full_c)                     <= ctrl.irq_rx_full;
-          bus_rsp_o.data(ctrl_irq_tx_empty_c)                    <= ctrl.irq_tx_empty;
-          bus_rsp_o.data(ctrl_irq_tx_nfull_c)                    <= ctrl.irq_tx_nfull;
-          bus_rsp_o.data(ctrl_irq_com_beg_c)                     <= ctrl.irq_com_beg;
-          bus_rsp_o.data(ctrl_irq_com_end_c)                     <= ctrl.irq_com_end;
-          bus_rsp_o.data(ctrl_rx_size3_c downto ctrl_rx_size0_c) <= std_ulogic_vector(to_unsigned(rx_size_c, 4));
-          bus_rsp_o.data(ctrl_tx_size3_c downto ctrl_tx_size0_c) <= std_ulogic_vector(to_unsigned(tx_size_c, 4));
-          bus_rsp_o.data(ctrl_rx_avail_c)                        <= rx_fifo.avail;
-          bus_rsp_o.data(ctrl_rx_full_c)                         <= not rx_fifo.free;
-          bus_rsp_o.data(ctrl_tx_empty_c)                        <= not tx_fifo.avail;
-          bus_rsp_o.data(ctrl_tx_full_c)                         <= not tx_fifo.free;
-          bus_rsp_o.data(ctrl_com_beg_c)                         <= com_beg;
-          bus_rsp_o.data(ctrl_com_end_c)                         <= com_end;
-          bus_rsp_o.data(ctrl_com_c)                             <= engine.com;
-        else -- RX data FIFO
-          bus_rsp_o.data(7 downto 0) <= rx_fifo.rdata;
-        end if;
+    end if;
+  end process;
+
+  -- read access (asynchronous) --
+  bus_read: process(bus_rden, bus_req_i.addr, ctrl, rx_fifo, tx_fifo, com_beg, com_end, engine)
+  begin
+    bus_rdata <= (others => '0');
+    if (bus_rden = '1') then -- output gating
+      if (bus_req_i.addr(2) = '0') then -- control register
+        bus_rdata(ctrl_en_c)                              <= ctrl.enable;
+        bus_rdata(ctrl_fsel_c)                            <= ctrl.fsel;
+        bus_rdata(ctrl_addr6_c downto ctrl_addr0_c)       <= ctrl.device_addr;
+        bus_rdata(ctrl_irq_rx_avail_c)                    <= ctrl.irq_rx_avail;
+        bus_rdata(ctrl_irq_rx_full_c)                     <= ctrl.irq_rx_full;
+        bus_rdata(ctrl_irq_tx_empty_c)                    <= ctrl.irq_tx_empty;
+        bus_rdata(ctrl_irq_tx_nfull_c)                    <= ctrl.irq_tx_nfull;
+        bus_rdata(ctrl_irq_com_beg_c)                     <= ctrl.irq_com_beg;
+        bus_rdata(ctrl_irq_com_end_c)                     <= ctrl.irq_com_end;
+        bus_rdata(ctrl_rx_size3_c downto ctrl_rx_size0_c) <= std_ulogic_vector(to_unsigned(rx_size_c, 4));
+        bus_rdata(ctrl_tx_size3_c downto ctrl_tx_size0_c) <= std_ulogic_vector(to_unsigned(tx_size_c, 4));
+        bus_rdata(ctrl_rx_avail_c)                        <= rx_fifo.avail;
+        bus_rdata(ctrl_rx_full_c)                         <= not rx_fifo.free;
+        bus_rdata(ctrl_tx_empty_c)                        <= not tx_fifo.avail;
+        bus_rdata(ctrl_tx_full_c)                         <= not tx_fifo.free;
+        bus_rdata(ctrl_com_beg_c)                         <= com_beg;
+        bus_rdata(ctrl_com_end_c)                         <= com_end;
+        bus_rdata(ctrl_com_c)                             <= engine.com;
+      else -- RX data FIFO
+        bus_rdata(7 downto 0) <= rx_fifo.rdata;
       end if;
     end if;
-  end process bus_access;
+  end process;
 
-  -- access helpers --
-  acc_we <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') else '0';
-  acc_re <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') else '0';
+  -- bus response --
+  bus_rsp_o.ack  <= bus_ack;
+  bus_rsp_o.err  <= '0'; -- no access errors supported
+  bus_rsp_o.data <= bus_rdata;
 
 
   -- Data FIFOs -----------------------------------------------------------------------------
@@ -216,9 +234,9 @@ begin
     avail_o => tx_fifo.avail
   );
 
-  tx_fifo.clr   <= (not ctrl.enable) or (acc_we and (not bus_req_i.addr(2)) and bus_req_i.data(ctrl_clr_tx_c));
+  tx_fifo.clr   <= (not ctrl.enable) or ctrl.clr_tx;
   tx_fifo.wdata <= bus_req_i.data(7 downto 0);
-  tx_fifo.we    <= acc_we and bus_req_i.addr(2);
+  tx_fifo.we    <= bus_req_i.stb and bus_req_i.rw and bus_req_i.addr(2);
   tx_fifo.re    <= engine.tx_re;
 
   -- RX --
@@ -243,19 +261,17 @@ begin
     avail_o => rx_fifo.avail
   );
 
-  rx_fifo.clr   <= (not ctrl.enable) or (acc_we and (not bus_req_i.addr(2)) and bus_req_i.data(ctrl_clr_rx_c));
+  rx_fifo.clr   <= (not ctrl.enable) or ctrl.clr_rx;
   rx_fifo.wdata <= engine.sreg;
   rx_fifo.we    <= engine.rx_we;
-  rx_fifo.re    <= acc_re and bus_req_i.addr(2);
+  rx_fifo.re    <= bus_rden and bus_req_i.addr(2);
 
 
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_gen: process(rstn_i, clk_i)
+  irq_gen: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      irq_o <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       irq_o <= ctrl.enable and (
                (ctrl.irq_rx_avail and      rx_fifo.avail)  or -- RX FIFO not empty
                (ctrl.irq_rx_full  and (not rx_fifo.free))  or -- RX FIFO full
@@ -264,44 +280,40 @@ begin
                (ctrl.irq_com_beg  and      com_beg)        or -- begin of communication
                (ctrl.irq_com_end  and      com_end));         -- end of communication
     end if;
-  end process irq_gen;
+  end process;
 
 
   -- Bus Sampling Logic ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  synchronizer: process(rstn_i, clk_i)
+  synchronizer: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      smp.valid    <= '0';
-      smp.sda_sreg <= (others => '0');
-      smp.scl_sreg <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       -- input register --
-      smp.sda_sreg(0) <= to_stdulogic(to_bit(twd_sda_i)); -- "to_bit" to avoid hardware-vs-simulation mismatch
-      smp.scl_sreg(0) <= to_stdulogic(to_bit(twd_scl_i));
+      smp_sda_sreg(0) <= to_stdulogic(to_bit(twd_sda_i)); -- "to_bit" to avoid hardware-vs-simulation mismatch
+      smp_scl_sreg(0) <= to_stdulogic(to_bit(twd_scl_i));
       -- sample register --
-      smp.valid <= ctrl.enable and smp.clk_en; -- valid sample
-      if (smp.clk_en = '1') then
+      smp_valid <= ctrl.enable and smp_clk_en; -- valid sample
+      if (smp_clk_en = '1') then
         if (ctrl.enable = '1') then
-          smp.sda_sreg(2 downto 1) <= smp.sda_sreg(1 downto 0);
-          smp.scl_sreg(2 downto 1) <= smp.scl_sreg(1 downto 0);
+          smp_sda_sreg(2 downto 1) <= smp_sda_sreg(1 downto 0);
+          smp_scl_sreg(2 downto 1) <= smp_scl_sreg(1 downto 0);
         else
-          smp.sda_sreg(2 downto 1) <= (others => '1');
-          smp.scl_sreg(2 downto 1) <= (others => '1');
+          smp_sda_sreg(2 downto 1) <= (others => '1');
+          smp_scl_sreg(2 downto 1) <= (others => '1');
         end if;
       end if;
     end if;
-  end process synchronizer;
+  end process;
 
   -- sample clock for input "filtering" --
-  smp.clk_en <= clkgen_i(clk_div64_c) when (ctrl.fsel = '1') else clkgen_i(clk_div8_c);
+  smp_clk_en <= clkgen_i(clk_div64_c) when (ctrl.fsel = '1') else clkgen_i(clk_div8_c);
 
   -- bus event detectors (event signals are "single-shot") --
-  smp.sda      <= smp.sda_sreg(1);
-  smp.scl_rise <= smp.valid and (not smp.scl_sreg(2)) and (    smp.scl_sreg(1));
-  smp.scl_fall <= smp.valid and (    smp.scl_sreg(2)) and (not smp.scl_sreg(1));
-  smp.start    <= smp.valid and smp.scl_sreg(2) and smp.scl_sreg(1) and (    smp.sda_sreg(2)) and (not smp.sda_sreg(1));
-  smp.stop     <= smp.valid and smp.scl_sreg(2) and smp.scl_sreg(1) and (not smp.sda_sreg(2)) and (    smp.sda_sreg(1));
+  smp_sda      <= smp_sda_sreg(1);
+  smp_scl_rise <= smp_valid and (not smp_scl_sreg(2)) and (    smp_scl_sreg(1));
+  smp_scl_fall <= smp_valid and (    smp_scl_sreg(2)) and (not smp_scl_sreg(1));
+  smp_start    <= smp_valid and smp_scl_sreg(2) and smp_scl_sreg(1) and (    smp_sda_sreg(2)) and (not smp_sda_sreg(1));
+  smp_stop     <= smp_valid and smp_scl_sreg(2) and smp_scl_sreg(1) and (not smp_sda_sreg(2)) and (    smp_sda_sreg(1));
 
 
   -- Bus Engine -----------------------------------------------------------------------------
@@ -326,7 +338,7 @@ begin
         -- ------------------------------------------------------------
           engine.sda <= '1'; -- idle
           engine.com <= '0'; -- no active communication yet/anymore
-          if (ctrl.enable = '1') and (smp.start = '1') then
+          if (ctrl.enable = '1') and (smp_start = '1') then
             engine.state <= S_INIT;
           end if;
 
@@ -337,11 +349,11 @@ begin
 
         when S_ADDR => -- sample address + R/W bit and check if address match and data is available
         -- ------------------------------------------------------------
-          if (ctrl.enable = '0') or (smp.stop = '1') then -- disabled or stop-condition received?
+          if (ctrl.enable = '0') or (smp_stop = '1') then -- disabled or stop-condition received?
             engine.state <= S_IDLE;
-          elsif (smp.start = '1') then -- start-condition received?
+          elsif (smp_start = '1') then -- start-condition received?
             engine.state <= S_INIT;
-          elsif (engine.cnt(3) = '1') and (smp.scl_fall = '1') then -- 8 bits received?
+          elsif (engine.cnt(3) = '1') and (smp_scl_fall = '1') then -- 8 bits received?
             if (ctrl.device_addr = engine.sreg(7 downto 1)) then -- address match?
               engine.state <= S_RESP;
             else -- no access, go back to idle
@@ -349,8 +361,8 @@ begin
             end if;
           end if;
           -- sample bus on rising edge --
-          if (smp.scl_rise = '1') then
-            engine.sreg <= engine.sreg(6 downto 0) & smp.sda;
+          if (smp_scl_rise = '1') then
+            engine.sreg <= engine.sreg(6 downto 0) & smp_sda;
             engine.cnt  <= engine.cnt + 1;
           end if;
 
@@ -361,7 +373,7 @@ begin
           engine.cmd <= engine.sreg(0); -- READ/WRITE operation request
           if (ctrl.enable = '0') then -- disabled?
             engine.state <= S_IDLE;
-          elsif (smp.scl_fall = '1') then -- end of bit slot
+          elsif (smp_scl_fall = '1') then -- end of bit slot
             engine.state <= S_PREP;
           end if;
 
@@ -379,38 +391,38 @@ begin
 
         when S_RTX => -- receive/transmit 8 data bits
         -- ------------------------------------------------------------
-          if (ctrl.enable = '0') or (smp.stop = '1') then -- disabled or stop-condition
+          if (ctrl.enable = '0') or (smp_stop = '1') then -- disabled or stop-condition
             engine.state <= S_IDLE;
-          elsif (smp.start = '1') then -- start-condition
+          elsif (smp_start = '1') then -- start-condition
             engine.state <= S_INIT;
-          elsif (engine.cnt(3) = '1') and (smp.scl_fall = '1') then -- 8 bits received?
+          elsif (engine.cnt(3) = '1') and (smp_scl_fall = '1') then -- 8 bits received?
             engine.state <= S_ACK;
           end if;
           -- sample bus on rising edge --
-          if (smp.scl_rise = '1') then
-            engine.sreg <= engine.sreg(6 downto 0) & smp.sda;
+          if (smp_scl_rise = '1') then
+            engine.sreg <= engine.sreg(6 downto 0) & smp_sda;
             engine.cnt  <= engine.cnt + 1;
           end if;
           -- update bus at falling edge --
-          if (smp.scl_fall = '1') then -- end of bit slot
+          if (smp_scl_fall = '1') then -- end of bit slot
             engine.sda <= engine.sreg(7);
           end if;
 
         when S_ACK => -- receive/transmit ACK/NACK
         -- ------------------------------------------------------------
-          if (ctrl.enable = '0') or (smp.stop = '1') then -- disabled or stop-condition
+          if (ctrl.enable = '0') or (smp_stop = '1') then -- disabled or stop-condition
             engine.state <= S_IDLE;
-          elsif (smp.start = '1') then -- start-condition
+          elsif (smp_start = '1') then -- start-condition
             engine.state <= S_INIT;
           else
             if (engine.cmd = '0') then -- WRITE operation
               engine.sda   <= not rx_fifo.free; -- ACK if RX FIFO is not full; NACK if RX FIFO is full
-              engine.rx_we <= smp.scl_fall; -- push to RX FIFO at end of bit slot (if RX FIFO not full)
+              engine.rx_we <= smp_scl_fall; -- push to RX FIFO at end of bit slot (if RX FIFO not full)
             else -- READ operation
               engine.sda   <= '1'; -- keep high-Z so we can sample the ACK/NACK from the host
-              engine.tx_re <= smp.scl_rise and (not smp.sda); -- pop from TX FIFO if ACK at sample point
+              engine.tx_re <= smp_scl_rise and (not smp_sda); -- pop from TX FIFO if ACK at sample point
             end if;
-            if (smp.scl_fall = '1') then -- end of bit slot
+            if (smp_scl_fall = '1') then -- end of bit slot
               engine.state <= S_PREP;
             end if;
           end if;
@@ -421,38 +433,37 @@ begin
 
       end case;
     end if;
-  end process bus_engine;
+  end process;
 
-  -- TWI data line tri-state driver --
+  -- TWI data line (tri-state driver) --
   twd_sda_o <= engine.sda;
 
 
   -- Communication State Monitor ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  com_state_monitor: process(rstn_i, clk_i)
+  com_state_monitor: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      com_beg <= '0';
-      com_end <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (ctrl.enable = '0') then
         com_beg <= '0';
         com_end <= '0';
       else
         -- begin of communication --
-        if (engine.state = S_RESP) and (smp.scl_fall = '1') then
+        if (engine.state = S_RESP) and (smp_scl_fall = '1') then
           com_beg <= '1';
-        elsif (acc_we = '1') and (bus_req_i.addr(2) = '0') and (bus_req_i.data(ctrl_com_beg_c) = '1') then
+        elsif (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '0') and
+              (bus_req_i.data(ctrl_com_beg_c) = '1') then
           com_beg <= '0';
         end if;
         -- end of communication --
         if (engine.state = S_IDLE) and (engine.com = '1') then
           com_end <= '1';
-        elsif (acc_we = '1') and (bus_req_i.addr(2) = '0') and (bus_req_i.data(ctrl_com_end_c) = '1') then
+        elsif (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '0') and
+              (bus_req_i.data(ctrl_com_end_c) = '1') then
           com_end <= '0';
         end if;
       end if;
     end if;
-  end process com_state_monitor;
+  end process;
 
-end neorv32_twd_rtl;
+end architecture;

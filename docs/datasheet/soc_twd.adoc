@@ -63,7 +63,7 @@ Depending on the transaction type, data is either read from the TX FIFO and tran
 **Read Operation: Host Reads Data from TWD Module**
 
 .Exemplary single-byte TWD read operation (split across two lines)
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 {signal: [
   {name: 'SDA', wave: '10.7..7..7..7..7..7..7..1..0..x|.', node: 'a.b.....................c..d..e', data: ['A6', 'A5', 'A4', 'A3', 'A2', 'A1', 'A0']},
@@ -98,7 +98,7 @@ all-one bytes are sent back to the host. The transaction is terminated by a STOP
 **Write Operation: Host Writes Data to TWD Module**
 
 .Exemplary single-byte TWD write operation timing (split across two lines)
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 {signal: [
   {name: 'SDA', wave: '10.7..7..7..7..7..7..7..0..0..x|.', node: 'a.b.....................c..d..e', data: ['A6', 'A5', 'A4', 'A3', 'A2', 'A1', 'A0']},

@@ -24,7 +24,7 @@
 
 
 /**********************************************************************//**
-// global trap handler table (for all CPU cores)
+ * global trap handler table (for all CPU cores)
  **************************************************************************/
 static volatile uint32_t __attribute__((aligned(4))) __neorv32_rte_vector_lut[2][32];
 
@@ -43,7 +43,7 @@ static void __neorv32_rte_puts(const char *s) {
 
 
 /**********************************************************************//**
- * Print 32-bit value as 8-char hexadecimal number (with "0x" suffix) via UART0.
+ * Print 32-bit value as 8-char hexadecimal number (with "0x" prefix) via UART0.
  *
  * @param[in] num Value to print as hexadecimal.
  **************************************************************************/
@@ -103,11 +103,11 @@ static void __neorv32_rte_panic(void) {
     case TRAP_CODE_MSI:          __neorv32_rte_puts("Machine software IRQ"); break;
     case TRAP_CODE_MTI:          __neorv32_rte_puts("Machine timer IRQ"); break;
     case TRAP_CODE_MEI:          __neorv32_rte_puts("Machine external IRQ"); break;
-    case TRAP_CODE_FIRQ_0:       __neorv32_rte_puts("FIRQ-0 (TWD)"); break;
+    case TRAP_CODE_FIRQ_0:       __neorv32_rte_puts("FIRQ-0 (reserved)"); break;
     case TRAP_CODE_FIRQ_1:       __neorv32_rte_puts("FIRQ-1 (CFS)"); break;
     case TRAP_CODE_FIRQ_2:       __neorv32_rte_puts("FIRQ-2 (UART0)"); break;
     case TRAP_CODE_FIRQ_3:       __neorv32_rte_puts("FIRQ-3 (UART1)"); break;
-    case TRAP_CODE_FIRQ_4:       __neorv32_rte_puts("FIRQ-4 (reserved)"); break;
+    case TRAP_CODE_FIRQ_4:       __neorv32_rte_puts("FIRQ-4 (TWD)"); break;
     case TRAP_CODE_FIRQ_5:       __neorv32_rte_puts("FIRQ-5 (TRACER)"); break;
     case TRAP_CODE_FIRQ_6:       __neorv32_rte_puts("FIRQ-6 (SPI)"); break;
     case TRAP_CODE_FIRQ_7:       __neorv32_rte_puts("FIRQ-7 (TWI)"); break;

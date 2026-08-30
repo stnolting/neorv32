@@ -46,8 +46,8 @@ set_property INCREMENTAL false [get_filesets sim_1]
 # **************************************************************
 
 # read and process NEORV32 SoC file list
-set file_list_file [read [open "$neorv32_home/rtl/file_list_soc.f" r]]
-set file_list [string map [list "NEORV32_RTL_PATH_PLACEHOLDER" "$neorv32_home/rtl"] $file_list_file]
+set file_list_file [read [open "$neorv32_home/rtl/file_list_core.f" r]]
+set file_list [string map [list {$NEORV32_HOME} $neorv32_home] $file_list_file]
 puts "NEORV32 source files:"
 puts $file_list
 add_files $file_list
@@ -141,6 +141,7 @@ proc setup_ip_gui {} {
   set_property enablement_dependency {$IO_CLINT_EN}    [ipx::get_ports mtime_time_o     -of_objects [ipx::current_core]]
   set_property enablement_dependency {!$IO_CLINT_EN}   [ipx::get_ports irq_mti_i        -of_objects [ipx::current_core]]
   set_property enablement_dependency {!$IO_CLINT_EN}   [ipx::get_ports irq_msi_i        -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$SMC_EN}         [ipx::get_ports smc_*            -of_objects [ipx::current_core]]
 
 
   # **************************************************************
@@ -260,7 +261,7 @@ proc setup_ip_gui {} {
     { HPM_NUM_CNTS        {HPM counters}                                     {Number of HPM counters} {$RISCV_ISA_Zihpm} }
   }
 
-  set group [add_group $page {Bit-Manipulation}]
+  set group [add_group $page {Bit-Manipulation (B)}]
   add_params $group {
     { RISCV_ISA_Zba {Zba - Shifted-add bit-manipulation instructions} {} }
     { RISCV_ISA_Zbb {Zbb - Basic bit-manipulation instructions}       {} }
@@ -292,6 +293,7 @@ proc setup_ip_gui {} {
     { RISCV_ISA_Zibi   {Zibi - Branch with immediate-comparison}            {} }
     { RISCV_ISA_Zicond {Zicond - Conditional-move instructions}             {} }
     { RISCV_ISA_Zimop  {Zimop - May-be-operation}                           {} }
+    { RISCV_ISA_Zcmop  {Zcmop - Compressed may-be-operation}                {} {$RISCV_ISA_C && $RISCV_ISA_Zimop} {$RISCV_ISA_C && $RISCV_ISA_Zimop ? $RISCV_ISA_Zcmop : false}}
     { RISCV_ISA_Xcfu   {Xcfu - Custom-instructions unit (user-defined)}     {} }
   }
 
@@ -308,6 +310,7 @@ proc setup_ip_gui {} {
   add_params $group {
     { CPU_CONSTT_BR_EN  {Constant-time branches} {Identical execution times for taken and not-taken branches} }
     { CPU_FAST_MUL_EN   {DSP-based multiplier}   {Use DSP block instead of bit-serial multipliers} }
+    { CPU_FAST_MUL_REGS {Multiplier registers}   {Number of multiplier register stages (1..3)} }
     { CPU_FAST_SHIFT_EN {Barrel shifter}         {Use full-parallel shifters instead of of bit-serial shifters} }
     { CPU_RF_ARCH_SEL   {Register file style}    {Select implementation style of CPU register file} }
   }
@@ -320,7 +323,7 @@ proc setup_ip_gui {} {
   # GUI Page: Memory
   # **************************************************************
   set page [add_page {Memory}]
-  set mem_note "The memory sizes & address need to be exported to the linker via dedicated symbols. Example:"
+  set mem_note "The memory sizes & base addresses need to be exported to the linker via dedicated symbols. Example:"
   set imem_note "IMEM 32kB @ 0x00000000: -Wl,--defsym,__neorv32_rom_size=32k -Wl,--defsym,__neorv32_rom_base=0x00000000"
   set dmem_note "DMEM 16kB @ 0x80000000: -Wl,--defsym,__neorv32_ram_size=16k -Wl,--defsym,__neorv32_ram_base=0x80000000"
   ipgui::add_static_text -name {MEM note}  -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Memory" -component [ipx::current_core] ] -text $mem_note
@@ -330,7 +333,7 @@ proc setup_ip_gui {} {
   set group [add_group $page {Internal Instruction Memory (IMEM)}]
   add_params $group {
     { IMEM_EN        {Enable internal IMEM} }
-    { IMEM_BASE      {IMEM base address}     {Naturally-aligned to its size; use with care!}     {$IMEM_EN} }
+    { IMEM_BASE      {IMEM base address}     {Naturally-aligned to its size}                     {$IMEM_EN} }
     { IMEM_SIZE      {IMEM size (bytes)}     {Use a power of two}                                {$IMEM_EN} }
     { IMEM_OUTREG_EN {Output register stage} {Improves mapping/timing at the expense of latency} {$IMEM_EN} }
   }
@@ -338,9 +341,15 @@ proc setup_ip_gui {} {
   set group [add_group $page {Internal Data Memory (DMEM)}]
   add_params $group {
     { DMEM_EN        {Enable internal DMEM} }
-    { DMEM_BASE      {DMEM base address}     {Naturally-aligned to its size; use with care!}     {$DMEM_EN} }
+    { DMEM_BASE      {DMEM base address}     {Naturally-aligned to its size}                     {$DMEM_EN} }
     { DMEM_SIZE      {DMEM size (bytes)}     {Use a power of two}                                {$DMEM_EN} }
     { DMEM_OUTREG_EN {Output register stage} {Improves mapping/timing at the expense of latency} {$DMEM_EN} }
+  }
+
+  set group [add_group $page {Serial Memory Controller (SMC)}]
+  add_params $group {
+    { SMC_EN   {Enable serial memeory controller} }
+    { SMC_BASE {Serial memory base address} {top 4 MSBs only / 256MB aligned} {$SMC_EN} }
   }
 
 

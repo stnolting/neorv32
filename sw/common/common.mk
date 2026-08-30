@@ -123,6 +123,7 @@ endif
 
 # Compiler suite
 CC      = $(RISCV_PREFIX)gcc
+CXX     = $(RISCV_PREFIX)g++
 OBJDUMP = $(RISCV_PREFIX)objdump
 OBJCOPY = $(RISCV_PREFIX)objcopy
 READELF = $(RISCV_PREFIX)readelf
@@ -147,10 +148,10 @@ ifeq ($(PLATFORM),windows)
 endif
 
 # Compiler & linker flags
-CC_FLAGS  = -march=$(MARCH) -mabi=$(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv
-CC_FLAGS += -mstrict-align -mbranch-cost=10 -Wl,--gc-sections -ffp-contract=off -g
+CC_FLAGS  = -march=$(MARCH) -mabi=$(MABI) $(EFFORT) -Wall -Wextra -ffunction-sections -fdata-sections
+CC_FLAGS += -mno-fdiv -mstrict-align -mbranch-cost=10 -ffp-contract=off -g
 CC_FLAGS += $(USER_FLAGS)
-LD_LIBS   = -lm -lc -lgcc
+LD_LIBS   = -lm -lc -lgcc -nostartfiles -Wl,--gc-sections
 LD_LIBS  += $(USER_LIBS)
 
 # Allow users to use tool-specific flags
@@ -160,13 +161,17 @@ NEO_CXXFLAGS = $(CC_FLAGS) $(CXXFLAGS)
 NEO_LDFLAGS  = $(CC_FLAGS) $(LDFLAGS)
 NEO_ASFLAGS  = $(CC_FLAGS) $(ASFLAGS)
 
+# Add CC_FLAGS as string-define
+NEO_CFLAGS   += -DCC_FLAGS_STR='"$(CC_FLAGS)"'
+NEO_CXXFLAGS += -DCC_FLAGS_STR='"$(CC_FLAGS)"'
+
 # -----------------------------------------------------------------------------
 # Application output definitions
 # -----------------------------------------------------------------------------
 
 .PHONY: check info help elf_info elf_sections clean clean_all \
         elf asm exe bin hex coe mem mif image install all \
-        sim upload gdb bootloader bl_image hdl_lists
+        sim upload gdb bootloader bl_image hdl_list elf_symbols
 
 .DEFAULT_GOAL := help
 
@@ -230,12 +235,12 @@ $(BUILD_DIR)/%.c.o: %.c | $(BUILD_DIR)
 
 # Compile app *.cpp sources
 $(BUILD_DIR)/%.cpp.o: %.cpp | $(BUILD_DIR)
-	$(Q)$(CC) -c $(NEO_CXXFLAGS) -MMD -MP -MF $(BUILD_DIR)/$*.cpp.d -MT $(BUILD_DIR)/$*.cpp.o -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
+	$(Q)$(CXX) -c $(NEO_CXXFLAGS) -MMD -MP -MF $(BUILD_DIR)/$*.cpp.d -MT $(BUILD_DIR)/$*.cpp.o -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
 
 # Link object files and show memory utilization
 -include $(OBJ:.o=.d)
-$(APP_ELF): $(OBJ)
-	$(Q)$(CC) $(NEO_LDFLAGS) -T $(LD_SCRIPT) $^ $(LD_LIBS) -o $@
+$(APP_ELF): $(OBJ) $(LD_SCRIPT)
+	$(Q)$(CC) $(NEO_LDFLAGS) -T $(LD_SCRIPT) $(OBJ) $(LD_LIBS) -o $@
 	$(ECHO) "Memory utilization:"
 	$(Q)$(SIZE) $(APP_ELF)
 
@@ -311,12 +316,12 @@ install-$(APP_VHD): $(APP_VHD)
 	$(Q)$(CP) $(APP_VHD) $(NEORV32_RTL_PATH)/core/.
 
 # -----------------------------------------------------------------------------
-# Regenerate HDL file list file(s)
+# Regenerate HDL file list file
 # -----------------------------------------------------------------------------
 
-hdl_lists:
-	$(Q)$(CHMOD) +rx $(NEORV32_RTL_PATH)/generate_file_lists.sh
-	$(Q)$(NEORV32_RTL_PATH)/generate_file_lists.sh
+hdl_list:
+	$(Q)$(CHMOD) +rx $(NEORV32_RTL_PATH)/file_list_regenerate.sh
+	$(Q)$(NEORV32_RTL_PATH)/file_list_regenerate.sh
 
 # -----------------------------------------------------------------------------
 # Show final ELF details (just for debugging)
@@ -462,7 +467,7 @@ help::
 	$(ECHO) "Additional targets:"
 	$(ECHO) ""
 	$(ECHO) "  sim           in-console simulation using default testbench (sim folder) and GHDL"
-	$(ECHO) "  hdl_lists     regenerate HDL file-lists (*.f) in NEORV32_HOME/rtl"
+	$(ECHO) "  hdl_list      regenerate HDL file-list file (*.f) in NEORV32_HOME/rtl"
 	$(ECHO) "  upload        upload executable to bootloader via UART ($(UART_TTY))"
 	$(ECHO) "  elf_info      show ELF information"
 	$(ECHO) "  elf_sections  show ELF sections"

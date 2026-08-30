@@ -37,7 +37,7 @@ entity neorv32_cpu_lsu is
     dbus_req_o  : out bus_req_t; -- request
     dbus_rsp_i  : in  bus_rsp_t  -- response
   );
-end neorv32_cpu_lsu;
+end entity;
 
 architecture neorv32_cpu_lsu_rtl of neorv32_cpu_lsu is
 
@@ -81,7 +81,7 @@ begin
           req.lock <= '0'; -- clear at the end of the bus access
         end if;
       end if;
-    end process amo_reg;
+    end process;
   end generate;
 
   -- no atomic memory operations --
@@ -98,7 +98,6 @@ begin
   mem_do_reg: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      req.meta <= (others => '0');
       req.addr <= (others => '0');
       req.data <= (others => '0');
       req.ben  <= (others => '0');
@@ -106,7 +105,6 @@ begin
       misalign <= '0';
     elsif rising_edge(clk_i) then
       if (ctrl_i.lsu_mo_en = '1') then
-        req.meta <= std_ulogic_vector(to_unsigned(HART_ID, 2)) & ctrl_i.cpu_debug & ctrl_i.lsu_priv & '0';
         req.addr <= addr_i; -- memory address register
         case ctrl_i.ir_funct3(1 downto 0) is -- alignment + byte-enable
           when "00" => -- byte
@@ -132,8 +130,9 @@ begin
         end if;
       end if;
     end if;
-  end process mem_do_reg;
+  end process;
 
+  req.meta   <= std_ulogic_vector(to_unsigned(HART_ID, 2)) & ctrl_i.cpu_debug & ctrl_i.lsu_priv & '0';
   req.burst  <= '0'; -- only non-burst/single-accesses
   req.stb    <= ctrl_i.lsu_req and (not misalign) and (not pmp_fault_i); -- access request (all source signals are driven by registers)
   dbus_req_o <= req; -- output bus request
@@ -142,11 +141,9 @@ begin
 
   -- Response -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_di_reg: process(rstn_i, clk_i)
+  mem_di_reg: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      rdata_o <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       rdata_o <= (others => '0'); -- output zero if there is no pending memory request
       if (ctrl_i.lsu_mi_en = '1') then
         case ctrl_i.ir_funct3(1 downto 0) is
@@ -155,7 +152,8 @@ begin
               when "00"   => rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(7),  24) & dbus_rsp_i.data(7 downto 0);
               when "01"   => rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(15), 24) & dbus_rsp_i.data(15 downto 8);
               when "10"   => rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(23), 24) & dbus_rsp_i.data(23 downto 16);
-              when others => rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(31), 24) & dbus_rsp_i.data(31 downto 24);
+              when "11"   => rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(31), 24) & dbus_rsp_i.data(31 downto 24);
+              when others => rdata_o <= (others => 'X');
             end case;
           when "01" => -- half-word
             if (req.addr(1) = '0') then
@@ -168,7 +166,7 @@ begin
         end case;
       end if;
     end if;
-  end process mem_di_reg;
+  end process;
 
   -- wait for bus response --
   wait_o <= not dbus_rsp_i.ack;
@@ -181,4 +179,4 @@ begin
   err_o(2) <= ctrl_i.lsu_mi_en and ctrl_i.lsu_wr and misalign; -- misaligned store
   err_o(3) <= ctrl_i.lsu_mi_en and ctrl_i.lsu_wr and (dbus_rsp_i.err or pmp_fault_i); -- store access error
 
-end neorv32_cpu_lsu_rtl;
+end architecture;

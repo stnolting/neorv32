@@ -1,6 +1,8 @@
 -- ================================================================================ --
 -- NEORV32 SoC - Instruction Memory (IMEM)                                          --
 -- -------------------------------------------------------------------------------- --
+-- Replace this file by a more efficient technology-specific IP wrapper.            --
+-- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
 -- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
@@ -16,45 +18,33 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_imem is
   generic (
-    MEM_SIZE : natural; -- memory size in bytes, has to be a power of 2, min 4
-    MEM_INIT : boolean; -- implement IMEM as pre-initialized read-only memory?
-    OUTREG   : boolean  -- implement output register stage
+    AWIDTH  : natural; -- memory address width (byte-addressing)
+    INITROM : boolean; -- implement IMEM as pre-initialized read-only memory?
+    OUTREG  : boolean  -- add output register stage
   );
   port (
-    clk_i     : in  std_ulogic; -- global clock line
-    rstn_i    : in  std_ulogic; -- async reset, low-active
-    bus_req_i : in  bus_req_t;  -- bus request
-    bus_rsp_o : out bus_rsp_t   -- bus response
+    -- global control --
+    clk_i      : in  std_ulogic;                     -- clock, trigger on rising edge
+    rstn_i     : in  std_ulogic;                     -- async reset, low-active
+    -- bus request --
+    req_addr_i : in  std_ulogic_vector(31 downto 0); -- access address (byte-addressing)
+    req_data_i : in  std_ulogic_vector(31 downto 0); -- write data
+    req_ben_i  : in  std_ulogic_vector(3 downto 0);  -- byte enable
+    req_stb_i  : in  std_ulogic;                     -- request strobe
+    req_rw_i   : in  std_ulogic;                     -- 0 = read, 1 = write
+    -- bus response --
+    rsp_data_o : out std_ulogic_vector(31 downto 0); -- read data
+    rsp_ack_o  : out std_ulogic;                     -- access acknowledge
+    rsp_err_o  : out std_ulogic                      -- access error
   );
-end neorv32_imem;
+end entity;
 
 architecture neorv32_imem_rtl of neorv32_imem is
 
-  -- IMEM RAM wrapper --
-  -- [NOTE] We use component instantiation here to allow easy black-box instantiation for
-  -- late component binding (e.g. when using the VHDL-to-Verilog flow with Verilog memory IP).
-  component neorv32_imem_ram
+  component neorv32_imem_rom -- IMEM ROM wrapper
   generic (
     AWIDTH : natural;
-    OUTREG : natural
-  );
-  port (
-    clk_i  : in  std_ulogic;
-    en_i   : in  std_ulogic_vector(3 downto 0);
-    rw_i   : in  std_ulogic;
-    addr_i : in  std_ulogic_vector(31 downto 0);
-    data_i : in  std_ulogic_vector(31 downto 0);
-    data_o : out std_ulogic_vector(31 downto 0)
-  );
-  end component;
-
-  -- IMEM ROM wrapper --
-  -- [NOTE] We use component instantiation here to allow easy black-box instantiation for
-  -- late component binding (e.g. when using the VHDL-to-Verilog flow with Verilog memory IP).
-  component neorv32_imem_rom
-  generic (
-    AWIDTH : natural;
-    OUTREG : natural
+    OUTREG : boolean
   );
   port (
     clk_i  : in  std_ulogic;
@@ -64,73 +54,134 @@ architecture neorv32_imem_rtl of neorv32_imem is
   );
   end component;
 
-  -- auto-configuration --
-  constant awidth_c : natural := index_size_f(MEM_SIZE); -- address width (byte-addressing)
   constant outreg_c : natural := sel_natural_f(OUTREG, 1, 0); -- add output register?
 
-  -- local signals --
+  signal en    : std_ulogic_vector(3 downto 0);
   signal rdata : std_ulogic_vector(31 downto 0);
-  signal wren  : std_ulogic;
-  signal rden  : std_ulogic_vector(1 downto 0);
-  signal ben   : std_ulogic_vector(3 downto 0);
+  signal wrack : std_ulogic;
+  signal rdack : std_ulogic_vector(1 downto 0);
 
 begin
 
-  -- IMEM as pre-initialized ROM (Wrapper) --------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- IMEM as pre-initialized ROM --
   imem_rom:
-  if MEM_INIT generate
+  if INITROM generate
     imem_rom_inst: neorv32_imem_rom
     generic map (
-      AWIDTH => awidth_c,
-      OUTREG => outreg_c
+      AWIDTH => AWIDTH,
+      OUTREG => OUTREG
     )
     port map (
       clk_i  => clk_i,
-      en_i   => bus_req_i.stb,
-      addr_i => bus_req_i.addr,
+      en_i   => req_stb_i,
+      addr_i => req_addr_i,
       data_o => rdata
     );
   end generate;
 
-  -- IMEM as plain RAM (Wrapper) ------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- IMEM as plain RAM --
   imem_ram:
-  if not MEM_INIT generate
-    imem_ram_inst: neorv32_imem_ram
-    generic map (
-      AWIDTH => awidth_c,
-      OUTREG => outreg_c
-    )
-    port map (
-      clk_i  => clk_i,
-      en_i   => ben,
-      rw_i   => bus_req_i.rw,
-      addr_i => bus_req_i.addr,
-      data_i => bus_req_i.data,
-      data_o => rdata
-    );
+  if not INITROM generate
+    imem_ram_gen:
+    for i in 0 to 3 generate -- 4x byte-wide RAMs
+      imem_ram_inst: entity neorv32.neorv32_prim_spram
+      generic map (
+        AWIDTH => AWIDTH-2,
+        DWIDTH => 8,
+        OUTREG => OUTREG
+      )
+      port map (
+        clk_i  => clk_i,
+        en_i   => en(i),
+        rw_i   => req_rw_i,
+        addr_i => req_addr_i(AWIDTH-1 downto 2),
+        data_i => req_data_i(i*8+7 downto i*8),
+        data_o => rdata(i*8+7 downto i*8)
+      );
+      en(i) <= req_ben_i(i) and req_stb_i; -- byte-wise enable
+    end generate;
   end generate;
 
-  -- byte-wise enable --
-  ben <= bus_req_i.ben when (bus_req_i.stb = '1') else (others => '0');
-
-  -- Bus Handshake --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- bus handshake --
   bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      wren <= '0';
-      rden <= (others => '0');
+      wrack <= '0';
+      rdack <= (others => '0');
     elsif rising_edge(clk_i) then
-      wren <= bus_req_i.stb and bus_req_i.rw;
-      rden <= rden(0) & (bus_req_i.stb and (not bus_req_i.rw));
+      wrack <= req_stb_i and req_rw_i;
+      rdack <= rdack(0) & (req_stb_i and (not req_rw_i));
     end if;
-  end process bus_handshake;
+  end process;
 
-  -- output gate --
-  bus_rsp_o.data <= rdata when (rden(outreg_c) = '1') else (others => '0');
-  bus_rsp_o.err  <= '0';
-  bus_rsp_o.ack  <= rden(outreg_c) when MEM_INIT else (rden(outreg_c) or wren); -- read-only?
+  rsp_data_o <= rdata when (rdack(outreg_c) = '1') else (others => '0');
+  rsp_ack_o  <= rdack(outreg_c) when INITROM else (rdack(outreg_c) or wrack);
+  rsp_err_o  <= '0'; -- no access errors supported (could be used for ECC / parity checks)
 
-end neorv32_imem_rtl;
+end architecture;
+
+-- ================================================================================ --
+-- NEORV32 SoC - Instruction Memory (IMEM) - ROM Primitive Wrapper                  --
+-- ================================================================================ --
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+library neorv32;
+use neorv32.neorv32_package.all;
+use neorv32.neorv32_imem_image.all;
+
+entity neorv32_imem_rom is
+  generic (
+    AWIDTH : natural; -- address width (byte address)
+    OUTREG : boolean  -- add output register stage when true
+  );
+  port (
+    clk_i  : in  std_ulogic;                     -- clock, rising-edge
+    en_i   : in  std_ulogic;                     -- access-enable
+    addr_i : in  std_ulogic_vector(31 downto 0); -- full byte address
+    data_o : out std_ulogic_vector(31 downto 0)  -- read data, sync
+  );
+end entity;
+
+architecture neorv32_imem_rom_rtl of neorv32_imem_rom is
+
+  constant awidth_c : natural := index_size_f(image_size_c); -- physical byte address width
+  signal rdata : std_ulogic_vector(31 downto 0);
+
+begin
+
+  -- size check --
+  assert (image_size_c <= 2**AWIDTH) report
+    "[NEORV32] IMEM image (" & natural'image(image_size_c) & " bytes) " &
+    "overflows IMEM size (" & natural'image(2**AWIDTH) & " bytes)!" severity error;
+
+  -- ROM --
+  rom_access: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if (en_i = '1') then
+        rdata <= image_data_c(to_integer(unsigned(addr_i(awidth_c-1 downto 2))));
+      end if;
+    end if;
+  end process;
+
+  -- output register stage --
+  rom_output_register_enabled:
+  if OUTREG generate
+    rom_outreg: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        data_o <= rdata;
+      end if;
+    end process;
+  end generate;
+
+  -- no output register stage --
+  rom_output_register_disabled:
+  if not OUTREG generate
+    data_o <= rdata;
+  end generate;
+
+end architecture;

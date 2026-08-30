@@ -63,14 +63,14 @@ entity neorv32_litex_core_complex is
     -- CPU interrupt --
     irq_mei_i  : in  std_ulogic  -- RISC-V machine external interrupt (MEI)
   );
-end neorv32_litex_core_complex;
+end entity;
 
 architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
 
   -- configuration helpers --
   constant num_configs_c : natural := 5;    -- number of pre-defined configurations
-  type bool_t is array (0 to num_configs_c-1) of boolean;
-  type natural_t is array (0 to num_configs_c-1) of natural;
+  type bool_t is array (num_configs_c-1 downto 0) of boolean;
+  type natural_t is array (num_configs_c-1 downto 0) of natural;
   type configs_t is record
     riscv_c      : bool_t;
     riscv_m      : bool_t;
@@ -170,5 +170,4 @@ begin
     irq_mei_i  => irq_mei_i   -- machine external interrupt
   );
 
-
-end neorv32_litex_core_complex_rtl;
+end architecture;

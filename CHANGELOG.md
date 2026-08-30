@@ -29,6 +29,44 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 30.08.2026 | 1.13.5.4 | ocd, gptmr, pwm: area optimizations; remove reset from registers where it is not strictly necessary | [#1641](https://github.com/stnolting/neorv32/pull/1641) |
+| 29.08.2026 | 1.13.5.3 | :test_tube: use asynchronous bus read access for further IO devices | [#1640](https://github.com/stnolting/neorv32/pull/1640) |
+| 29.08.2026 | 1.13.5.2 | :test_tube: use asynchronous bus read access for serial IO devices | [#1638](https://github.com/stnolting/neorv32/pull/1638) |
+| 29.08.2026 | 1.13.5.1 | CPU: optimize set-on-less-than timing | [#1635](https://github.com/stnolting/neorv32/pull/1635) |
+| 22.08.2026 | [**1.13.5**](https://github.com/stnolting/neorv32/releases/tag/v1.13.5) | :rocket: **New release** | |
+| 21.08.2026 | 1.13.4.9 | :bug: fix permanent CPU stall when accessing unmapped addresses (if XBUS is disabled) | [#1634](https://github.com/stnolting/neorv32/pull/1634) |
+| 21.08.2026 | 1.13.4.8 | convert remaining list arrays to `downto` (named-association aggregates) | [#1632](https://github.com/stnolting/neorv32/pull/1632) |
+| 19.08.2026 | 1.13.4.7 | :warning: rework/remove memory/IP wrappers | [#1631](https://github.com/stnolting/neorv32/pull/1631) |
+| 17.08.2026 | 1.13.4.6 | CPU: minor timing optimizations and code cleanups | [#1630](https://github.com/stnolting/neorv32/pull/1630) |
+| 14.08.2026 | 1.13.4.5 | CPU: generalize fast multiplier pipeline | [#1625](https://github.com/stnolting/neorv32/pull/1625) |
+| 14.08.2026 | 1.13.4.4 | minor rtl edits and optimizations | [#1624](https://github.com/stnolting/neorv32/pull/1624) |
+| 14.08.2026 | 1.13.4.3 | normalize bus/list array ranges to `x downto y` | [#1622](https://github.com/stnolting/neorv32/pull/1622) |
+| 14.08.2026 | 1.13.4.2 | bitmanip: simplify register enables | [#1626](https://github.com/stnolting/neorv32/pull/1626) |
+| 12.08.2026 | 1.13.4.1 | declare FIFO/SPRAM memory arrays per generate-branch to fix RAM extraction on Verific-based synthesis tools | [#1623](https://github.com/stnolting/neorv32/pull/1623) |
+| 10.08.2026 | [**1.13.4**](https://github.com/stnolting/neorv32/releases/tag/v1.13.4) | :rocket: **New release** | |
+| 09.08.2026 | 1.13.3.9 | minor CPU updates, optimizations and RISC-V-compliance fixes | [#1621](https://github.com/stnolting/neorv32/pull/1621) |
+| 08.08.2026 | 1.13.3.8 | remove reset from registers where it is not strictly necessary | [#1620](https://github.com/stnolting/neorv32/pull/1620) |
+| 02.08.2026 | 1.13.3.7 | `instret` counter: only increment for actually retired instructions | [#1615](https://github.com/stnolting/neorv32/pull/1615) |
+| 02.08.2026 | 1.13.3.6 | minor rtl cleanups and optimizations | [#1614](https://github.com/stnolting/neorv32/pull/1614) |
+| 02.08.2026 | 1.13.3.5 | CPU register file area optimizations and cleanups | [#1613](https://github.com/stnolting/neorv32/pull/1613) |
+| 01.08.2026 | 1.13.3.4 | RVFI: extend `order` to 64-bit as required by the spec | [#1612](https://github.com/stnolting/neorv32/pull/1612) |
+| 01.08.2026 | 1.13.3.3 | :test_tube: remove dedicated reset logic from CPU data path FFs | [#1609](https://github.com/stnolting/neorv32/pull/1609) |
+| 26.07.2026 | 1.13.3.2 | minor rtl edits and cleanups; :warning: simplify CFS bus interface | [#1606](https://github.com/stnolting/neorv32/pull/1606) |
+| 24.07.2026 | 1.13.3.1 | :bug: fix PMP `pmpaddr*[31:30]` bits: must be read-only and zero | [#1605](https://github.com/stnolting/neorv32/pull/1605) |
+| 24.07.2026 | [**1.13.3**](https://github.com/stnolting/neorv32/releases/tag/v1.13.3) | :rocket: **New release** | |
+| 23.07.2026 | 1.13.2.9 | :sparkles: add optional `CPU_FAST_MUL_REG` generic: pipeline register for the fast multiplier (shortens critical path on narrow-DSP FPGAs; +1 multiply latency cycle) | [#1603](https://github.com/stnolting/neorv32/pull/1603) |
+| 20.07.2026 | 1.13.2.8 | comprehensive VHDL coding style edits | [#1602](https://github.com/stnolting/neorv32/pull/1602) |
+| 17.07.2026 | 1.13.2.7 | :sparkles: add new SoC module: serial memory controller (SMC) to attach external serial memory (PSRAM or flash; supports XIP) | [#1599](https://github.com/stnolting/neorv32/pull/1599) |
+| 11.07.2026 | 1.13.2.6 | :bug: fix another RVFI memory address & data signal alignment bug | [#1597](https://github.com/stnolting/neorv32/pull/1597) |
+| 03.07.2026 | 1.13.2.5 | :sparkles: add support for RISC-V `Zcmop` ISA extension (compressed may-be-operations) | [#1596](https://github.com/stnolting/neorv32/pull/1596) |
+| 03.07.2026 | 1.13.2.4 | :bug: fix further illegal instruction detection loopholes in `Zfinx` ISA extension (classify + compare)| [#1595](https://github.com/stnolting/neorv32/pull/1595) |
+| 03.07.2026 | 1.13.2.3 | minor rtl edits and cleanups | [#1594](https://github.com/stnolting/neorv32/pull/1594) |
+| 01.07.2026 | 1.13.2.2 | :bug: fix illegal instruction detection loopholes in `Ziimop` and `Zfinx` ISA extensions | [#1590](https://github.com/stnolting/neorv32/pull/1590) |
+| 01.07.2026 | 1.13.2.1 | :bug: fix RVFI memory address & data signal alignment | [#1585](https://github.com/stnolting/neorv32/pull/1585) |
+| 16.06.2026 | [**1.13.2**](https://github.com/stnolting/neorv32/releases/tag/v1.13.2) | :rocket: **New release** | |
+| 15.06.2026 | 1.13.1.9 | remove `mhpmevent*h` CSRs that do not exist on RV32 without `Sscofpmf` | [#1575](https://github.com/stnolting/neorv32/pull/1575) |
+| 14.06.2026 | 1.13.1.8 | close (the last) RVC illegal instruction detection loophole; further shrink bootloader image size; add defaults for CPU-top generics | [#1574](https://github.com/stnolting/neorv32/pull/1574) |
+| 07.06.2026 | 1.13.1.7 | minor rtl edits and optimizations | [#1570](https://github.com/stnolting/neorv32/pull/1570) |
 | 05.06.2026 | 1.13.1.6 | :warning: rework hardware performance counter (HPM) events | [#1569](https://github.com/stnolting/neorv32/pull/1569) |
 | 05.06.2026 | 1.13.1.5 | :bug: minor rtl fixes: fix trace port's RD register signal; fix `Smcntrpmf`'s *cfg CSR address decoding | [#1568](https://github.com/stnolting/neorv32/pull/1568) |
 | 04.06.2026 | 1.13.1.4 | minor rtl edits and cleanups | [#1565](https://github.com/stnolting/neorv32/pull/1565) |
@@ -334,316 +372,5 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 | 05.08.2024 | 1.10.2.3 | :bug: fix bug in **Vivado IP module** (error if zero-sized input port is unconnected) | [#978](https://github.com/stnolting/neorv32/pull/978) |
 | 04.08.2024 | 1.10.2.2 | :bug: fix bug in **Vivado IP module** (error if AXI port is unconnected) | [#976](https://github.com/stnolting/neorv32/pull/976) |
 | 02.08.2024 | 1.10.2.1 | :warning: rework CFU; remove support for R5-type instructions | [#971](https://github.com/stnolting/neorv32/pull/971) |
-| 29.07.2024 | [**:1.10.2**](https://github.com/stnolting/neorv32/releases/tag/v1.10.2) | :rocket: **New release** | |
-| 28.07.2024 | 1.10.1.9 | make SYSINFO.CLK read/**write** | [#966](https://github.com/stnolting/neorv32/pull/966) |
-| 21.07.2024 | 1.10.1.8 | :lock: restrict IO access to privileged (machine-mode) software | [#958](https://github.com/stnolting/neorv32/pull/958) |
-| 20.07.2024 | 1.10.1.7 | :bug: fix bug in `sbrk` newlib system call (causing `malloc` to provide infinite memory until heap and stack collide) | [#957](https://github.com/stnolting/neorv32/pull/957) |
-| 20.07.2024 | 1.10.1.6 | SDI: remove explicit "RX clear flag"; add new flag to check the current state of the chip-select input | [#955](https://github.com/stnolting/neorv32/pull/955) |
-| 19.07.2024 | 1.10.1.5 | :sparkles: add "programmable" chip-select enable/disable functionality to SPI module | [#954](https://github.com/stnolting/neorv32/pull/954) |
-| 19.07.2024 | 1.10.1.4 | :bug: fix SDI "TX FIFO full" flag | [#953](https://github.com/stnolting/neorv32/pull/953) |
-| 18.07.2024 | 1.10.1.3 | :test_tube: add new generic to disable the SYSINFO module (:warning: for advanced users only that wish to use a CPU-only setup): `IO_DISABLE_SYSINFO` | [#952](https://github.com/stnolting/neorv32/pull/952) |
-| 10.07.2024 | 1.10.1.2 | minor rtl edits and cleanups | [#948](https://github.com/stnolting/neorv32/pull/948) |
-| 05.07.2024 | 1.10.1.1 | minor rtl cleanups and optimizations | [#941](https://github.com/stnolting/neorv32/pull/941) |
-| 04.07.2024 | [**1.10.1**](https://github.com/stnolting/neorv32/releases/tag/v1.10.1) | :rocket: **New release** | |
-| 04.07.2024 | 1.10.0.10 | :warning: rework GPTMR and remove capture mode | [#939](https://github.com/stnolting/neorv32/pull/939) |
-| 03.07.2024 | 1.10.0.9 | :warning: remove `AMO_RVS_GRANULARITY` generic, reservation set granularity is now fixed to 4 bytes | [#938](https://github.com/stnolting/neorv32/pull/938) |
-| 03.07.2024 | 1.10.0.8 | :test_tube: add XBUS to AHB3-lite bridge | [#937](https://github.com/stnolting/neorv32/pull/937) |
-| 02.07.2024 | 1.10.0.7 | minor rtl and software edits and cleanups | [#936](https://github.com/stnolting/neorv32/pull/936) |
-| 30.06.2024 | 1.10.0.6 | minor rtl edits and cleanups | [#935](https://github.com/stnolting/neorv32/pull/935) |
-| 29.06.2024 | 1.10.0.5 | :warning: rework and optimize custom functions unit (CFU) interface; simplified illegal RVC decoding | [#932](https://github.com/stnolting/neorv32/pull/932) |
-| 23.06.2024 | 1.10.0.4 | minor rtl edits/cleanups | [#931](https://github.com/stnolting/neorv32/pull/931) |
-| 22.06.2024 | 1.10.0.3 | UARTs: add flags to clear RX/TX FIFOs; DMA: add FIRQ trigger type configuration flag | [#930](https://github.com/stnolting/neorv32/pull/930) |
-| 21.06.2024 | 1.10.0.2 | minor code rtl clean-ups; fix some missing TOP defaults | [#929](https://github.com/stnolting/neorv32/pull/929) |
-| 17.06.2024 | 1.10.0.1 | :warning: remove (optional and redundant) JTAG reset signal `jtag_trst_i` | [#928](https://github.com/stnolting/neorv32/pull/928) |
-| 16.06.2024 | [**1.10.0**](https://github.com/stnolting/neorv32/releases/tag/v1.10.0) | :rocket: **New release** | |
-| 15.06.2024 | 1.9.9.9 | :sparkles: add pre-configured example project for Eclipse IDE | [#926](https://github.com/stnolting/neorv32/pull/926) |
-| 14.06.2024 | 1.9.9.8 | minor rtl edits/cleanups; increase bootloader's auto-boot timeout from 8s to 10s | [#925](https://github.com/stnolting/neorv32/pull/925) |
-| 07.06.2024 | 1.9.9.7 | :sparkles: re-add TRNG "data available" interrupt | [#922](https://github.com/stnolting/neorv32/pull/922) |
-| 31.05.2024 | 1.9.9.6 | add "tag" signal to XBUS to provide additional access information (compatible to the AXI4 _ARPROT_ and _AWPROT_ signals) | [#917](https://github.com/stnolting/neorv32/pull/917) |
-| 30.05.2024 | 1.9.9.5 | :bug: fix uncached-vs-cached memory accesses (do not interrupt cache bursts by direct/uncached memory accesses) | [#915](https://github.com/stnolting/neorv32/pull/915) |
-| 29.05.2024 | 1.9.9.4 | Vivado IP block: add resizing ports for GPIOs, XIRQs and PWM; split size configuration for GPIO inputs and outputs | [#913](https://github.com/stnolting/neorv32/pull/913) |
-| 27.05.2024 | 1.9.9.3 | removed `XIRQ_TRIGGER_*` generics; XIRQ trigger type is now _programmable_ by dedicated configuration registers | [#911](https://github.com/stnolting/neorv32/pull/911) |
-| 21.05.2024 | 1.9.9.2 | :sparkles: add SLINK routing information ports (compatible to AXI-stream's `TID` and `TDEST` signals) | [#908](https://github.com/stnolting/neorv32/pull/908) |
-| 04.05.2024 | 1.9.9.1 | :sparkles: add NEORV32 as Vivado IP block | [#894](https://github.com/stnolting/neorv32/pull/894) |
-| 03.05.2024 | [**1.9.9**](https://github.com/stnolting/neorv32/releases/tag/v1.9.9) | :rocket: **New release** | |
-| 02.05.2024 | 1.9.8.10 | :bug: fix UART receiver bug (introduced in v1.9.8.7) | [#891](https://github.com/stnolting/neorv32/pull/891) |
-| 01.05.2024 | 1.9.8.9 | minor rtl cleanups (cleanup boolean expressions) | [#889](https://github.com/stnolting/neorv32/pull/889) |
-| 27.04.2024 | 1.9.8.8 | fix delayed halt when single-stepping into an exception | [#887](https://github.com/stnolting/neorv32/pull/887) |
-| 24.04.2024 | 1.9.8.7 | minor RTL fixes | [#883](https://github.com/stnolting/neorv32/pull/883) |
-| 23.04.2024 | 1.9.8.6 | :bug: fix on-chip-debugger external-halt-request vs. exception concurrency | [#882](https://github.com/stnolting/neorv32/pull/882) |
-| 21.04.2024 | 1.9.8.5 | rtl cleanups and (area) optimizations | [#880](https://github.com/stnolting/neorv32/pull/880) |
-| 16.04.2024 | 1.9.8.4 | :warning: use a 4-bit FIRQ select instead of a 16-bit FIRQ mask for DMA auto-trigger configuration | [#877](https://github.com/stnolting/neorv32/pull/877) |
-| 15.04.2024 | 1.9.8.3 | :warning: simplify XBUS gateway logic and configuration generics; only "pipelined Wishbone" protocol is supported now | [#876](https://github.com/stnolting/neorv32/pull/876) |
-| 14.04.2024 | 1.9.8.2 | :warning: rename SLINK data interface registers; minor CPU control logic/area optimizations | [#874](https://github.com/stnolting/neorv32/pull/874) |
-| 13.04.2024 | 1.9.8.1 | minor rtl code cleanups and optimizations | [#872](https://github.com/stnolting/neorv32/pull/872) |
-| 04.04.2024 | [**1.9.8**](https://github.com/stnolting/neorv32/releases/tag/v1.9.8) | :rocket: **New release** | |
-| 04.04.2024 | 1.9.7.10 | extend SPI and SDI interrupt conditions | [#870](https://github.com/stnolting/neorv32/pull/870) |
-| 04.04.2024 | 1.9.7.9 | RISC-V `B` ISA extension (bit-manipulation) only contains sub-extensions `Zba+Zbb+Zbs`; :warning: remove support for `Zbc` ISA extension | [#869](https://github.com/stnolting/neorv32/pull/869) |
-| 03.04.2024 | 1.9.7.8 | split SLINK interrupt into two individual FIRQs (SLINK RX and SLINK TX) | [#868](https://github.com/stnolting/neorv32/pull/868) |
-| 01.04.2024 | 1.9.7.7 | add back TWI clock stretching option | [#867](https://github.com/stnolting/neorv32/pull/867) |
-| 26.03.2024 | 1.9.7.6 | :warning: rework TWI module; add optional & configurable command/data FIFO | [#865](https://github.com/stnolting/neorv32/pull/865) |
-| 24.03.2024 | 1.9.7.5 | :warning: **interrupt system rework**: rework CPU's FIRQ system; `mip` CSR is now read-only ; :bug: fix DMA fence configuration flag | [#864](https://github.com/stnolting/neorv32/pull/864) |
-| 23.03.2024 | 1.9.7.4 | :warning: **interrupt system rework**: rework TWI and XIRQ interrupts | [#860](https://github.com/stnolting/neorv32/pull/860) |
-| 23.03.2024 | 1.9.7.3 | :warning: **interrupt system rework**: rework ONEWIRE and GPTMR interrupts | [#859](https://github.com/stnolting/neorv32/pull/859) |
-| 23.03.2024 | 1.9.7.2 | :warning: **interrupt system rework**: removed WDT and TRNG interrupts; :bug: fix core complex clocking during sleep mode | [#858](https://github.com/stnolting/neorv32/pull/858) |
-| 23.03.2024 | 1.9.7.1 | CPU hardware optimization (reduced hardware footprint, shortened critical path) | [#857](https://github.com/stnolting/neorv32/pull/857) |
-| 22.03.2024 | [**1.9.7**](https://github.com/stnolting/neorv32/releases/tag/v1.9.7) | :rocket: **New release** | |
-| 18.03.2024 | 1.9.6.9 | :sparkles: update CFU example: now implementing the Extended Tiny Encryption Algorithm (XTEA) | [#855](https://github.com/stnolting/neorv32/pull/855) |
-| 16.03.2024 | 1.9.6.8 | rework cache system: L1 + L2 caches, all based on the generic cache component | [#853](https://github.com/stnolting/neorv32/pull/853) |
-| 16.03.2024 | 1.9.6.7 | cache optimizations: add read-only option, add option to disable direct/uncached accesses | [#851](https://github.com/stnolting/neorv32/pull/851) |
-| 15.03.2024 | 1.9.6.6 | :warning: clean-up configuration generics (remove XBUS endianness configuration; refine JEDED/VENDORID configuration); rearrange SYSINFO.SOC bits | [#850](https://github.com/stnolting/neorv32/pull/850) |
-| 14.03.2024 | 1.9.6.5 | :sparkles: add optional external bus interface cache (XCACHE) | [#849](https://github.com/stnolting/neorv32/pull/849) |
-| 12.03.2024 | 1.9.6.4 | :warning: :warning: rename external bus/memory interface and according generics ("WISHBONE/MEM_EXT" -> "XBUS"); also rename bus interface ports (`wb_* -> xbus_*`) | [#846](https://github.com/stnolting/neorv32/pull/846) |
-| 11.03.2024 | 1.9.6.3 | :warning: remove Wishbone tag signal; minor rtl edits and optimizations | [#845](https://github.com/stnolting/neorv32/pull/845) |
-| 10.03.2024 | 1.9.6.2 | minor rtl clean-ups, optimizations and fixes | [#843](https://github.com/stnolting/neorv32/pull/843) |
-| 09.03.2024 | 1.9.6.1 | add generic cache module (not used yet) | [#842](https://github.com/stnolting/neorv32/pull/842) |
-| 01.03.2024 | [**1.9.6**](https://github.com/stnolting/neorv32/releases/tag/v1.9.6) | :rocket: **New release** | |
-| 25.02.2024 | 1.9.5.10 | :bug: fix minor GPTMR threshold configuration issue | [#834](https://github.com/stnolting/neorv32/pull/834) |
-| 23.02.2024 | 1.9.5.9 | :bug: fix atomic write/clear/set accesses of clear-only CSR bits (re-fix of v1.9.5.6) | [#829](https://github.com/stnolting/neorv32/pull/829) |
-| 23.02.2024 | 1.9.5.8 | optimize FIFO component to improve technology mapping (inferring blockRAM for "async read" configuration); :bug: fix SLINK status flag delay | [#828](https://github.com/stnolting/neorv32/pull/828) |
-| 23.02.2024 | 1.9.5.7 | fix FIFO synthesis issue (Vivado cannot infer block RAM nor LUT-RAM) | [#827](https://github.com/stnolting/neorv32/pull/827) |
-| 20.02.2024 | 1.9.5.6 | :bug: fix bug in `mip.firq` CSR access; `mip.firq` bits are now read-write - software can trigger FIRQs by writing `1` to the according CSR bit | [#821](https://github.com/stnolting/neorv32/pull/821) |
-| 19.02.2024 | 1.9.5.5 | SLINK: add native hardware support for AXI-stream's "tlast" signal | [#815](https://github.com/stnolting/neorv32/pull/815) |
-| 19.02.2024 | 1.9.5.4 | :warning: remove support of `Smcntrpmf` ISA extension (counter privilege mode filtering) | [#814](https://github.com/stnolting/neorv32/pull/814) |
-| 17.02.2024 | 1.9.5.3 | :warning: reworked CPU's hardware performance monitor (HPMs) events | [#811](https://github.com/stnolting/neorv32/pull/811) |
-| 16.02.2024 | 1.9.5.2 | :warning: **revert** support for page faults (keep that in mmu branch for now) | [#809](https://github.com/stnolting/neorv32/pull/809) |
-| 16.02.2024 | 1.9.5.1 | :sparkles: add two new generics to exclude certain PMP modes from synthesis | [#808](https://github.com/stnolting/neorv32/pull/808) |
-| 16.02.2024 | [**1.9.5**](https://github.com/stnolting/neorv32/releases/tag/v1.9.5) | :rocket: **New release** | |
-| 15.02.2024 | 1.9.4.13 | allow the DMA to issue a FENCE operation | [#807](https://github.com/stnolting/neorv32/pull/807) |
-| 14.02.2024 | 1.9.4.12 | :lock: close another illegal compressed instruction encoding loophole | [#806](https://github.com/stnolting/neorv32/pull/806) |
-| 11.02.2024 | 1.9.4.11 | :bug: fix several FPU bugs and design flaws | [#794](https://github.com/stnolting/neorv32/pull/794) |
-| 11.02.2024 | 1.9.4.10 | minor additions to previous version (1.9.4.9): fix HPM configuration read-back | [#804](https://github.com/stnolting/neorv32/pull/804) |
-| 10.02.2024 | 1.9.4.9 | fixing HPM configuration's null range assertions | [#803](https://github.com/stnolting/neorv32/pull/803) |
-| 10.02.2024 | 1.9.4.8 | :bug: fix missing fence pass-through in caches | [#802](https://github.com/stnolting/neorv32/pull/802) |
-| 09.02.2024 | 1.9.4.7 | :warning: integrate fence signal into CPU bus, remove top entity's fence signals | [#800](https://github.com/stnolting/neorv32/pull/800) |
-| 09.02.2024 | 1.9.4.6 | :sparkles: add configurable XIP cache | [#799](https://github.com/stnolting/neorv32/pull/799) |
-| 09.02.2024 | 1.9.4.5 | :lock: close further illegal compressed instruction encoding loopholes | [#797](https://github.com/stnolting/neorv32/pull/797) |
-| 04.02.2024 | 1.9.4.4 | :bug: fix minor bug: CPU instruction bus privilege signal did not remain stable during the entire request | [#792](https://github.com/stnolting/neorv32/pull/792) |
-| 03.02.2024 | 1.9.4.3 | :bug: fix minor bug: CPU instruction bus privilege signal was hardwired to "user-mode" | [#790](https://github.com/stnolting/neorv32/pull/790) |
-| 01.02.2024 | 1.9.4.2 | :sparkles: add support for page fault exceptions (yet unused) | [#786](https://github.com/stnolting/neorv32/pull/786) |
-| 31.01.2024 | 1.9.4.1 | fix trap priority | [#784](https://github.com/stnolting/neorv32/pull/784) |
-| 31.01.2024 | [**1.9.4**](https://github.com/stnolting/neorv32/releases/tag/v1.9.4) | :rocket: **New release** | |
-| 31.01.2024 | 1.9.3.10 | close illegal compressed instruction decoding loophole | [#783](https://github.com/stnolting/neorv32/pull/783) |
-| 29.01.2024 | 1.9.3.9 | :test_tube: extend switchable clock domain (CPU bus switch, i-cache, d-cache) | [#780](https://github.com/stnolting/neorv32/pull/780) |
-| 29.01.2024 | 1.9.3.8 | top entity input ports now have default values `'L'` or `'h'` modeling a pull-down or pull-resistor in case they are not explicitly assigned during instantiation | [#779](https://github.com/stnolting/neorv32/pull/779) |
-| 28.01.2024 | 1.9.3.7 | FIFO module _NULL assertion_ fix | [#778](https://github.com/stnolting/neorv32/pull/778) |
-| 27.01.2024 | 1.9.3.6 | improve CPU's front end (instruction fetch) increasing overall performance | [#777](https://github.com/stnolting/neorv32/pull/777) |
-| 27.01.2024 | 1.9.3.5 | :bug: fix typo that renders the clock gating (added in v1.9.3.4) useless: CPU sleep output stuck at zero | [#776](https://github.com/stnolting/neorv32/pull/776) |
-| 24.01.2024 | 1.9.3.4 | :sparkles: add optional CPU clock gating (via new generic `CLOCK_GATING_EN`): shut down the CPU clock during sleep mode; :warning: add new HDL design file for the clock gate (`neorv32_clockgate.vhd`) | [#775](https://github.com/stnolting/neorv32/pull/775) |
-| 23.01.2024 | 1.9.3.3 | :bug: remove compressed floating point load/store operations as they are **not** supported by `Zfinx` | [#771](https://github.com/stnolting/neorv32/pull/771) |
-| 20.01.2024 | 1.9.3.2 | optimize bus switch; minor RTL and comment edits | [#769](https://github.com/stnolting/neorv32/pull/769) |
-| 14.01.2024 | 1.9.3.1 | minor rtl cleanups and optimizations | [#764](https://github.com/stnolting/neorv32/pull/764) |
-| 11.01.2024 | [**1.9.3**](https://github.com/stnolting/neorv32/releases/tag/v1.9.3) | :rocket: **New release** | |
-| 10.01.2024 | 1.9.2.11 | minor HDL fix (introduced in v1.9.2.9) | [#763](https://github.com/stnolting/neorv32/pull/763) |
-| 10.01.2024 | 1.9.2.10 | re-add MTIME system time output to processor top (`mtime_time_o`) | [#762](https://github.com/stnolting/neorv32/pull/762) |
-| 08.01.2024 | 1.9.2.9 | minor rtl code cleanups | [#760](https://github.com/stnolting/neorv32/pull/760) |
-| 06.01.2024 | 1.9.2.8 | :sparkles: add timer-capture mode to General Purpose Timer (GPTMR); :warning: remove "single-shot" mode, change control register layout | [#759](https://github.com/stnolting/neorv32/pull/759) |
-| 19.12.2023 | 1.9.2.7 | minor rtl code cleanups, edits and optimization; :lock: reset `mtvec`, `mepc` and `dpc` CSRs to CPU boot address (`CPU_BOOT_ADDR` CPU generic) | [#755](https://github.com/stnolting/neorv32/pull/755) |
-| 19.12.2023 | 1.9.2.6 | rework FIFO component fixing problems with inferring block RAM | [#754](https://github.com/stnolting/neorv32/pull/754) |
-| 11.12.2023 | 1.9.2.5 | clean-up software framework | [#752](https://github.com/stnolting/neorv32/pull/752) |
-| 09.12.2023 | 1.9.2.4 | minor rtl code cleanups | [#747](https://github.com/stnolting/neorv32/pull/747) |
-| 09.12.2023 | 1.9.2.3 | refine behavior of CPU's sleep state & signal | [#746](https://github.com/stnolting/neorv32/pull/746) |
-| 05.12.2023 | 1.9.2.2 | reset `mstatus.mpp` to "machine-mode" | [#745](https://github.com/stnolting/neorv32/pull/745) |
-| 02.12.2023 | 1.9.2.1 | :sparkles: add RISC-V `Zicond` ISA extension (integer conditional operations) | [#743](https://github.com/stnolting/neorv32/pull/743) |
-| 01.12.2023 | [**1.9.2**](https://github.com/stnolting/neorv32/releases/tag/v1.9.2) | :rocket: **New release** | |
-| 01.12.2023 | 1.9.1.9 | add `menvcfg[h]` CSRs | [#741](https://github.com/stnolting/neorv32/pull/741) |
-| 30.11.2023 | 1.9.1.8 | :sparkles: :bug: upgrade RISC-V hardware trigger module (`Sdtrig` ISA extension) to spec. version v1.0 (fixing several minor bugs) | [#739](https://github.com/stnolting/neorv32/pull/739) |
-| 25.11.2023 | 1.9.1.7 | cleanup/update assertions and auto-adjusting of invalid generic configurations | [#738](https://github.com/stnolting/neorv32/pull/738) |
-| 25.11.2023 | 1.9.1.6 | :sparkles: add option for "ASIC style" register file that provides a full/dedicated hardware reset | [#736](https://github.com/stnolting/neorv32/pull/736) |
-| 23.11.2023 | 1.9.1.5 | clean-up & rework CPU branch logic | [#735](https://github.com/stnolting/neorv32/pull/735) |
-| 21.11.2023 | 1.9.1.4 | :bug: fix bug in handling of "misaligned instruction exception" | [#734](https://github.com/stnolting/neorv32/pull/734) |
-| 20.11.2023 | 1.9.1.3 | :bug: fix wiring of FPU exception flags | [#733](https://github.com/stnolting/neorv32/pull/733) |
-| 18.11.2023 | 1.9.1.2 | add XIP clock divider to fine-tune SPI frequency | [#731](https://github.com/stnolting/neorv32/pull/731) |
-| 18.11.2023 | 1.9.1.1 | (re-)add SPI high-speed mode, :bug: fix bug in SPI shift register - introduced in v1.9.0.9 | [#730](https://github.com/stnolting/neorv32/pull/730) |
-| 14.11.2023 | [**1.9.1**](https://github.com/stnolting/neorv32/releases/tag/v1.9.1) | :rocket: **New release** | |
-| 11.11.2023 | 1.9.0.9 | :test_tube: add full hardware reset for **all** flip flops in CPU/processor | [#724](https://github.com/stnolting/neorv32/pull/724) |
-| 09.11.2023 | 1.9.0.8 | minor rtl code cleanups | [#723](https://github.com/stnolting/neorv32/pull/723) |
-| 04.11.2023 | 1.9.0.7 | upgrade true random number generator to [neoTRNG version 3](https://github.com/stnolting/neoTRNG) | [#721](https://github.com/stnolting/neorv32/pull/721) |
-| 31.10.2023 | 1.9.0.6 | update crt0's early-boot trap handler | [#719](https://github.com/stnolting/neorv32/pull/719) |
-| 30.10.2023 | 1.9.0.5 | minor rtl cleanups and code beautification | [#718](https://github.com/stnolting/neorv32/pull/718) |
-| 28.10.2023 | 1.9.0.4 | :warning: :sparkles: move FreeRTOS port and demo to a new repository: https://github.com/stnolting/neorv32-freertos | [#716](https://github.com/stnolting/neorv32/pull/716) |
-| 18.10.2023 | 1.9.0.3 | :warning: remove top's `CPU_EXTENSION_RISCV_Zifencei` generic - `Zifencei` ISA extension is now always enabled | [#709](https://github.com/stnolting/neorv32/pull/709) |
-| 16.10.2023 | 1.9.0.2 | minor CPU control cleanups and optimizations (branch system) | [#707](https://github.com/stnolting/neorv32/pull/707) |
-| 13.10.2023 | 1.9.0.1 | update software framework to GCC-13.2.0 | [#705](https://github.com/stnolting/neorv32/pull/705) |
-| 13.10.2023 | [**1.9.0**](https://github.com/stnolting/neorv32/releases/tag/v1.9.0) | :rocket: **New release** | |
-| 13.10.2023 | 1.8.9.9 | minor hardware edits and optimizations | [#703](https://github.com/stnolting/neorv32/pull/703) |
-| 07.10.2023 | 1.8.9.8 | add "transfer done" flag to DMA | [#699](https://github.com/stnolting/neorv32/pull/699) |
-| 04.10.2023 | 1.8.9.7 | :warning: rework internal bus protocol | [#697](https://github.com/stnolting/neorv32/pull/697) |
-| 29.09.2023 | 1.8.9.6 | optimize PMP logic (reducing area requirements) | [#695](https://github.com/stnolting/neorv32/pull/695) |
-| 29.09.2023 | 1.8.9.5 | minor CPU optimizations and code clean-ups | [#694](https://github.com/stnolting/neorv32/pull/694) |
-| 23.09.2023 | 1.8.9.4 | :sparkles: added vectored trap handling mode of `mtvec` for reduced latency from IRQ to ISR | [#691](https://github.com/stnolting/neorv32/pull/691)
-| 22.09.2023 | 1.8.9.3 | :lock: **watchdog**: add reset password and optional "strict" mode for increased safety | [#692](https://github.com/stnolting/neorv32/pull/692) |
-| 15.09.2023 | 1.8.9.2 | :warning: rework CFU CSRs; minor rtl edits | [#690](https://github.com/stnolting/neorv32/pull/690) |
-| 11.09.2023 | 1.8.9.1 | minor rtl edits and updates | [#684](https://github.com/stnolting/neorv32/pull/684) |
-| 09.09.2023 | [**1.8.9**](https://github.com/stnolting/neorv32/releases/tag/v1.8.9) | :rocket: **New release** | |
-| 08.09.2023 | 1.8.8.9 | removed unused `mcontext` and `scontext` CSRs (`Sdtrig` ISA extension); CPU optimizations (area and timing) | [#683](https://github.com/stnolting/neorv32/pull/683) |
-| 02.09.2023 | 1.8.8.8 | :sparkles: add option to implement **up to 2^32 CFU-internal user-defined CSRs** (via indirect CSR access) | [#681](https://github.com/stnolting/neorv32/pull/681) |
-| 02.09.2023 | 1.8.8.7 | :lock: (re-)add **execution monitor**: raise an exception if a multi-cycle ALU operation does not complete within a bound amount of time | [#680](https://github.com/stnolting/neorv32/pull/680) |
-| 01.09.2023 | 1.8.8.6 | minor rtl edits and cleanups | [#679](https://github.com/stnolting/neorv32/pull/679) |
-| 30.08.2023 | 1.8.8.5 | remove "branch prediction" logic - core is smaller and _even faster_ without it | [#678](https://github.com/stnolting/neorv32/pull/678) |
-| 25.08.2023 | 1.8.8.4 | add new generic to downgrade on-chip debugger's debug module back to spec. version 0.13 (`DM_LEGACY_MODE` generic) | [#677](https://github.com/stnolting/neorv32/pull/677) |
-| 23.08.2023 | 1.8.8.3 | :test_tube: add experimental `Smcntrpmf` ISA extension (counter privilege mode filtering; spec. is frozen but not yet ratified); remove unused `menvcfg` CSRs | [#676](https://github.com/stnolting/neorv32/pull/676) |
-| 19.08.2023 | 1.8.8.2 | :warning: constrain `mtval` CSR; add support for `mtinst` CSR (trap instruction) | [#674](https://github.com/stnolting/neorv32/pull/674) |
-| 19.08.2023 | 1.8.8.1 | :test_tube: update RTE to support easy emulation of instructions; add example program to showcase how to emulate unaligned memory accesses | [#673](https://github.com/stnolting/neorv32/pull/673) |
-| 18.08.2023 | [**1.8.8**](https://github.com/stnolting/neorv32/releases/tag/v1.8.8) | :rocket: **New release** | |
-| 17.08.2023 | 1.8.7.9 | minor rtl edits and cleanups | [#672](https://github.com/stnolting/neorv32/pull/672) |
-| 13.08.2023 | 1.8.7.8 | :warning: constrain/optimize `mtval` and `mcounteren` CSRs | [#671](https://github.com/stnolting/neorv32/pull/671) |
-| 12.08.2023 | 1.8.7.7 | remove _unratified_ `Zicond` ISA extension; minor rtl code cleanups and optimizations | [#670](https://github.com/stnolting/neorv32/pull/670) |
-| 05.08.2023 | 1.8.7.6 | :bug: fix bug: HPM width configurations below 32 bit fail | [#665](https://github.com/stnolting/neorv32/pull/665) |
-| 04.08.2023 | 1.8.7.5 | :warning: major code edits/cleanups and file renaming | [#664](https://github.com/stnolting/neorv32/pull/664) |
-| 29.07.2023 | 1.8.7.4 | RTL cleanup and optimizations (less synthesis warnings, less resource requirements) | [#660](https://github.com/stnolting/neorv32/pull/660) |
-| 28.07.2023 | 1.8.7.3 | :warning: reworked **SYSINFO** module; clean-up address space layout; clean-up assertion notes | [#659](https://github.com/stnolting/neorv32/pull/659) |
-| 27.07.2023 | 1.8.7.2 | :bug: make sure that IMEM/DMEM size is always a power of two | [#658](https://github.com/stnolting/neorv32/pull/658) |
-| 27.07.2023 | 1.8.7.1 | :warning: remove `CUSTOM_ID` generic; cleanup and re-layout `NEORV32_SYSINFO.SOC` bits; (:bug:) fix gateway's generics (`positive` -> `natural` as these generics are allowed to be zero) | [#657](https://github.com/stnolting/neorv32/pull/657) |
-| 26.07.2023 | [**1.8.7**](https://github.com/stnolting/neorv32/releases/tag/v1.8.7) | :rocket: **New release** | |
-| 24.07.2023 | 1.8.6.10 | :bug: fixing some LR/SC design flaws | [#654](https://github.com/stnolting/neorv32/pull/654) |
-| 23.07.2023 | 1.8.6.9 | optimize bus system and customization options | [#653](https://github.com/stnolting/neorv32/pull/653) |
-| 22.07.2023 | 1.8.6.8 | minor rtl edits | [#652](https://github.com/stnolting/neorv32/pull/652) |
-| 21.07.2023 | 1.8.6.7 | :sparkles: add support for **RISC-V A ISA Extension** (atomic memory accesses; `lr.w`/`sc.w` only!) | [#651](https://github.com/stnolting/neorv32/pull/651) |
-| 18.07.2023 | 1.8.6.6 | :warning: remove 32-bit data dump mode from UART0/1 sim-mode | [#650](https://github.com/stnolting/neorv32/pull/650) |
-| 16.07.2023 | 1.8.6.5 | :warning: **rework SoC bus system & memory map - part 3**: re-enforce PMAs (physical memory attributes) | [#648](https://github.com/stnolting/neorv32/pull/648) |
-| 15.07.2023 | 1.8.6.4 | :warning: **rework SoC bus system & memory map - part 2**: move IO address decoding to central IO switch; add i-cache uncached accesses | [#648](https://github.com/stnolting/neorv32/pull/648) |
-| 14.07.2023 | 1.8.6.3 | :warning: **rework SoC bus system & memory map - part 1**: add central bus gateway to control core accesses to the main address regions | [#648](https://github.com/stnolting/neorv32/pull/648) |
-| 14.07.2023 | 1.8.6.2 | minor rtl edits | [#646](https://github.com/stnolting/neorv32/pull/646) |
-| 30.06.2023 | 1.8.6.1 | minor rtl edits, cleanups and optimizations | [#641](https://github.com/stnolting/neorv32/pull/641) |
-| 27.06.2023 | [**1.8.6**](https://github.com/stnolting/neorv32/releases/tag/v1.8.6) | :rocket: **New release** | |
-| 24.06.2023 | 1.8.5.9 | :test_tube: VHDL code: use entity instantiation instead of component instantiation | [#637](https://github.com/stnolting/neorv32/pull/637) |
-| 24.06.2023 | 1.8.5.8 | optimize CPU control logic; closed further invalid instruction word detection holes | [#636](https://github.com/stnolting/neorv32/pull/636) |
-| 23.06.2023 | 1.8.5.7 | :warning: remove **buskeeper's status register** | [#635](https://github.com/stnolting/neorv32/pull/635) |
-| 17.06.2023 | 1.8.5.6 | :sparkles: add new **Cyclic Redundancy Check module (CRC)** | [#632](https://github.com/stnolting/neorv32/pull/632) |
-| 03.06.2023 | 1.8.5.5 | :sparkles: re-add (simplified) **Stream Link Interface (SLINK)** | [#628](https://github.com/stnolting/neorv32/pull/628) |
-| 03.06.2023 | 1.8.5.4 | :warning: rearrange bits in **SYSINFO** | [#627](https://github.com/stnolting/neorv32/pull/627) |
-| 02.06.2023 | 1.8.5.3 | :bug: executable generation: fix address continuity between `.text` and `.rodata` segments | [#626](https://github.com/stnolting/neorv32/pull/626) |
-| 19.05.2023 | 1.8.5.2 | :sparkles: add automatic trigger mode to **DMA** (trigger transfer if a processor-internal peripheral issues an interrupt request) | [#618](https://github.com/stnolting/neorv32/pull/618) |
-| 18.05.2023 | 1.8.5.1 | software can now retrieve the configured FIFO size of the **TRNG** | [#616](https://github.com/stnolting/neorv32/pull/616) |
-| 18.05.2023 | [**1.8.5**](https://github.com/stnolting/neorv32/releases/tag/v1.8.5) | :rocket: **New release** | |
-| 18.05.2023 | 1.8.4.9 | remove `is_simulation` flag from SYSINFO; add programmable interrupt to **TRNG** module | [#615](https://github.com/stnolting/neorv32/pull/615) |
-| 12.05.2023 | 1.8.4.8 | `mtval` CSR now provides the address of `ebreak` exceptions (re-added temporarily to pass RISC-V ISA tests) | [#611](https://github.com/stnolting/neorv32/pull/611) |
-| 03.05.2023 | 1.8.4.7 | :bug: fix bug in FPU (terminate FPU sub-module operations if an exception has been raised) | [#609](https://github.com/stnolting/neorv32/pull/609) |
-| 02.05.2023 | 1.8.4.6 | make SDI FIFO access entirely synchronous; upgrade processor memory modules; update test setup wrappers | [#608](https://github.com/stnolting/neorv32/pull/608) |
-| 30.04.2023 | 1.8.4.5 | rework processor-internal bus system | [#607](https://github.com/stnolting/neorv32/pull/607) |
-| 27.04.2023 | 1.8.4.4 | minor hardware edits and switching activity optimizations of CPU bus unit | [#605](https://github.com/stnolting/neorv32/pull/605) |
-| 25.04.2023 | 1.8.4.3 | :bug: fix bug in **DMA** (corrupted write-back when there are bus wait cycles - e.g. when no caches are implemented) | [#601](https://github.com/stnolting/neorv32/pull/601) |
-| 24.04.2023 | 1.8.4.2 | minor rtl edits; shorten critical path of d-cache setup | [#599](https://github.com/stnolting/neorv32/pull/599) |
-| 22.04.2023 | 1.8.4.1 | :sparkles: add optional **direct memory access controller (DMA)** | [#593](https://github.com/stnolting/neorv32/pull/593) |
-| 21.04.2023 | [**1.8.4**](https://github.com/stnolting/neorv32/releases/tag/v1.8.4) | :rocket: **New release** | |
-| 21.04.2023 | 1.8.3.9 | :bug: fix timeout bug in **FPU** normalizer | [#592](https://github.com/stnolting/neorv32/pull/592) |
-| 19.04.2023 | 1.8.3.8 | minor processor bus system optimizations and clean-ups | [#591](https://github.com/stnolting/neorv32/pull/591) |
-| 15.04.2023 | 1.8.3.7 | :bug: :warning: `wfi` and XIRQ bug fixes; massive RTL code cleanup and optimization of CPU control | [#586](https://github.com/stnolting/neorv32/pull/586) |
-| 14.04.2023 | 1.8.3.6 | [UARTs] software can now retrieve the configured RX/TX FIFO sizes from the `DATA` register | [#581](https://github.com/stnolting/neorv32/pull/581) |
-| 13.04.2023 | 1.8.3.5 | :bug: fixed bug in FPU control logic (introduced in some earlier clean-up commit); minor code edits and optimizations | [#578](https://github.com/stnolting/neorv32/pull/578) |
-| 07.04.2023 | 1.8.3.4 | rtl edits and cleanups | [#571](https://github.com/stnolting/neorv32/pull/571) |
-| 05.04.2023 | 1.8.3.3 | update **external interrupt controller (XIRQ)** | [#570](https://github.com/stnolting/neorv32/pull/570) |
-| 05.04.2023 | 1.8.3.2 | `time` CSR struggles (again) and logic optimization | [#569](https://github.com/stnolting/neorv32/pull/569) |
-| 01.04.2023 | 1.8.3.1 | :sparkles: add full `NA4` and `NAPOT` support to the (now) RISC-V-compatible **physical memory protection (PMP)** | [#566](https://github.com/stnolting/neorv32/pull/566) |
-| 31.03.2023 | [**1.8.3**](https://github.com/stnolting/neorv32/releases/tag/v1.8.3) | :rocket: **New release** | |
-| 29.03.2023 | 1.8.2.9 | :warning: remove `CPU_EXTENSION_RISCV_Zicsr` generic - `Zicsr` ISA extension is always enabled; optimize bus switch; VHDL code cleanups | [#562](https://github.com/stnolting/neorv32/pull/562) |
-| 25.03.2023 | 1.8.2.8 | :test_tube: add configurable data cache (**dCACHE**) | [#560](https://github.com/stnolting/neorv32/pull/560) |
-| 24.03.2023 | 1.8.2.7 | :sparkles: add full support of `mcounteren` CSR; cleanup counter and PMP CSRs; i-cache optimization | [#559](https://github.com/stnolting/neorv32/pull/559) |
-| 18.03.2023 | 1.8.2.6 | add new generic `JEDEC_ID` (official JEDEC identifier; used for `mvendorid` CSR); further generics cleanups | [#557](https://github.com/stnolting/neorv32/pull/557)
-| 17.03.2023 | 1.8.2.5 | add RISC-V `time[h]` CSRs (part of the `Zicntr` ISA extension) | [#556](https://github.com/stnolting/neorv32/pull/556) |
-| 17.03.2023 | 1.8.2.4 | re-add VHDL process names | [#555](https://github.com/stnolting/neorv32/pull/555) |
-| 15.03.2023 | 1.8.2.3 | rtl reworks, cleanups and optimizations | [#550](https://github.com/stnolting/neorv32/pull/550) |
-| 11.03.2023 | 1.8.2.2 | :sparkles: add support for RISC-V `Zicond` ISA extension (conditional operations) | [#546](https://github.com/stnolting/neorv32/pull/546) |
-| 10.03.2023 | 1.8.2.1 | rtl code edits, clean-ups and minor optimizations (improve branch prediction) | [#545](https://github.com/stnolting/neorv32/pull/545) |
-| 10.03.2023 | [**1.8.2**](https://github.com/stnolting/neorv32/releases/tag/v1.8.2) | :rocket: **New release** | |
-| 09.03.2023 | 1.8.1.10 | :warning: move tri-state drivers (ONEWIRE and TWI) out of the core | [#543](https://github.com/stnolting/neorv32/pull/543) |
-| 08.03.2023 | 1.8.1.9 | reintegrate **UART** RTS/CTS hardware flow-control | [#541](https://github.com/stnolting/neorv32/pull/541) |
-| 07.03.2023 | 1.8.1.8 | update smart LED controller **NEOLED** | [#536](https://github.com/stnolting/neorv32/pull/536) |
-| 05.03.2023 | 1.8.1.7 | :warning: rework and update **UART0 & UART1** | [#533](https://github.com/stnolting/neorv32/pull/533) |
-| 04.03.2023 | 1.8.1.6 | :warning: rework and update **SPI** module | [#530](https://github.com/stnolting/neorv32/pull/530) |
-| 02.03.2023 | 1.8.1.5 | minor general purpose timer (GPTMR) code edits | [#529](https://github.com/stnolting/neorv32/pull/529) |
-| 02.03.2023 | 1.8.1.4 | :bug: fix timeout bug in **FPU** (conversion and add/sub instructions) | [#528](https://github.com/stnolting/neorv32/pull/528) |
-| 25.02.2023 | 1.8.1.3 | :sparkles: add new processor module: **Serial Data Interface (SDI)** - a SPI _device-class_ interface | [#505](https://github.com/stnolting/neorv32/pull/505) |
-| 24.02.2023 | 1.8.1.2 | :warning: rename top interface signals of **XIP** and **SIP** modules | [#504](https://github.com/stnolting/neorv32/pull/504) |
-| 23.02.2023 | 1.8.1.1 | CFS: add another 32 interface register (now having 64 memory-mapped registers for custom usage) | [#503](https://github.com/stnolting/neorv32/pull/503) |
-| 23.02.2023 | [**1.8.1**](https://github.com/stnolting/neorv32/releases/tag/v1.8.1) | :rocket: **New release** | |
-| 22.02.2023 | 1.8.0.10 | :warning: **remove stream link interface (SLINK)** | [#502](https://github.com/stnolting/neorv32/pull/502) |
-| 19.02.2023 | 1.8.0.9 | :warning: constrain number of **PWM** channels to 12 (was 60); change base address of PWM module | [#501](https://github.com/stnolting/neorv32/pull/501) |
-| 18.02.2023 | 1.8.0.8 | :bug: fix minor bug in CPU's co-processor monitor; minor VHDL clean-ups and edits | [#500](https://github.com/stnolting/neorv32/pull/500) |
-| 13.02.2023 | 1.8.0.7 | minor CPU optimization and fixes | [#497](https://github.com/stnolting/neorv32/pull/497) |
-| 11.02.2023 | 1.8.0.6 | :warning: replace boolean `IO_GPIO_EN` generic by natural `IO_GPIO_NUM` generic to fine-tune GPIO pin number | [#491](https://github.com/stnolting/neorv32/pull/491) |
-| 10.02.2023 | 1.8.0.5 | :test_tube: add CPU co-processor monitor (to auto-terminate operation if a co-processor operation takes too long) | [#490](https://github.com/stnolting/neorv32/pull/490) |
-| 10.02.2023 | 1.8.0.4 | replace CPU-internal control bus by a VHDL `record` (much cleaner code); minor control optimizations; add 6ht CPU co-processor slot (yet unused) | [#489](https://github.com/stnolting/neorv32/pull/489) |
-| 05.02.2023 | 1.8.0.3 | CPU control optimizations | [#487](https://github.com/stnolting/neorv32/pull/487) |
-| 04.02.2023 | 1.8.0.2 | fix RISC-V-incompatible behavior of `mip` CSR | [#486](https://github.com/stnolting/neorv32/pull/486) |
-| 01.02.2023 | 1.8.0.1 | clean-up CPU's interrupt controller; fix race condition in FIRQ trigger/acknowledge | [#484](https://github.com/stnolting/neorv32/pull/484) |
-| 25.01.2023 | [**1.8.0**](https://github.com/stnolting/neorv32/releases/tag/v1.8.0) | :rocket: **New release** | |
-| 21.01.2023 | 1.7.9.10 | update software framework; :bug: fix bug in constructor calling in `crt0` start-up code | [#478](https://github.com/stnolting/neorv32/pull/478) |
-| 15.01.2023 | 1.7.9.9 | :warning: rework **CPU counters**; remove `mtime_i/o` top entity ports; remove `time[h]` CSRs | [#477](https://github.com/stnolting/neorv32/pull/477) |
-| 14.01.2023 | 1.7.9.8 | minor CPU control edits, optimizations and fixes | [#476](https://github.com/stnolting/neorv32/pull/476) |
-| 10.01.2023 | 1.7.9.7 | :warning: rework **watchdog timer (WDT)** | [#474](https://github.com/stnolting/neorv32/pull/474) |
-| 06.01.2023 | 1.7.9.6 | update [neoTRNG v2](https://github.com/stnolting/neoTRNG) | [#472](https://github.com/stnolting/neorv32/pull/472) |
-| 06.01.2023 | 1.7.9.5 | CPU control: logic optimization and fix minor bug in trigger module | [#470](https://github.com/stnolting/neorv32/pull/470) |
-| 04.01.2023 | 1.7.9.4 | update **on-chip debugger**: :test_tube: remove debug module's `haltsum0` register; rework DMI to comply with RISC-V debug spec.; minor edits, updates and fixes | [#468](https://github.com/stnolting/neorv32/pull/468) |
-| 23.12.2022 | 1.7.9.3 | :warning: add explicit `Sdext` and `Sdtrig` ISA extension generics (replacing `DEBUG`); :sparkles: trigger-module can now also be used by machine-mode software without the on-chip debugger, add minimal example program `sw/example/demo_trigger_module` | [#465](https://github.com/stnolting/neorv32/pull/465) |
-| 23.12.2022 | 1.7.9.2 | :sparkles: upgrade the **on-chip debugger (OCD)** to spec. version 1.0; major logic and debugging response time optimizations | [#463](https://github.com/stnolting/neorv32/pull/463) |
-| 22.12.2022 | 1.7.9.1 | remove signal initialization (in reset generator) as some FPGAs do not support FF initialization via bitstream | [#464](https://github.com/stnolting/neorv32/pull/464) |
-| 21.12.2022 | [**1.7.9**](https://github.com/stnolting/neorv32/releases/tag/v1.7.9) | :rocket: **New release** | |
-| 21.12.2022 | 1.7.8.11 | CPU: remove explicit reset-to-don't-care; branch and CSR access check logic optimizations; close further illegal instruction encoding hole | [#462](https://github.com/stnolting/neorv32/pull/462) |
-| 20.12.2022 | 1.7.8.10 | SOC: rework r/w access logic; split read and write accesses into two processes; removed explicit reset-to-don't-care | [#461](https://github.com/stnolting/neorv32/pull/461) |
-| 18.12.2022 | 1.7.8.9 | `mtval` is no longer read-only and can now be written by machine-mode software | [#460](https://github.com/stnolting/neorv32/pull/460) |
-| 17.12.2022 | 1.7.8.8 | :bug: fix incorrect value written to `mepc` when encountering an "instruction access fault" exception | [#458](https://github.com/stnolting/neorv32/pull/458) |
-| 16.12.2022 | 1.7.8.7 | :bug: fix **instruction cache** block invalidation when a bus access error occurs during memory block fetch (after cache miss) | [#457](https://github.com/stnolting/neorv32/pull/457) |
-| 16.12.2022 | 1.7.8.6 | :test_tube: optimized park-loop code (**on-chip debugger firmware**) providing slightly faster debugging response; added explicit address generics for defining debug mode entry points | [#456](https://github.com/stnolting/neorv32/pull/456) |
-| 13.12.2022 | 1.7.8.5 | code cleanup of FIFO module; improved **instruction prefetch buffer (IPB)** - IPD depth can be as small as "1" and will be adjusted automatically when enabling the `C` ISA extension; update hardware implementation results | [#455](https://github.com/stnolting/neorv32/pull/455) |
-| 09.12.2022 | 1.7.8.4 | :sparkles: new option to add custom **R5-type** (4 source registers, 1 destination register) instructions to **Custom Functions Unit (CFU)** | [#452](https://github.com/stnolting/neorv32/pull/452) |
-| 08.12.2022 | 1.7.8.3 | :bug: fix interrupt behavior when in user-mode; minor core rtl fixes; do not check registers specifiers in CFU instructions (i.e. using registers above `x15` when `E` ISA extension is enabled) | [#450](https://github.com/stnolting/neorv32/pull/450) |
-| 03.12.2022 | 1.7.8.2 | :sparkles: new option to add custom **R4-type** RISC-V instructions to **Custom Functions Unit (CFU)**; rework CFU hardware module, intrinsic library and example program | [#449](https://github.com/stnolting/neorv32/pull/449) |
-| 01.12.2022 | 1.7.8.1 | package cleanup | [#447](https://github.com/stnolting/neorv32/pull/447) |
-| 28.11.2022 | [**1.7.8**](https://github.com/stnolting/neorv32/releases/tag/v1.7.8) | :rocket: **New release** | |
-| 14.11.2022 | 1.7.7.9 | minor rtl edits and code optimizations | [#442](https://github.com/stnolting/neorv32/pull/442) |
-| 05.11.2022 | 1.7.7.8 | minor rtl edits | [#441](https://github.com/stnolting/neorv32/pull/441) |
-| 03.11.2022 | 1.7.7.7 | :sparkles: add fine-grained clock configuration for **TWI** module: add fine-grained clock configuration, add clock stretching configuration flag | [#440](https://github.com/stnolting/neorv32/pull/440) |
-| 01.11.2022 | 1.7.7.6 | :warning: rework **SPI module** | [#438](https://github.com/stnolting/neorv32/pull/438) |
-| 24.10.2022 | 1.7.7.5 | :test_tube: remove weird Quartus latch warnings by modifying VHDL coding style | [#434](https://github.com/stnolting/neorv32/pull/434) |
-| 19.10.2022 | 1.7.7.4 | optimize UART's `RTS` (hardware flow control) behavior | [#433](https://github.com/stnolting/neorv32/pull/433) |
-| 15.10.2022 | 1.7.7.3 | :bug: fix bug in `is_power_of_two_f` VHDL function (thanks Alan!) | [#428](https://github.com/stnolting/neorv32/pull/428) |
-| 12.10.2022 | 1.7.7.2 | add dedicated hardware reset to _all_ CPU counters (`[m]cycle[h]`, `[m]instret[h]`, `[m]hpmcounter[h]`); :sparkles: **all CSRs now provide a dedicated hardware reset** | [#426](https://github.com/stnolting/neorv32/pull/426) |
-| 09.10.2022 | 1.7.7.1 | fix Quartus synthesis issue (VHDL): make sure reset state is the _first_ entry in a state list | [#423](https://github.com/stnolting/neorv32/pull/423) |
-| 24.09.2022 | [**1.7.7**](https://github.com/stnolting/neorv32/releases/tag/v1.7.7) | :rocket: **New release** | |
-| 23.09.2022 | 1.7.6.10 | cleanup native data path size (remove `data_width_c` package constant); initial preparations to **support RV64 ISA extension** somewhere in the future | [#417](https://github.com/stnolting/neorv32/pull/417) |
-| 18.09.2022 | 1.7.6.9 | :bug: fixed instruction decoding collision in **`B` ISA extensions** - `B` extension is now fully operational and verified (see [neorv32-riscof](https://github.com/stnolting/neorv32-riscof))! | [#413](https://github.com/stnolting/neorv32/pull/413) |
-| 13.09.2022 | 1.7.6.8 | :bug: bug fix: clearing `mie`'s FIRQ bits did not clear the according _pending_ FIRQs | [#411](https://github.com/stnolting/neorv32/pull/411) |
-| 12.09.2022 | 1.7.6.7 | minor rtl edits and cleanups | [#410](https://github.com/stnolting/neorv32/pull/410) |
-| 10.09.2022 | 1.7.6.6 | :warning: set `mtval` to _zero_ on any illegal instruction exception - removes redundancies, simplifies hardware | [#409](https://github.com/stnolting/neorv32/pull/409) |
-| 09.09.2022 | 1.7.6.5 | minor rtl edits; add "output gate" to FIFO component | [#408](https://github.com/stnolting/neorv32/pull/408) |
-| 08.09.2022 | 1.7.6.4 | :warning: cleanup CPU standard counters and remove _CPU_CNT_WIDTH_ generic | [#407](https://github.com/stnolting/neorv32/pull/407) |
-| 07.09.2022 | 1.7.6.3 | minor rtl edits and cleanups | [#406](https://github.com/stnolting/neorv32/pull/406) |
-| 03.09.2022 | 1.7.6.2 | cleanup hardware reset logic | [#405](https://github.com/stnolting/neorv32/pull/405) |
-| 02.09.2022 | 1.7.6.1 | :sparkles: add new processor module: **1-Wire Interface Controller** (ONEWIRE) | [#402](https://github.com/stnolting/neorv32/pull/402) |
-| 28.08.2022 | [**1.7.6**](https://github.com/stnolting/neorv32/releases/tag/v1.7.6) | :rocket: **New release** | |
-| 27.08.2022 | 1.7.5.9 | fix minor core rtl issues that were found while experimenting with a low-level netlist of the processor | [#398](https://github.com/stnolting/neorv32/pull/398) |
-| 26.08.2022 | 1.7.5.8 | cleanup **crt0** start-up code: remove setup of `mcountern` and `mcountinhibit` CSRs | [#397](https://github.com/stnolting/neorv32/pull/397) |
-| 24.08.2022 | 1.7.5.7 | minor rtl cleanups | [#396](https://github.com/stnolting/neorv32/pull/396) |
-| 20.08.2022 | 1.7.5.6 | :sparkles: update software framework to GCC 12.1.0 (new prebuilt toolchains available!) | [#391](https://github.com/stnolting/neorv32/pull/391) |
-| 18.08.2022 | 1.7.5.5 | :lock: add **TRNG** read data protection | [#389](https://github.com/stnolting/neorv32/pull/389) |
-| 18.08.2022 | 1.7.5.4 | minor rtl cleanup in **PWM** module | [#388](https://github.com/stnolting/neorv32/pull/388) |
-| 17.08.2022 | 1.7.5.3 | optimized **CPU front-end** - faster instruction fetch | [#387](https://github.com/stnolting/neorv32/pull/387) |
-| 16.08.2022 | 1.7.5.2 | relocate TWI tri-state drivers | [#386](https://github.com/stnolting/neorv32/pull/386) |
-| 15.08.2022 | 1.7.5.1 | change base address of **BUSKEEPER** | [#385](https://github.com/stnolting/neorv32/pull/385) |
-| 15.08.2022 | [**1.7.5**](https://github.com/stnolting/neorv32/releases/tag/v1.7.5) | :rocket: **New release** | |
-| 14.08.2022 | 1.7.4.10 | cleanup of FIFO rtl component | [#384](https://github.com/stnolting/neorv32/pull/384) |
-| 13.08.2022 | 1.7.4.9 | minor rtl cleanups and optimizations | [#383](https://github.com/stnolting/neorv32/pull/383) |
-| 01.08.2022 | 1.7.4.8 | :sparkles: add configurable data FIFO to **SPI** module | [#381](https://github.com/stnolting/neorv32/pull/381) |
-| 31.07.2022 | 1.7.4.7 | :warning: rework **SLINK** module | [#377](https://github.com/stnolting/neorv32/pull/377) |
-| 25.07.2022 | 1.7.4.6 | :warning: simplify memory configuration of **linker script**; :sparkles: add in-console configuration option | [#375](https://github.com/stnolting/neorv32/pull/375) |
-| 22.07.2022 | 1.7.4.5 | add `CUSTOM_ID` generic; update bootloader | [#374](https://github.com/stnolting/neorv32/pull/374) |
-| 21.07.2022 | 1.7.4.4 | :lock: specify **physical memory attributes (PMA)** | [#372](https://github.com/stnolting/neorv32/pull/372) |
-| 18.07.2022 | 1.7.4.3 | minor rtl edits and updates | [#369](https://github.com/stnolting/neorv32/pull/369) |
-| 15.07.2022 | 1.7.4.2 | :bug: fixed PMP configuration error when `PMP_NUM_REGIONS` = 0 | [#368](https://github.com/stnolting/neorv32/pull/368) |
-| 15.07.2022 | 1.7.4.1 | :bug: fix permanent stall of `[m]cycle[h]` and `[m]instret[h]` counter if _HPM_NUM_CNTS_ = 0; :bug: fixed bug in Wishbone `we` signal when _ASYNC_TX_ mode enabled; hardwire `dcsr.mprven` to 1 | [#367](https://github.com/stnolting/neorv32/pull/367) |
-| 14.07.2022 | [**1.7.4**](https://github.com/stnolting/neorv32/releases/tag/v1.7.4) | :rocket: **New release** | |
-| 14.07.2022 | 1.7.3.11 | reset all "core" CSRs to all-zero | [#366](https://github.com/stnolting/neorv32/pull/366) |
-| 13.07.2022 | 1.7.3.10 | :bug: reworked/fixed **physical memory protection**; :sparkles: added `mstatus.MPRV` flag | [#365](https://github.com/stnolting/neorv32/pull/365) |
-| 12.07.2022 | 1.7.3.9 | clean-up and rework **bootloader**; :sparkles: add "boot via XIP" option | [#364](https://github.com/stnolting/neorv32/pull/364) |
-| 11.07.2022 | 1.7.3.8 | **physical memory protection(PMP)**: locking entry `i` in TOR mode will now also prevent write access to `pmpaddr(i-1)` (RISC-V compatibility) | [#363](https://github.com/stnolting/neorv32/pull/363) |
-| 09.07.2022 | 1.7.3.7 | :bug: fixed **bootloader's** byte order when using the flash for application storage: :warning: was BIG-endian, is now also LITTLE-endian | [#362](https://github.com/stnolting/neorv32/pull/362) |
-| 08.07.2022 | 1.7.3.6 | :test_tube: added burst mode option to **XIP module** to accelerate consecutive flash read accesses; :warning: fixed XIP endianness: was BIG-endian and is now LITTLE-endian | [#361](https://github.com/stnolting/neorv32/pull/361) |
-| 08.07.2022 | 1.7.3.5 | Update "raw" executable generation options of makefile and image generator | [#360](https://github.com/stnolting/neorv32/pull/360) |
-| 05.07.2022 | 1.7.3.4 | add "infrastructure" for cached (burst) bus accesses | [#359](https://github.com/stnolting/neorv32/pull/359) |
-| 01.07.2022 | 1.7.3.3 | minor rtl cleanups | [#357](https://github.com/stnolting/neorv32/pull/357) |
-| 29.06.2022 | 1.7.3.2 | :test_tube: add experimental core complex wrapper for integration into the [**LiteX**](https://github.com/enjoy-digital/litex) SoC builder framework | [#353](https://github.com/stnolting/neorv32/pull/353) |
-| 28.06.2022 | 1.7.3.1 | :bug: fix bug that caused permanent CPU stall if illegal load/store instruction | [#356](https://github.com/stnolting/neorv32/pull/356) |
-| 23.06.2022 | [**1.7.3**](https://github.com/stnolting/neorv32/releases/tag/v1.7.3) | :rocket: **New release** | |
-| ...        | ...     | Change log trimmed. See [`CHANGELOG.md` in v1.7.3](https://github.com/stnolting/neorv32/blob/v1.7.3/CHANGELOG.md) for older logs. | ... |
+| 29.07.2024 | [**1.10.2**](https://github.com/stnolting/neorv32/releases/tag/v1.10.2) | :rocket: **New release** | |
+| ...        | ...      | **Change log trimmed. See [`CHANGELOG.md` in v1.10.2](https://github.com/stnolting/neorv32/blob/v1.10.2/CHANGELOG.md) for older logs.** | ... |

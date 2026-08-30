@@ -32,7 +32,7 @@ entity neorv32_tracer is
     bus_rsp_o : out bus_rsp_t;    -- bus response
     irq_o     : out std_ulogic    -- tracing-done interrupt
   );
-end neorv32_tracer;
+end entity;
 
 architecture neorv32_tracer_rtl of neorv32_tracer is
 
@@ -50,6 +50,10 @@ architecture neorv32_tracer_rtl of neorv32_tracer is
   -- helpers --
   constant log2_fifo_size_c : natural := index_size_f(TRACE_DEPTH);
 
+  -- bus interface --
+  signal bus_ack, bus_rden : std_ulogic;
+  signal bus_rdata : std_ulogic_vector(31 downto 0);
+
   -- control registers --
   signal ctrl_en, ctrl_hsel, ctrl_start, ctrl_stop, ctrl_iclr : std_ulogic;
   signal stop_addr : std_ulogic_vector(30 downto 0);
@@ -62,10 +66,10 @@ architecture neorv32_tracer_rtl of neorv32_tracer is
     delta : std_ulogic; -- control flow transfer detected
     src   : std_ulogic_vector(31 downto 0); -- source address
     dst   : std_ulogic_vector(31 downto 0); -- destination address
-    push  : std_ulogic; -- push to trace buffer
-    astop : std_ulogic; -- auto-stop tracing
   end record;
-  signal arbiter : arbiter_t;
+  signal arbiter : arbiter_t; -- FSM
+  signal push : std_ulogic; -- push to trace buffer
+  signal stop : std_ulogic; -- auto-stop tracing
 
   -- trace buffer interface --
   type fifo_t is record
@@ -84,10 +88,21 @@ begin
 
   -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_access: process(rstn_i, clk_i)
+  bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o  <= rsp_terminate_c;
+      bus_ack  <= '0';
+      bus_rden <= '0';
+    elsif rising_edge(clk_i) then
+      bus_ack  <= bus_req_i.stb;
+      bus_rden <= bus_req_i.stb and (not bus_req_i.rw);
+    end if;
+  end process;
+
+  -- write access --
+  bus_write: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
       ctrl_en    <= '0';
       ctrl_hsel  <= '0';
       ctrl_start <= '0';
@@ -95,10 +110,6 @@ begin
       ctrl_iclr  <= '0';
       stop_addr  <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- bus handshake --
-      bus_rsp_o.ack <= bus_req_i.stb;
-      bus_rsp_o.err <= '0';
-      -- write access --
       ctrl_start <= '0';
       ctrl_stop  <= '0';
       ctrl_iclr  <= '0';
@@ -114,26 +125,35 @@ begin
           stop_addr <= bus_req_i.data(31 downto 1);
         end if;
       end if;
-      -- read access --
-      bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
-        case bus_req_i.addr(3 downto 2) is
-          when "00" => -- control register
-            bus_rsp_o.data(ctrl_enable_c) <= ctrl_en;
-            bus_rsp_o.data(ctrl_hsel_c)   <= ctrl_hsel and bool_to_ulogic_f(DUAL_CORE_EN);
-            bus_rsp_o.data(ctrl_run_c)    <= arbiter.run;
-            bus_rsp_o.data(ctrl_avail_c)  <= fifo.avail;
-            bus_rsp_o.data(data_tbm_msb_c downto data_tbm_lsb_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
-          when "01" => -- stop-address register
-            bus_rsp_o.data <= stop_addr & '0';
-          when "10" => -- trace data: source
-            bus_rsp_o.data <= fifo.rdata(31 downto 0);
-          when others => -- trace data: destination
-            bus_rsp_o.data <= fifo.rdata(63 downto 32);
-        end case;
-      end if;
     end if;
-  end process bus_access;
+  end process;
+
+  -- read access (asynchronous) --
+  bus_read: process(bus_rden, bus_req_i.addr, ctrl_en, ctrl_hsel, arbiter.run, fifo, stop_addr)
+  begin
+    bus_rdata <= (others => '0');
+    if (bus_rden = '1') then -- output gating
+      case bus_req_i.addr(3 downto 2) is
+        when "00" => -- control register
+          bus_rdata(ctrl_enable_c) <= ctrl_en;
+          bus_rdata(ctrl_hsel_c)   <= ctrl_hsel and bool_to_ulogic_f(DUAL_CORE_EN);
+          bus_rdata(ctrl_run_c)    <= arbiter.run;
+          bus_rdata(ctrl_avail_c)  <= fifo.avail;
+          bus_rdata(data_tbm_msb_c downto data_tbm_lsb_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
+        when "01" => -- stop-address register
+          bus_rdata <= stop_addr & '0';
+        when "10" => -- trace data: source
+          bus_rdata <= fifo.rdata(31 downto 0);
+        when others => -- trace data: destination
+          bus_rdata <= fifo.rdata(63 downto 32);
+      end case;
+    end if;
+  end process;
+
+  -- bus response --
+  bus_rsp_o.ack  <= bus_ack;
+  bus_rsp_o.err  <= '0'; -- no access errors supported
+  bus_rsp_o.data <= bus_rdata;
 
   -- trace source select (CPU0 or CPU1) --
   trace_src <= trace0_i when (ctrl_hsel = '0') or (DUAL_CORE_EN = false) else trace1_i;
@@ -160,7 +180,7 @@ begin
         end if;
       else -- tracing in progress
         arbiter.valid(0) <= '0'; -- default
-        if (ctrl_en = '0') or (ctrl_stop = '1') or (arbiter.astop = '1') then -- tracing still running
+        if (ctrl_en = '0') or (ctrl_stop = '1') or (stop = '1') then -- tracing still running
           arbiter.run <= '0';
         elsif (trace_src.valid = '1') and (trace_src.debug = '0') then -- valid trace packet and not in debug-mode
           arbiter.valid(0) <= '1';
@@ -173,36 +193,34 @@ begin
         end if;
         arbiter.delta <= trace_src.delta;
         -- clear first-packet flag on first push
-        if (arbiter.push = '1') then
+        if (push = '1') then
           arbiter.first <= '0';
         end if;
       end if;
     end if;
-  end process trace_arbiter;
+  end process;
 
   -- push to trace buffer --
-  arbiter.push <= '1' when (arbiter.valid = "11") and (arbiter.delta = '1') else '0';
+  push <= '1' when (arbiter.valid = "11") and (arbiter.delta = '1') else '0';
 
   -- automatic stop if reaching stop address --
-  arbiter.astop <= '1' when (arbiter.dst(31 downto 1) = stop_addr) and (arbiter.valid(0) = '1') else '0';
+  stop <= '1' when (arbiter.dst(31 downto 1) = stop_addr) and (arbiter.valid(0) = '1') else '0';
 
 
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_generator: process(rstn_i, clk_i)
+  irq_generator: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      irq_o <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (ctrl_en = '0') then
         irq_o <= '0';
-      elsif (arbiter.astop = '1') then -- trigger interrupt when reaching auto-stop-address
+      elsif (stop = '1') then -- trigger interrupt when reaching auto-stop-address
         irq_o <= '1';
       elsif (ctrl_iclr = '1') then
         irq_o <= '0';
       end if;
     end if;
-  end process irq_generator;
+  end process;
 
 
   -- Trace Buffer (implemented as FIFO) -----------------------------------------------------
@@ -230,19 +248,17 @@ begin
 
   -- FIFO access --
   fifo.clear <= not ctrl_en;
-  fifo.we    <= arbiter.push;
+  fifo.we    <= push;
   fifo.wdata <= arbiter.dst & arbiter.src;
-  fifo.re    <= '1' when (discard = '1') or ((bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(3 downto 2) = "11")) else '0';
+  fifo.re    <= '1' when (discard = '1') or ((bus_rden = '1') and (bus_req_i.addr(3 downto 2) = "11")) else '0';
 
   -- discard oldest entry if overflowing --
-  fifo_overflow: process(rstn_i, clk_i)
+  fifo_overflow: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      discard <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       discard <= ctrl_en and arbiter.run and (not fifo.free);
     end if;
-  end process fifo_overflow;
+  end process;
 
 
   -- Simulation Trace Logging ---------------------------------------------------------------
@@ -278,4 +294,4 @@ begin
     );
   end generate;
 
-end neorv32_tracer_rtl;
+end architecture;

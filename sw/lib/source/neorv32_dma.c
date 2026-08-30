@@ -7,7 +7,7 @@
 // ================================================================================ //
 
 /**
- * @file neorv32_wdt.c
+ * @file neorv32_dma.c
  * @brief Direct Memory Access Controller (DMA) HW driver source file.
  */
 

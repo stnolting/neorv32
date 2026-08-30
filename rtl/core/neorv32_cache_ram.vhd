@@ -35,7 +35,7 @@ entity neorv32_cache_ram is
     data_i    : in  std_ulogic_vector(31 downto 0); -- write data
     data_o    : out std_ulogic_vector(31 downto 0)  -- read data
   );
-end neorv32_cache_ram;
+end entity;
 
 architecture neorv32_cache_ram_rtl of neorv32_cache_ram is
 
@@ -43,15 +43,13 @@ architecture neorv32_cache_ram_rtl of neorv32_cache_ram is
 
 begin
 
-  -- notifier --
-  assert false report "[NEORV32] Using default CACHE RAM component." severity note;
-
-  -- tag RAM --
+  -- Tag RAM --------------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
   tag_ram_inst: entity neorv32.neorv32_prim_spram
   generic map (
     AWIDTH => IDX_WIDTH,
     DWIDTH => TAG_WIDTH,
-    OUTREG => 0
+    OUTREG => false
   )
   port map (
     clk_i  => clk_i,
@@ -65,14 +63,15 @@ begin
   tag_o(TAG_WIDTH-1 downto 0) <= tag_rd(TAG_WIDTH-1 downto 0); -- actual tag
   tag_o(31 downto TAG_WIDTH)  <= (others => '0'); -- zero-extend
 
-  -- data RAM --
+  -- Data RAM -------------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
   data_ram_gen:
   for i in 0 to 3 generate -- four individual byte RAMs per word
     data_ram_inst: entity neorv32.neorv32_prim_spram
     generic map (
       AWIDTH => IDX_WIDTH + OFS_WIDTH,
       DWIDTH => 8,
-      OUTREG => 0
+      OUTREG => false
     )
     port map (
       clk_i  => clk_i,
@@ -84,4 +83,4 @@ begin
     );
   end generate;
 
-end neorv32_cache_ram_rtl;
+end architecture;

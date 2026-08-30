@@ -108,37 +108,6 @@ enum NEORV32_CSR_enum {
   CSR_MCYCLECFGH     = 0x721, /**< 0x721 - mcyclecfgh:   Machine cycle counter privilege mode filtering - high word */
   CSR_MINSTRETCFGH   = 0x722, /**< 0x722 - minstretcfgh: Machine instret counter privilege mode filtering - high word */
 
-  /* hardware performance monitors - event configuration - continued */
-  CSR_MHPMEVENT3H    = 0x723, /**< 0x723 - mhpmevent3h:  Machine hardware performance monitor event selector 3  high word */
-  CSR_MHPMEVENT4H    = 0x724, /**< 0x724 - mhpmevent4h:  Machine hardware performance monitor event selector 4  high word */
-  CSR_MHPMEVENT5H    = 0x725, /**< 0x725 - mhpmevent5h:  Machine hardware performance monitor event selector 5  high word */
-  CSR_MHPMEVENT6H    = 0x726, /**< 0x726 - mhpmevent6h:  Machine hardware performance monitor event selector 6  high word */
-  CSR_MHPMEVENT7H    = 0x727, /**< 0x727 - mhpmevent7h:  Machine hardware performance monitor event selector 7  high word */
-  CSR_MHPMEVENT8H    = 0x728, /**< 0x728 - mhpmevent8h:  Machine hardware performance monitor event selector 8  high word */
-  CSR_MHPMEVENT9H    = 0x729, /**< 0x729 - mhpmevent9h:  Machine hardware performance monitor event selector 9  high word */
-  CSR_MHPMEVENT10H   = 0x72a, /**< 0x72a - mhpmevent10h: Machine hardware performance monitor event selector 10 high word */
-  CSR_MHPMEVENT11H   = 0x72b, /**< 0x72b - mhpmevent11h: Machine hardware performance monitor event selector 11 high word */
-  CSR_MHPMEVENT12H   = 0x72c, /**< 0x72c - mhpmevent12h: Machine hardware performance monitor event selector 12 high word */
-  CSR_MHPMEVENT13H   = 0x72d, /**< 0x72d - mhpmevent13h: Machine hardware performance monitor event selector 13 high word */
-  CSR_MHPMEVENT14H   = 0x72e, /**< 0x72e - mhpmevent14h: Machine hardware performance monitor event selector 14 high word */
-  CSR_MHPMEVENT15H   = 0x72f, /**< 0x72f - mhpmevent15h: Machine hardware performance monitor event selector 15 high word */
-  CSR_MHPMEVENT16H   = 0x730, /**< 0x730 - mhpmevent16h: Machine hardware performance monitor event selector 16 high word */
-  CSR_MHPMEVENT17H   = 0x731, /**< 0x731 - mhpmevent17h: Machine hardware performance monitor event selector 17 high word */
-  CSR_MHPMEVENT18H   = 0x732, /**< 0x732 - mhpmevent18h: Machine hardware performance monitor event selector 18 high word */
-  CSR_MHPMEVENT19H   = 0x733, /**< 0x733 - mhpmevent19h: Machine hardware performance monitor event selector 19 high word */
-  CSR_MHPMEVENT20H   = 0x734, /**< 0x734 - mhpmevent20h: Machine hardware performance monitor event selector 20 high word */
-  CSR_MHPMEVENT21H   = 0x735, /**< 0x735 - mhpmevent21h: Machine hardware performance monitor event selector 21 high word */
-  CSR_MHPMEVENT22H   = 0x736, /**< 0x736 - mhpmevent22h: Machine hardware performance monitor event selector 22 high word */
-  CSR_MHPMEVENT23H   = 0x737, /**< 0x737 - mhpmevent23h: Machine hardware performance monitor event selector 23 high word */
-  CSR_MHPMEVENT24H   = 0x738, /**< 0x738 - mhpmevent24h: Machine hardware performance monitor event selector 24 high word */
-  CSR_MHPMEVENT25H   = 0x739, /**< 0x739 - mhpmevent25h: Machine hardware performance monitor event selector 25 high word */
-  CSR_MHPMEVENT26H   = 0x73a, /**< 0x73a - mhpmevent26h: Machine hardware performance monitor event selector 26 high word */
-  CSR_MHPMEVENT27H   = 0x73b, /**< 0x73b - mhpmevent27h: Machine hardware performance monitor event selector 27 high word */
-  CSR_MHPMEVENT28H   = 0x73c, /**< 0x73c - mhpmevent28h: Machine hardware performance monitor event selector 28 high word */
-  CSR_MHPMEVENT29H   = 0x73d, /**< 0x73d - mhpmevent29h: Machine hardware performance monitor event selector 29 high word */
-  CSR_MHPMEVENT30H   = 0x73e, /**< 0x73e - mhpmevent30h: Machine hardware performance monitor event selector 30 high word */
-  CSR_MHPMEVENT31H   = 0x73f, /**< 0x73f - mhpmevent31h: Machine hardware performance monitor event selector 31 high word */
-
   /* on-chip debugger - hardware trigger module */
   CSR_TSELECT        = 0x7a0, /**< 0x7a0 - tselect:  Trigger select */
   CSR_TDATA1         = 0x7a1, /**< 0x7a1 - tdata1:   Trigger data register 0 */
@@ -359,37 +328,37 @@ enum NEORV32_CSR_MSTATUS_enum {
  * mcountinhibitCSR (r/w): Machine counter-inhibit
  **************************************************************************/
 enum NEORV32_CSR_MCOUNTINHIBIT_enum {
-  CSR_MCOUNTINHIBIT_CY    = 0,  /**< mcountinhibit CSR (0): CY - Enable auto-increment of [m]cycle[h]   CSR when set (r/w) */
-  CSR_MCOUNTINHIBIT_IR    = 2,  /**< mcountinhibit CSR (2): IR - Enable auto-increment of [m]instret[h] CSR when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM3  = 3,  /**< mcountinhibit CSR (3):  HPM3  - Enable auto-increment of hpmcnt3[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM4  = 4,  /**< mcountinhibit CSR (4):  HPM4  - Enable auto-increment of hpmcnt4[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM5  = 5,  /**< mcountinhibit CSR (5):  HPM5  - Enable auto-increment of hpmcnt5[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM6  = 6,  /**< mcountinhibit CSR (6):  HPM6  - Enable auto-increment of hpmcnt6[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM7  = 7,  /**< mcountinhibit CSR (7):  HPM7  - Enable auto-increment of hpmcnt7[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM8  = 8,  /**< mcountinhibit CSR (8):  HPM8  - Enable auto-increment of hpmcnt8[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM9  = 9,  /**< mcountinhibit CSR (9):  HPM9  - Enable auto-increment of hpmcnt9[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM10 = 10, /**< mcountinhibit CSR (10): HPM10 - Enable auto-increment of hpmcnt10[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM11 = 11, /**< mcountinhibit CSR (11): HPM11 - Enable auto-increment of hpmcnt11[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM12 = 12, /**< mcountinhibit CSR (12): HPM12 - Enable auto-increment of hpmcnt12[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM13 = 13, /**< mcountinhibit CSR (13): HPM13 - Enable auto-increment of hpmcnt13[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM14 = 14, /**< mcountinhibit CSR (14): HPM14 - Enable auto-increment of hpmcnt14[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM15 = 15, /**< mcountinhibit CSR (15): HPM15 - Enable auto-increment of hpmcnt15[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM16 = 16, /**< mcountinhibit CSR (16): HPM16 - Enable auto-increment of hpmcnt16[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM17 = 17, /**< mcountinhibit CSR (17): HPM17 - Enable auto-increment of hpmcnt17[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM18 = 18, /**< mcountinhibit CSR (18): HPM18 - Enable auto-increment of hpmcnt18[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM19 = 19, /**< mcountinhibit CSR (19): HPM19 - Enable auto-increment of hpmcnt19[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM20 = 20, /**< mcountinhibit CSR (20): HPM20 - Enable auto-increment of hpmcnt20[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM21 = 21, /**< mcountinhibit CSR (21): HPM21 - Enable auto-increment of hpmcnt21[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM22 = 22, /**< mcountinhibit CSR (22): HPM22 - Enable auto-increment of hpmcnt22[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM23 = 23, /**< mcountinhibit CSR (23): HPM23 - Enable auto-increment of hpmcnt23[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM24 = 24, /**< mcountinhibit CSR (24): HPM24 - Enable auto-increment of hpmcnt24[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM25 = 25, /**< mcountinhibit CSR (25): HPM25 - Enable auto-increment of hpmcnt25[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM26 = 26, /**< mcountinhibit CSR (26): HPM26 - Enable auto-increment of hpmcnt26[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM27 = 27, /**< mcountinhibit CSR (27): HPM27 - Enable auto-increment of hpmcnt27[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM28 = 28, /**< mcountinhibit CSR (28): HPM28 - Enable auto-increment of hpmcnt28[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM29 = 29, /**< mcountinhibit CSR (29): HPM29 - Enable auto-increment of hpmcnt29[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM30 = 30, /**< mcountinhibit CSR (30): HPM30 - Enable auto-increment of hpmcnt30[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM31 = 31  /**< mcountinhibit CSR (31): HPM31 - Enable auto-increment of hpmcnt31[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_CY    = 0,  /**< mcountinhibit CSR (0):  CY    - Disable auto-increment of [m]cycle[h]   CSR when set (r/w) */
+  CSR_MCOUNTINHIBIT_IR    = 2,  /**< mcountinhibit CSR (2):  IR    - Disable auto-increment of [m]instret[h] CSR when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM3  = 3,  /**< mcountinhibit CSR (3):  HPM3  - Disable auto-increment of hpmcnt3[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM4  = 4,  /**< mcountinhibit CSR (4):  HPM4  - Disable auto-increment of hpmcnt4[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM5  = 5,  /**< mcountinhibit CSR (5):  HPM5  - Disable auto-increment of hpmcnt5[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM6  = 6,  /**< mcountinhibit CSR (6):  HPM6  - Disable auto-increment of hpmcnt6[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM7  = 7,  /**< mcountinhibit CSR (7):  HPM7  - Disable auto-increment of hpmcnt7[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM8  = 8,  /**< mcountinhibit CSR (8):  HPM8  - Disable auto-increment of hpmcnt8[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM9  = 9,  /**< mcountinhibit CSR (9):  HPM9  - Disable auto-increment of hpmcnt9[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM10 = 10, /**< mcountinhibit CSR (10): HPM10 - Disable auto-increment of hpmcnt10[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM11 = 11, /**< mcountinhibit CSR (11): HPM11 - Disable auto-increment of hpmcnt11[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM12 = 12, /**< mcountinhibit CSR (12): HPM12 - Disable auto-increment of hpmcnt12[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM13 = 13, /**< mcountinhibit CSR (13): HPM13 - Disable auto-increment of hpmcnt13[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM14 = 14, /**< mcountinhibit CSR (14): HPM14 - Disable auto-increment of hpmcnt14[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM15 = 15, /**< mcountinhibit CSR (15): HPM15 - Disable auto-increment of hpmcnt15[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM16 = 16, /**< mcountinhibit CSR (16): HPM16 - Disable auto-increment of hpmcnt16[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM17 = 17, /**< mcountinhibit CSR (17): HPM17 - Disable auto-increment of hpmcnt17[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM18 = 18, /**< mcountinhibit CSR (18): HPM18 - Disable auto-increment of hpmcnt18[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM19 = 19, /**< mcountinhibit CSR (19): HPM19 - Disable auto-increment of hpmcnt19[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM20 = 20, /**< mcountinhibit CSR (20): HPM20 - Disable auto-increment of hpmcnt20[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM21 = 21, /**< mcountinhibit CSR (21): HPM21 - Disable auto-increment of hpmcnt21[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM22 = 22, /**< mcountinhibit CSR (22): HPM22 - Disable auto-increment of hpmcnt22[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM23 = 23, /**< mcountinhibit CSR (23): HPM23 - Disable auto-increment of hpmcnt23[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM24 = 24, /**< mcountinhibit CSR (24): HPM24 - Disable auto-increment of hpmcnt24[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM25 = 25, /**< mcountinhibit CSR (25): HPM25 - Disable auto-increment of hpmcnt25[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM26 = 26, /**< mcountinhibit CSR (26): HPM26 - Disable auto-increment of hpmcnt26[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM27 = 27, /**< mcountinhibit CSR (27): HPM27 - Disable auto-increment of hpmcnt27[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM28 = 28, /**< mcountinhibit CSR (28): HPM28 - Disable auto-increment of hpmcnt28[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM29 = 29, /**< mcountinhibit CSR (29): HPM29 - Disable auto-increment of hpmcnt29[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM30 = 30, /**< mcountinhibit CSR (30): HPM30 - Disable auto-increment of hpmcnt30[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM31 = 31  /**< mcountinhibit CSR (31): HPM31 - Disable auto-increment of hpmcnt31[h] when set (r/w) */
 };
 
 /**********************************************************************//**
@@ -499,7 +468,8 @@ enum NEORV32_CSR_MXISA_enum {
 };
 
 enum NEORV32_CSR_MXISAH_enum {
-  CSR_MXISAH_ZBC = 0 /**< mxisah CSR (0): carry-less multiplication (r/-)*/
+  CSR_MXISAH_ZBC   = 0, /**< mxisah CSR (0): carry-less multiplication (r/-)*/
+  CSR_MXISAH_ZCMOP = 1  /**< mxisah CSR (1): compressed may-be-operations (r/-)*/
 };
 
 /**********************************************************************//**

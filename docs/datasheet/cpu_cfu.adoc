@@ -56,7 +56,7 @@ shift-amounts. However, the actual functionality is entirely user-defined. Note 
 always compile-time-static.
 
 .R-Type Instruction Format
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 {reg: [
   {bits: 7, name: 'opcode', type: 1},
@@ -79,7 +79,7 @@ look-up-tables addresses or shift-amounts. However, the actual functionality is 
 all immediate values are always compile-time-static.
 
 .I-Type Instruction Format
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 {reg: [
   {bits:  7, name: 'opcode', type: 1},
@@ -162,7 +162,7 @@ combinatorial operation that completes within the same cycle in which it was tri
 one performs a multi-cycle operation and is completed after several clock cycles.
 
 .CFU Interface Timing Examples
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 {signal: [
   {name: 'clk_i',    wave: 'p....|..'},

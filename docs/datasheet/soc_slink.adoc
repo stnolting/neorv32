@@ -56,7 +56,7 @@ Each link/channel consists of the following signals:
 * `src` and `dst` provide source/destination routing information (optional)
 
 .SLINK example transmissions
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 {signal: [
   {name: 'clk',      wave: 'p.........'},

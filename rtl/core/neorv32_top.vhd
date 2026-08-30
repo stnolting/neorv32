@@ -50,6 +50,7 @@ entity neorv32_top is
     RISCV_ISA_Zbkx      : boolean                        := false;         -- cryptography crossbar permutation extension
     RISCV_ISA_Zbs       : boolean                        := false;         -- single-bit bit-manipulation extension
     RISCV_ISA_Zcb       : boolean                        := false;         -- additional code size reduction instructions
+    RISCV_ISA_Zcmop     : boolean                        := false;         -- compressed may-be-operations
     RISCV_ISA_Zcmp      : boolean                        := false;         -- additional code size reduction instructions
     RISCV_ISA_Zfinx     : boolean                        := false;         -- 32-bit floating-point extension
     RISCV_ISA_Zibi      : boolean                        := false;         -- branch with immediate
@@ -69,6 +70,7 @@ entity neorv32_top is
     -- Tuning Options --
     CPU_CONSTT_BR_EN    : boolean                        := false;         -- enable constant-time branches
     CPU_FAST_MUL_EN     : boolean                        := false;         -- use DSPs for M extension's multiplier
+    CPU_FAST_MUL_REGS   : natural range 1 to 3           := 1;             -- number of fast multiplier register stages (needs CPU_FAST_MUL_EN)
     CPU_FAST_SHIFT_EN   : boolean                        := false;         -- use barrel shifter for shift operations
     CPU_RF_ARCH_SEL     : natural range 0 to 3           := 0;             -- register file implementation style select
 
@@ -102,6 +104,10 @@ entity neorv32_top is
     CACHE_BLOCK_SIZE    : natural range 4 to 1024        := 64;            -- i-cache/d-cache: block size in bytes, has to be a power of 2
     CACHE_BURSTS_EN     : boolean                        := true;          -- i-cache/d-cache: enable issuing of burst transfer for cache update
     CACHE_UC_BASE       : std_ulogic_vector(31 downto 0) := x"F0000000";   -- base address of uncached address space (has to be 256MB-aligned)
+
+    -- Serial Memory Controller (SMC) --
+    SMC_EN              : boolean                        := false;         -- implement serial memory controller
+    SMC_BASE            : std_ulogic_vector(31 downto 0) := x"E0000000";   -- serial memory base address (256MB-aligned)
 
     -- External Bus Interface (XBUS) --
     XBUS_EN             : boolean                        := false;         -- implement external bus interface
@@ -194,6 +200,13 @@ entity neorv32_top is
     jtag_tdo_o     : out std_ulogic;                                         -- serial data output
     jtag_tms_i     : in  std_ulogic := 'L';                                  -- mode select
 
+    -- Serial memory controller interface (available if SMC_EN = true) --
+    smc_ioen_o     : out std_ulogic;                                         -- SMC pin enable, can be used for IO multiplexing
+    smc_sck_o      : out std_ulogic;                                         -- clock
+    smc_csn_o      : out std_ulogic_vector(1 downto 0);                      -- bank/chip select, low-active
+    smc_sdo_o      : out std_ulogic;                                         -- controller data out, memory data in
+    smc_sdi_i      : in  std_ulogic := 'L';                                  -- controller data in, memory data out
+
     -- External bus interface (available if XBUS_EN = true) --
     xbus_adr_o     : out std_ulogic_vector(31 downto 0);                     -- address
     xbus_dat_o     : out std_ulogic_vector(31 downto 0);                     -- write data
@@ -207,7 +220,7 @@ entity neorv32_top is
     xbus_ack_i     : in  std_ulogic := 'L';                                  -- transfer acknowledge
     xbus_err_i     : in  std_ulogic := 'L';                                  -- transfer error
 
-    -- Stream Link Interface (available if IO_SLINK_EN = true) --
+    -- Stream link interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'L');  -- RX input data
     slink_rx_src_i : in  std_ulogic_vector(3 downto 0)  := (others => 'L');  -- RX source routing information
     slink_rx_val_i : in  std_ulogic := 'L';                                  -- RX valid input
@@ -224,13 +237,13 @@ entity neorv32_top is
     gpio_o         : out std_ulogic_vector(31 downto 0);                     -- parallel output
     gpio_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L');  -- parallel input; interrupt-capable
 
-    -- primary UART0 (available if IO_UART0_EN = true) --
+    -- Primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_ulogic;                                         -- UART0 send data
     uart0_rxd_i    : in  std_ulogic := 'L';                                  -- UART0 receive data
     uart0_rtsn_o   : out std_ulogic;                                         -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
     uart0_ctsn_i   : in  std_ulogic := 'L';                                  -- HW flow control: UART0.TX allowed to transmit, low-active, optional
 
-    -- secondary UART1 (available if IO_UART1_EN = true) --
+    -- Secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    : out std_ulogic;                                         -- UART1 send data
     uart1_rxd_i    : in  std_ulogic := 'L';                                  -- UART1 receive data
     uart1_rtsn_o   : out std_ulogic;                                         -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
@@ -281,7 +294,7 @@ entity neorv32_top is
     irq_mti_i      : in  std_ulogic := 'L';                                  -- machine timer interrupt, available if IO_CLINT_EN = false
     irq_mei_i      : in  std_ulogic := 'L'                                   -- machine external interrupt
   );
-end neorv32_top;
+end entity;
 
 architecture neorv32_top_rtl of neorv32_top is
 
@@ -309,11 +322,13 @@ architecture neorv32_top_rtl of neorv32_top is
   constant cpu_sdtrig_en_c : boolean := OCD_EN and boolean(OCD_NUM_HW_TRIGGERS > 0);
   constant trace_en_c      : boolean := TRACE_PORT_EN or IO_TRACER_EN;
   constant vendorid_c      : std_ulogic_vector(31 downto 0) := x"00000" & '0' & OCD_JEDEC_ID;
-  constant bursts_en_c     : boolean := CACHE_BURSTS_EN and boolean(CACHE_BLOCK_SIZE >= 8);
+  constant bursts_en_c     : boolean := CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN) and boolean(CACHE_BLOCK_SIZE >= 8);
 
   -- make sure physical memory sizes are a power of two --
-  constant imem_size_c : natural := 2**index_size_f(IMEM_SIZE);
-  constant dmem_size_c : natural := 2**index_size_f(DMEM_SIZE);
+  constant log2_imem_size_c : natural := index_size_f(IMEM_SIZE);
+  constant log2_dmem_size_c : natural := index_size_f(DMEM_SIZE);
+  constant imem_size_c      : natural := 2**log2_imem_size_c;
+  constant dmem_size_c      : natural := 2**log2_dmem_size_c;
 
   -- reset nets --
   signal rstn_wdt, rstn_sys, rstn_ext : std_ulogic;
@@ -330,29 +345,28 @@ architecture neorv32_top_rtl of neorv32_top is
   signal dci_haltreq : std_ulogic_vector(num_cores_c-1 downto 0);
 
   -- CPU trace interface --
-  type cpu_trace_t is array (0 to num_cores_c-1) of trace_port_t;
+  type cpu_trace_t is array (num_cores_c-1 downto 0) of trace_port_t;
   signal cpu_trace : cpu_trace_t;
 
-  -- CPU memory ordering --
-  type cpu_fence_t is array (0 to num_cores_c-1) of std_ulogic_vector(1 downto 0);
-  signal cpu_fence : cpu_fence_t;
+  -- CPU memory ordering (cache synchronization) --
+  signal cpu_i_fence, cpu_d_fence, icache_sync, dcache_sync : std_ulogic_vector(num_cores_c-1 downto 0);
 
-  -- bus: CPU core complex --
-  type core_complex_req_t is array (0 to num_cores_c-1) of bus_req_t;
-  type core_complex_rsp_t is array (0 to num_cores_c-1) of bus_rsp_t;
+  -- bus: core complex --
+  type core_complex_req_t is array (num_cores_c-1 downto 0) of bus_req_t;
+  type core_complex_rsp_t is array (num_cores_c-1 downto 0) of bus_rsp_t;
   signal cpu_i_req, cpu_d_req, icache_req, dcache_req, core_req : core_complex_req_t;
   signal cpu_i_rsp, cpu_d_rsp, icache_rsp, dcache_rsp, core_rsp : core_complex_rsp_t;
 
   -- bus: system --
-  signal sys1_req, sys2_req, dma_req, amo_req, sys3_req, imem_req, dmem_req, io_req, xbus_req : bus_req_t;
-  signal sys1_rsp, sys2_rsp, dma_rsp, amo_rsp, sys3_rsp, imem_rsp, dmem_rsp, io_rsp, xbus_rsp : bus_rsp_t;
+  signal sys1_req, sys2_req, dma_req, amo_req, sys3_req, imem_req, dmem_req, smc_req, io_req, xbus_req : bus_req_t;
+  signal sys1_rsp, sys2_rsp, dma_rsp, amo_rsp, sys3_rsp, imem_rsp, dmem_rsp, smc_rsp, io_rsp, xbus_rsp : bus_rsp_t;
   signal xbus_terminate : std_ulogic;
 
   -- bus: IO devices --
   type io_devices_enum_t is (
     IODEV_BOOTROM, IODEV_OCD, IODEV_SYSINFO, IODEV_NEOLED, IODEV_GPIO, IODEV_WDT, IODEV_TRNG,
     IODEV_TWI, IODEV_SPI, IODEV_SDI, IODEV_UART1, IODEV_UART0, IODEV_CLINT, IODEV_ONEWIRE,
-    IODEV_GPTMR, IODEV_PWM, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_TWD, IODEV_TRACER
+    IODEV_GPTMR, IODEV_PWM, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_TWD, IODEV_TRACER, IODEV_SMC
   );
   type iodev_req_t is array (io_devices_enum_t) of bus_req_t;
   type iodev_rsp_t is array (io_devices_enum_t) of bus_rsp_t;
@@ -369,8 +383,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal cpu_firq : std_ulogic_vector(15 downto 0);
   signal mti, msi : std_ulogic_vector(num_cores_c-1 downto 0);
 
-  -- system time (mtime) --
-  signal mtime : std_ulogic_vector(63 downto 0);
+  -- system time --
+  signal mtime    : std_ulogic_vector(63 downto 0);
   signal mtime_lo : std_ulogic_vector(31 downto 0);
 
 begin
@@ -401,6 +415,7 @@ begin
       sel_string_f(bootrom_en_c,    "BOOTROM ",  "") &
       sel_string_f(ICACHE_EN,       "I-CACHE ",  "") &
       sel_string_f(DCACHE_EN,       "D-CACHE ",  "") &
+      sel_string_f(SMC_EN,          "SMC ",      "") &
       sel_string_f(XBUS_EN,         "XBUS ",     "") &
       sel_string_f(IO_CLINT_EN,     "CLINT ",    "") &
       sel_string_f(io_gpio_en_c,    "GPIO ",     "") &
@@ -451,17 +466,21 @@ begin
     assert not (DUAL_CORE_EN and (not IO_CLINT_EN)) report
       "[NEORV32] SMP dual-core configuration requires the CLINT!" severity error;
 
-    -- custom IMEM adress --
+    -- custom IMEM address --
     assert not (IMEM_EN and (IMEM_BASE /= x"00000000")) report
       "[NEORV32] Using non-default IMEM base address. Configure SW framework accordingly." severity warning;
     assert (or_reduce_f(IMEM_BASE(index_size_f(imem_size_c)-1 downto 0)) = '0') report
       "[NEORV32] IMEM base address has to be naturally aligned to its size!" severity error;
 
-    -- custom DMEM adress --
+    -- custom DMEM address --
     assert not (DMEM_EN and (DMEM_BASE /= x"80000000")) report
       "[NEORV32] Using non-default DMEM base address. Configure SW framework accordingly." severity warning;
     assert (or_reduce_f(DMEM_BASE(index_size_f(dmem_size_c)-1 downto 0)) = '0') report
       "[NEORV32] DMEM base address has to be naturally aligned to its size!" severity error;
+
+    -- custom SMC address --
+    assert (or_reduce_f(SMC_BASE(27 downto 0)) = '0') report
+      "[NEORV32] SMC base address has to be 256MB aligned!" severity error;
 
     -- uncached base address alignment --
     assert (CACHE_UC_BASE(27 downto 0) = x"0000000") report
@@ -494,7 +513,6 @@ begin
     port map (
       clk_i    => clk_i,
       rstn_i   => rstn_sys,
-      enable_i => '1',
       clk_en_o => clk_gen
     );
 
@@ -552,6 +570,7 @@ begin
       RISCV_ISA_Zbkc      => RISCV_ISA_Zbkc,
       RISCV_ISA_Zbkx      => RISCV_ISA_Zbkx,
       RISCV_ISA_Zbs       => RISCV_ISA_Zbs,
+      RISCV_ISA_Zcmop     => RISCV_ISA_Zcmop,
       RISCV_ISA_Zfinx     => RISCV_ISA_Zfinx,
       RISCV_ISA_Zibi      => RISCV_ISA_Zibi,
       RISCV_ISA_Zicntr    => RISCV_ISA_Zicntr,
@@ -573,6 +592,7 @@ begin
       CPU_TRACE_EN        => trace_en_c,
       CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
       CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
+      CPU_FAST_MUL_REGS   => CPU_FAST_MUL_REGS,
       CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
       CPU_RF_ARCH_SEL     => CPU_RF_ARCH_SEL,
       -- Physical Memory Protection (PMP) --
@@ -594,7 +614,6 @@ begin
       mtime_i    => mtime,
       trace_o    => cpu_trace(i),
       sleep_o    => open,
-      fence_o    => cpu_fence(i),
       -- interrupts --
       msi_i      => msi(i),
       mei_i      => irq_mei_i,
@@ -602,9 +621,11 @@ begin
       firq_i     => cpu_firq,
       dbi_i      => dci_haltreq(i),
       -- instruction bus interface --
+      ifence_o   => cpu_i_fence(i),
       ibus_req_o => cpu_i_req(i),
       ibus_rsp_i => cpu_i_rsp(i),
       -- data bus interface --
+      dfence_o   => cpu_d_fence(i),
       dbus_req_o => cpu_d_req(i),
       dbus_rsp_i => cpu_d_rsp(i)
     );
@@ -624,18 +645,21 @@ begin
       port map (
         clk_i      => clk_i,
         rstn_i     => rstn_sys,
-        sync_i     => cpu_fence(i)(1),
+        sync_i     => icache_sync(i),
         host_req_i => cpu_i_req(i),
         host_rsp_o => cpu_i_rsp(i),
         bus_req_o  => icache_req(i),
         bus_rsp_i  => icache_rsp(i)
       );
+      -- fence.i => clear I$
+      icache_sync(i) <= cpu_i_fence(i);
     end generate;
 
     neorv32_icache_disabled:
     if not ICACHE_EN generate
-      icache_req(i) <= cpu_i_req(i);
-      cpu_i_rsp(i)  <= icache_rsp(i);
+      icache_sync(i) <= '0';
+      icache_req(i)  <= cpu_i_req(i);
+      cpu_i_rsp(i)   <= icache_rsp(i);
     end generate;
 
     -- CPU Data Cache -------------------------------------------------------------------------
@@ -653,18 +677,22 @@ begin
       port map (
         clk_i      => clk_i,
         rstn_i     => rstn_sys,
-        sync_i     => cpu_fence(i)(0),
+        sync_i     => dcache_sync(i),
         host_req_i => cpu_d_req(i),
         host_rsp_o => cpu_d_rsp(i),
         bus_req_o  => dcache_req(i),
         bus_rsp_i  => dcache_rsp(i)
       );
+      -- fence   => flush D$
+      -- fence.i => clear I$ and flush D$ (so I$ gets updated data #1540)
+      dcache_sync(i) <= cpu_d_fence(i) or cpu_i_fence(i);
     end generate;
 
     neorv32_dcache_disabled:
     if not DCACHE_EN generate
-      dcache_req(i) <= cpu_d_req(i);
-      cpu_d_rsp(i)  <= dcache_rsp(i);
+      dcache_sync(i) <= '0';
+      dcache_req(i)  <= cpu_d_req(i);
+      cpu_d_rsp(i)   <= dcache_rsp(i);
     end generate;
 
     -- Core Instruction/Data Bus Switch -------------------------------------------------------
@@ -689,8 +717,8 @@ begin
   end generate;
 
   -- CPU execution trace ports --
-  trace_cpu0_o <= cpu_trace(core_req'left);
-  trace_cpu1_o <= cpu_trace(core_req'right) when (num_cores_c = 2) else trace_port_terminate_c;
+  trace_cpu0_o <= cpu_trace(core_req'low);
+  trace_cpu1_o <= cpu_trace(core_req'high) when (num_cores_c = 2) else trace_port_terminate_c;
 
   -- Core Complex Bus Arbiter ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -705,10 +733,10 @@ begin
     port map (
       clk_i   => clk_i,
       rstn_i  => rstn_sys,
-      a_req_i => core_req(core_req'left),
-      a_rsp_o => core_rsp(core_rsp'left),
-      b_req_i => core_req(core_req'right),
-      b_rsp_o => core_rsp(core_rsp'right),
+      a_req_i => core_req(core_req'low),
+      a_rsp_o => core_rsp(core_rsp'low),
+      b_req_i => core_req(core_req'high),
+      b_rsp_o => core_rsp(core_rsp'high),
       x_req_o => sys1_req,
       x_rsp_i => sys1_rsp
     );
@@ -831,22 +859,29 @@ begin
 
   neorv32_bus_gateway_inst: entity neorv32.neorv32_bus_gateway
   generic map (
-    TMO_INT => int_bus_tmo_c,
-    TMO_EXT => XBUS_TIMEOUT,
     -- port A: internal IMEM --
     A_EN    => IMEM_EN,
     A_BASE  => IMEM_BASE,
     A_SIZE  => imem_size_c,
+    A_TMO   => int_bus_tmo_c,
     -- port B: internal DMEM --
     B_EN    => DMEM_EN,
     B_BASE  => DMEM_BASE,
     B_SIZE  => dmem_size_c,
-    -- port C: IO --
-    C_EN    => true,
-    C_BASE  => mem_io_base_c,
-    C_SIZE  => mem_io_size_c,
+    B_TMO   => int_bus_tmo_c,
+    -- port C: internal serial memory controller --
+    C_EN    => SMC_EN,
+    C_BASE  => SMC_BASE,
+    C_SIZE  => 256*1024*1024, -- 256MB
+    C_TMO   => 2048, -- maximum SMC transfer duration + safety margin
+    -- port D: internal IO --
+    D_EN    => true,
+    D_BASE  => mem_io_base_c,
+    D_SIZE  => mem_io_size_c,
+    D_TMO   => int_bus_tmo_c,
     -- port X (the void): XBUS --
-    X_EN    => XBUS_EN
+    X_EN    => XBUS_EN,
+    X_TMO   => XBUS_TIMEOUT
   )
   port map (
     -- global control --
@@ -861,8 +896,10 @@ begin
     a_rsp_i => imem_rsp,
     b_req_o => dmem_req,
     b_rsp_i => dmem_rsp,
-    c_req_o => io_req,
-    c_rsp_i => io_rsp,
+    c_req_o => smc_req,
+    c_rsp_i => smc_rsp,
+    d_req_o => io_req,
+    d_rsp_i => io_rsp,
     x_req_o => xbus_req,
     x_rsp_i => xbus_rsp
   );
@@ -876,20 +913,27 @@ begin
 
     -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
     -- -------------------------------------------------------------------------------------------
+    -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
     neorv32_imem_enabled:
     if IMEM_EN generate
-      neorv32_imem_inst: entity neorv32.neorv32_imem
+      neorv32_imem_inst: neorv32_imem -- component declaration in package file
       generic map (
-        MEM_SIZE => imem_size_c,
-        MEM_INIT => imem_as_rom_c,
-        OUTREG   => IMEM_OUTREG_EN
+        AWIDTH  => log2_imem_size_c,
+        INITROM => imem_as_rom_c,
+        OUTREG  => IMEM_OUTREG_EN
       )
       port map (
-        clk_i     => clk_i,
-        rstn_i    => rstn_sys,
-        bus_req_i => imem_req,
-        bus_rsp_o => imem_rsp
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        req_addr_i => imem_req.addr,
+        req_data_i => imem_req.data,
+        req_ben_i  => imem_req.ben,
+        req_stb_i  => imem_req.stb,
+        req_rw_i   => imem_req.rw,
+        rsp_data_o => imem_rsp.data,
+        rsp_ack_o  => imem_rsp.ack
       );
+      imem_rsp.err <= '0';
     end generate;
 
     neorv32_imem_disabled:
@@ -899,25 +943,68 @@ begin
 
     -- Processor-Internal Data Memory (DMEM) --------------------------------------------------
     -- -------------------------------------------------------------------------------------------
+    -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
     neorv32_dmem_enabled:
     if DMEM_EN generate
-      neorv32_dmem_inst: entity neorv32.neorv32_dmem
+      neorv32_dmem_inst: neorv32_dmem -- component declaration in package file
       generic map (
-        MEM_SIZE => dmem_size_c,
-        OUTREG   => DMEM_OUTREG_EN
+        AWIDTH => log2_dmem_size_c,
+        OUTREG => DMEM_OUTREG_EN
       )
       port map (
-        clk_i     => clk_i,
-        rstn_i    => rstn_sys,
-        bus_req_i => dmem_req,
-        bus_rsp_o => dmem_rsp
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        req_addr_i => dmem_req.addr,
+        req_data_i => dmem_req.data,
+        req_ben_i  => dmem_req.ben,
+        req_stb_i  => dmem_req.stb,
+        req_rw_i   => dmem_req.rw,
+        rsp_data_o => dmem_rsp.data,
+        rsp_ack_o  => dmem_rsp.ack
       );
+      dmem_rsp.err <= '0';
     end generate;
 
     neorv32_dmem_disabled:
     if not DMEM_EN generate
       dmem_rsp <= rsp_terminate_c;
     end generate;
+
+    -- Serial Memory Controller (SMC) ---------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    neorv32_smc_enabled:
+    if SMC_EN generate
+      neorv32_smc_inst: entity neorv32.neorv32_smc
+      generic map (
+        BURST_EN   => bursts_en_c,
+        BURST_SIZE => CACHE_BLOCK_SIZE,
+        MEM_BASE   => SMC_BASE
+      )
+      port map (
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        ctrl_req_i => iodev_req(IODEV_SMC),
+        ctrl_rsp_o => iodev_rsp(IODEV_SMC),
+        data_req_i => smc_req,
+        data_rsp_o => smc_rsp,
+        smc_ioen_o => smc_ioen_o,
+        smc_sck_o  => smc_sck_o,
+        smc_csn_o  => smc_csn_o,
+        smc_sdo_o  => smc_sdo_o,
+        smc_sdi_i  => smc_sdi_i
+      );
+    end generate;
+
+    neorv32_smc_disabled:
+    if not SMC_EN generate
+      iodev_rsp(IODEV_SMC) <= rsp_terminate_c;
+      smc_rsp              <= rsp_terminate_c;
+      smc_ioen_o           <= '0';
+      smc_sck_o            <= '0';
+      smc_csn_o            <= (others => '1');
+      smc_sdo_o            <= '0';
+    end generate;
+
 
     -- External Bus Interface (XBUS) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -989,7 +1076,7 @@ begin
       DEV_12_EN => IO_SLINK_EN,       DEV_12_BASE => base_io_slink_c,
       DEV_13_EN => IO_DMA_EN,         DEV_13_BASE => base_io_dma_c,
       DEV_14_EN => false,             DEV_14_BASE => (others => '0'), -- reserved
-      DEV_15_EN => false,             DEV_15_BASE => (others => '0'), -- reserved
+      DEV_15_EN => SMC_EN,            DEV_15_BASE => base_io_smc_c,
       DEV_16_EN => io_pwm_en_c,       DEV_16_BASE => base_io_pwm_c,
       DEV_17_EN => io_gptmr_en_c,     DEV_17_BASE => base_io_gptmr_c,
       DEV_18_EN => IO_ONEWIRE_EN,     DEV_18_BASE => base_io_onewire_c,
@@ -1027,7 +1114,7 @@ begin
       dev_12_req_o => iodev_req(IODEV_SLINK),   dev_12_rsp_i => iodev_rsp(IODEV_SLINK),
       dev_13_req_o => iodev_req(IODEV_DMA),     dev_13_rsp_i => iodev_rsp(IODEV_DMA),
       dev_14_req_o => open,                     dev_14_rsp_i => rsp_terminate_c, -- reserved
-      dev_15_req_o => open,                     dev_15_rsp_i => rsp_terminate_c, -- reserved
+      dev_15_req_o => iodev_req(IODEV_SMC),     dev_15_rsp_i => iodev_rsp(IODEV_SMC),
       dev_16_req_o => iodev_req(IODEV_PWM),     dev_16_rsp_i => iodev_rsp(IODEV_PWM),
       dev_17_req_o => iodev_req(IODEV_GPTMR),   dev_17_rsp_i => iodev_rsp(IODEV_GPTMR),
       dev_18_req_o => iodev_req(IODEV_ONEWIRE), dev_18_rsp_i => iodev_rsp(IODEV_ONEWIRE),
@@ -1048,15 +1135,21 @@ begin
 
     -- Processor-Internal Bootloader ROM (BOOTROM) --------------------------------------------
     -- -------------------------------------------------------------------------------------------
+    -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
     neorv32_bootrom_enabled:
     if bootrom_en_c generate
-      neorv32_boot_rom_inst: entity neorv32.neorv32_bootrom
+      neorv32_boot_rom_inst: neorv32_bootrom -- component declaration in package file
       port map (
-        clk_i     => clk_i,
-        rstn_i    => rstn_sys,
-        bus_req_i => iodev_req(IODEV_BOOTROM),
-        bus_rsp_o => iodev_rsp(IODEV_BOOTROM)
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        req_addr_i => iodev_req(IODEV_BOOTROM).addr(15 downto 0),
+        req_ben_i  => iodev_req(IODEV_BOOTROM).ben,
+        req_stb_i  => iodev_req(IODEV_BOOTROM).stb,
+        req_rw_i   => iodev_req(IODEV_BOOTROM).rw,
+        rsp_data_o => iodev_rsp(IODEV_BOOTROM).data,
+        rsp_ack_o  => iodev_rsp(IODEV_BOOTROM).ack
       );
+      iodev_rsp(IODEV_BOOTROM).err <= '0';
     end generate;
 
     neorv32_boot_rom_disabled:
@@ -1070,14 +1163,20 @@ begin
     if IO_CFS_EN generate
       neorv32_cfs_inst: entity neorv32.neorv32_cfs
       port map (
-        clk_i       => clk_i,
-        rstn_i      => rstn_sys,
-        bus_req_i   => iodev_req(IODEV_CFS),
-        bus_rsp_o   => iodev_rsp(IODEV_CFS),
-        irq_o       => firq(FIRQ_CFS),
-        cfs_in_i    => cfs_in_i,
-        cfs_out_o   => cfs_out_o
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        req_addr_i => iodev_req(IODEV_CFS).addr(15 downto 0),
+        req_data_i => iodev_req(IODEV_CFS).data,
+        req_ben_i  => iodev_req(IODEV_CFS).ben,
+        req_stb_i  => iodev_req(IODEV_CFS).stb,
+        req_rw_i   => iodev_req(IODEV_CFS).rw,
+        rsp_data_o => iodev_rsp(IODEV_CFS).data,
+        rsp_ack_o  => iodev_rsp(IODEV_CFS).ack,
+        irq_o      => firq(FIRQ_CFS),
+        cfs_in_i   => cfs_in_i,
+        cfs_out_o  => cfs_out_o
       );
+      iodev_rsp(IODEV_CFS).err <= '0';
     end generate;
 
     neorv32_cfs_disabled:
@@ -1193,7 +1292,7 @@ begin
         elsif rising_edge(clk_i) then
           mtime_lo(31 downto 0) <= mtime(31 downto 0);
         end if;
-      end process mtime_sync;
+      end process;
       mtime_time_o <= mtime(63 downto 32) & mtime_lo;
     end generate;
 
@@ -1540,8 +1639,8 @@ begin
       port map (
         clk_i     => clk_i,
         rstn_i    => rstn_sys,
-        trace0_i  => cpu_trace(cpu_trace'left),
-        trace1_i  => cpu_trace(cpu_trace'right),
+        trace0_i  => cpu_trace(cpu_trace'low),
+        trace1_i  => cpu_trace(cpu_trace'high),
         bus_req_i => iodev_req(IODEV_TRACER),
         bus_rsp_o => iodev_rsp(IODEV_TRACER),
         irq_o     => firq(FIRQ_TRACER)
@@ -1576,6 +1675,7 @@ begin
       CACHE_BLOCK_SIZE  => CACHE_BLOCK_SIZE,
       CACHE_BURSTS_EN   => bursts_en_c,
       CACHE_UC_BASE     => CACHE_UC_BASE(31 downto 28),
+      SMC_EN            => SMC_EN,
       XBUS_EN           => XBUS_EN,
       OCD_EN            => OCD_EN,
       OCD_AUTH          => ocd_auth_en_c,
@@ -1663,4 +1763,4 @@ begin
     dci_haltreq          <= (others => '0');
   end generate;
 
-end neorv32_top_rtl;
+end architecture;

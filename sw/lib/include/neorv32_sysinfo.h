@@ -35,7 +35,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 /** NEORV32_SYSINFO.MISC (r/-): Miscellaneous system configurations */
 enum NEORV32_SYSINFO_MISC_enum {
   SYSINFO_MISC_IMEM_LSB =  0, /**< SYSINFO_MISC  (0) (r/-): log2(internal IMEM size in bytes) (via IMEM_SIZE generic), LSB */
-  SYSINFO_MISC_IMEM_MBS =  7, /**< SYSINFO_MISC  (7) (r/-): log2(internal IMEM size in bytes) (via IMEM_SIZE generic), MSB */
+  SYSINFO_MISC_IMEM_MSB =  7, /**< SYSINFO_MISC  (7) (r/-): log2(internal IMEM size in bytes) (via IMEM_SIZE generic), MSB */
 
   SYSINFO_MISC_DMEM_LSB =  8, /**< SYSINFO_MISC  (8) (r/-): log2(internal DMEM size in bytes) (via DMEM_SIZE generic), LSB */
   SYSINFO_MISC_DMEM_MSB = 15, /**< SYSINFO_MISC (15) (r/-): log2(internal DMEM size in bytes) (via DMEM_SIZE generic), MSB */
@@ -62,7 +62,7 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_OCD        =  4, /**< SYSINFO_SOC  (4) (r/-): On-chip debugger implemented when 1 (via OCD_EN generic) */
   SYSINFO_SOC_ICACHE     =  5, /**< SYSINFO_SOC  (5) (r/-): Processor-internal instruction cache implemented when 1 (via ICACHE_EN generic) */
   SYSINFO_SOC_DCACHE     =  6, /**< SYSINFO_SOC  (6) (r/-): Processor-internal instruction cache implemented when 1 (via DCACHE_EN generic) */
-//SYSINFO_SOC_reserved   =  7, /**< SYSINFO_SOC  (7) (r/-): reserved */
+  SYSINFO_SOC_SMC        =  7, /**< SYSINFO_SOC  (7) (r/-): Serial memory controller implemented when 1 (via SMC_EN generic) */
 //SYSINFO_SOC_reserved   =  8, /**< SYSINFO_SOC  (8) (r/-): reserved */
 //SYSINFO_SOC_reserved   =  9, /**< SYSINFO_SOC  (9) (r/-): reserved */
 //SYSINFO_SOC_reserved   = 10, /**< SYSINFO_SOC (10) (r/-): reserved */
@@ -112,7 +112,7 @@ enum NEORV32_SYSINFO_SOC_enum {
  * Check if this is a simulation.
  * @return Non-zero if we are inside the matrix.
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_is_sim(void) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_is_sim(void) {
   return (uint32_t)(NEORV32_SYSINFO->SOC >> SYSINFO_SOC_SIM);
 }
 
@@ -120,7 +120,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_is_sim(void) {
  * Get number of processor cores/harts.
  * @return Number of physical CPU cores / harts.
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_numcores(void) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_numcores(void) {
   return (uint32_t)((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_HART_LSB) & 0x0fu);
 }
 
@@ -128,7 +128,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_numcores(voi
  * Get size of internal IMEM.
  * @return IMEM size in bytes.
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_imemsize(void) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_imemsize(void) {
   uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_IMEM_LSB) & 0xffu;
   if (tmp) {
     return (uint32_t)(1u << tmp);
@@ -140,7 +140,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_imemsize(voi
  * Get size of internal DMEM.
  * @return DMEM size in bytes.
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_dmemsize(void) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_dmemsize(void) {
   uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_DMEM_LSB) & 0xffu;
   if (tmp) {
     return (uint32_t)(1u << tmp);
@@ -152,7 +152,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_dmemsize(voi
  * Get boot configuration.
  * @return Boot configuration ID.
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_bootmode(void) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_bootmode(void) {
   return (uint32_t)((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_BOOT_LSB) & 0x03u);
 }
 
@@ -160,7 +160,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_bootmode(voi
  * Get internal bus timeout cycles.
  * @return Bus timeout cycles.
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_intbustimeout(void) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_intbustimeout(void) {
   uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_ITMO_LSB) & 0x1fu;
   if (tmp) {
     return (uint32_t)(1u << tmp);
@@ -172,7 +172,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_intbustimeou
  * Get external bus timeout cycles.
  * @return Bus timeout cycles.
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_extbustimeout(void) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_extbustimeout(void) {
   uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_ETMO_LSB) & 0x1fu;
   if (tmp) {
     return (uint32_t)(1u << tmp);
@@ -184,7 +184,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_extbustimeou
  * Get current processor clock frequency.
  * @return Clock frequency in Hz.
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_clk(void) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_clk(void) {
   return NEORV32_SYSINFO->CLK;
 }
 
@@ -192,7 +192,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_clk(void) {
  * Set processor clock frequency.
  * @param[in] clock Clock frequency in Hz.
  **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_sysinfo_set_clk(uint32_t clock) {
+static inline void __attribute__ ((always_inline)) neorv32_sysinfo_set_clk(uint32_t clock) {
   NEORV32_SYSINFO->CLK = clock;
 }
 

@@ -77,11 +77,11 @@ begin
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS        => 6,           -- number of implemented HPM counters
     HPM_CNT_WIDTH       => 40,          -- total size of HPM counters
-    -- Internal Instruction memory (IMEM) --
+    -- Internal Instruction Memory (IMEM) --
     IMEM_EN             => true,        -- implement processor-internal instruction memory
     IMEM_SIZE           => 16*1024,     -- size of processor-internal instruction memory in bytes
     IMEM_OUTREG_EN      => false,       -- no additional output register
-    -- Internal Data memory (DMEM) --
+    -- Internal Data Memory (DMEM) --
     DMEM_EN             => true,        -- implement processor-internal data memory
     DMEM_SIZE           => 8*1024,      -- size of processor-internal data memory in bytes
     DMEM_OUTREG_EN      => true,        -- add additional output register
@@ -91,10 +91,13 @@ begin
     DCACHE_EN           => true,        -- implement data cache (d-cache)
     DCACHE_NUM_BLOCKS   => 4,           -- d-cache: number of blocks, has to be a power of 2
     CACHE_BLOCK_SIZE    => 64,          -- i-cache/d-cache: block size in bytes, has to be a power of 2
-    -- External bus interface (XBUS) --
+    -- Serial Memory Controller --
+    SMC_EN              => true,        -- implement serial memory controller
+    SMC_BASE            => x"E0000000", -- SMC memory base (256MB-aligned)
+    -- External Bus Interface (XBUS) --
     XBUS_EN             => true,        -- implement external memory bus interface?
     XBUS_REGSTAGE_EN    => true,        -- add XBUS register stage
-    -- Processor peripherals --
+    -- Processor Peripherals --
     IO_CLINT_EN         => true,        -- implement core local interruptor (CLINT)
     IO_UART0_EN         => true,        -- implement primary universal asynchronous receiver/transmitter (UART0)
     IO_UART0_RX_FIFO    => 64,          -- RX FIFO depth, has to be a power of two

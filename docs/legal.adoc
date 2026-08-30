@@ -11,13 +11,14 @@
 https://github.com/stnolting/neorv32 +
 Stephan Nolting, M.Sc. +
 stnolting[ät]gmail[dot]com +
-image:https://img.shields.io/badge/European%20Union%20-Germany-000000.svg?longCache=true&style=flat-square&logo=europeanunion&colorA=003399&colorB=000000[]
+European Union, Germany
 ==========================
 
-.DOI
-[NOTE]
-This project provides a _digital object identifier_ provided by https://zenodo.org[zenodo]:
-https://doi.org/10.5281/zenodo.5018888[image:https://zenodo.org/badge/DOI/10.5281/zenodo.5018888.svg[title='zenodo']]
+:sectnums!:
+=== DOI
+
+This project provides a _digital object identifier (DOI)_ provided by https://zenodo.org[zenodo]:
+https://doi.org/10.5281/zenodo.5018888
 
 
 // ####################################################################################################################

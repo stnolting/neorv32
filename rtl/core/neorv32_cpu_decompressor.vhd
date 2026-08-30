@@ -3,7 +3,8 @@
 -- -------------------------------------------------------------------------------- --
 -- Only the non-floating-point 'Zca' ISA subset is supported by default.            --
 -- The optional 'Zcb' sub-extension can emit 32-bit instructions that depend        --
--- on the 'M'/'Zmmul' and 'B'/'Zbb' ISA extensions.                                 --
+-- on the 'M'/'Zmmul' and 'B'/'Zbb' ISA extensions. The optional 'Zcmop' sub-       --
+-- extension maps compressed MOPs to the according 'Zimop' MOP.R.n operations.      --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -20,8 +21,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_decompressor is
   generic (
-    ZCB_EN : boolean; -- enable Zcb ISA extension
-    ZCMP_EN : boolean
+    ZCB_EN   : boolean; -- enable Zcb ISA extension
+    ZCMOP_EN : boolean; -- enable Zcmop ISA extension (requires Zimop ISA extension)
+    ZCMP_EN  : boolean  -- enable Zcmp ISA extension
   );
   port (
     instr_i : in  std_ulogic_vector(15 downto 0); -- compressed instruction
@@ -29,7 +31,7 @@ entity neorv32_cpu_decompressor is
     instr_is_zcmp : out std_ulogic; -- instruction is part of Zcmp extension
     zcmp_op : out zcmp_op_t -- Zcmp operation type
   );
-end neorv32_cpu_decompressor;
+end entity;
 
 architecture neorv32_cpu_decompressor_rtl of neorv32_cpu_decompressor is
 
@@ -168,7 +170,7 @@ begin
             decoded(instr_rd_msb_c     downto instr_rd_lsb_c)     <= instr_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c);
             decoded(instr_imm12_msb_c  downto instr_imm12_lsb_c)  <= replicate_f(instr_i(12),7) & instr_i(6 downto 2);
 
-          when "011" => -- C.LUI / C.ADDI16SP
+          when "011" => -- C.LUI / C.ADDI16SP / Zcmop (C.MOP.n)
           -- --------------------------------------------------------------------------------------
             if (instr_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c) = "00010") then -- C.ADDI16SP
               decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
@@ -176,12 +178,18 @@ begin
               decoded(instr_rs1_msb_c    downto instr_rs1_lsb_c)    <= "00010"; -- stack pointer
               decoded(instr_rd_msb_c     downto instr_rd_lsb_c)     <= "00010"; -- stack pointer
               decoded(instr_imm12_msb_c  downto instr_imm12_lsb_c)  <= replicate_f(instr_i(12),3) & instr_i(4 downto 3) & instr_i(5) & instr_i(2) & instr_i(6) & x"0";
+            elsif ZCMOP_EN and (instr_i(12 downto 11) = "00") and (instr_i(ci_rs2_5_msb_c downto ci_rs2_5_lsb_c) = "00000") then -- C.MOP
+              decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_system_c;
+              decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_zimop_c;
+              decoded(instr_rs1_msb_c    downto instr_rs1_lsb_c)    <= "00000";
+              decoded(instr_rd_msb_c     downto instr_rd_lsb_c)     <= "00000";
+              decoded(instr_imm12_msb_c  downto instr_imm12_lsb_c)  <= "1000" & instr_i(10) & instr_i(9) & "0111" & instr_i(8) & '0';
             else -- C.LUI
               decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_lui_c;
               decoded(instr_rd_msb_c     downto instr_rd_lsb_c)     <= instr_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c);
               decoded(instr_imm20_msb_c  downto instr_imm20_lsb_c)  <= replicate_f(instr_i(12),15) & instr_i(6 downto 2);
             end if;
-            if (instr_i(6 downto 2) = "00000") and (instr_i(12) = '0') then -- reserved if nzimm = 0
+            if (instr_i(6 downto 2) = "00000") and (instr_i(12) = '0') and (ZCMOP_EN = false) then -- reserved if nzimm = 0
               illegal <= '1';
             end if;
 
@@ -204,6 +212,7 @@ begin
                 decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
                 decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sr_c;
                 decoded(instr_rs2_msb_c    downto instr_rs2_lsb_c)    <= instr_i(6 downto 2); -- immediate
+                illegal                                               <= instr_i(12); -- shamt[5] == zero
               when "10" => -- C.ANDI
                 decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
                 decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_and_c;
@@ -277,6 +286,9 @@ begin
             decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sll_c;
             decoded(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0000000";
             decoded(instr_rs2_msb_c    downto instr_rs2_lsb_c)    <= instr_i(6 downto 2); -- immediate
+            if (instr_i(12) = '1') then -- shift amount out of range (RV64C)
+              illegal <= '1';
+            end if;
 
           when "010" | "011" => -- C.LWSP / C.FLWSP
           -- --------------------------------------------------------------------------------------
@@ -396,9 +408,9 @@ begin
         end case;
 
     end case;
-  end process decompressor;
+  end process;
 
   -- output illegal instruction in its pre-decoded 32-bit form --
   instr_o <= decoded(31 downto 2) & (decoded(1) and (not illegal)) & decoded(0); -- force OPCODE[1] to zero if illegal
 
-end neorv32_cpu_decompressor_rtl;
+end architecture;

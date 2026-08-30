@@ -31,7 +31,7 @@ entity neorv32_clint is
     mti_o     : out std_ulogic_vector(NUM_HARTS-1 downto 0); -- machine timer interrupt
     msi_o     : out std_ulogic_vector(NUM_HARTS-1 downto 0)  -- machine software interrupt
   );
-end neorv32_clint;
+end entity;
 
 architecture neorv32_clint_rtl of neorv32_clint is
 
@@ -59,7 +59,7 @@ architecture neorv32_clint_rtl of neorv32_clint is
   signal mtime_we : std_ulogic_vector(1 downto 0);
 
   -- mtimecmp access --
-  type mtimecmp_rwe_t is array (0 to NUM_HARTS-1) of std_ulogic_vector(1 downto 0);
+  type mtimecmp_rwe_t is array (NUM_HARTS-1 downto 0) of std_ulogic_vector(1 downto 0);
   signal mtimecmp_we : mtimecmp_rwe_t;
   signal mtimecmp_re : mtimecmp_rwe_t;
   signal mtimecmp_en : std_ulogic_vector(NUM_HARTS-1 downto 0);
@@ -68,7 +68,7 @@ architecture neorv32_clint_rtl of neorv32_clint is
   signal mswi_en, mswi : std_ulogic_vector(NUM_HARTS-1 downto 0);
 
   -- read-back --
-  type rb32_t is array (0 to NUM_HARTS-1) of std_ulogic_vector(31 downto 0);
+  type rb32_t is array (NUM_HARTS-1 downto 0) of std_ulogic_vector(31 downto 0);
   signal mtimecmp_rd : rb32_t;
   signal mswi_rd     : rb32_t;
   signal mtime       : std_ulogic_vector(63 downto 0);
@@ -99,10 +99,9 @@ begin
   mtime_we(1) <= mtime_en and bus_req_i.rw and (    bus_req_i.addr(2));
 
   -- subword read-back --
-  mtime_rd <= (others => '0') when (mtime_en = '0') else
-              mtime(63 downto 32) when (bus_req_i.addr(2) = '1') else mtime(31 downto 0);
+  mtime_rd <= (others => '0') when (mtime_en = '0') else mtime(63 downto 32) when (bus_req_i.addr(2) = '1') else mtime(31 downto 0);
 
-  -- system time output: high and low word are not synchronized! --
+  -- system time output: high and low word are NOT synchronized! --
   time_o <= mtime;
 
 
@@ -171,7 +170,7 @@ begin
       tmp_v := tmp_v or mtimecmp_rd(i) or mswi_rd(i);
     end loop;
     rdata <= mtime_rd or tmp_v;
-  end process read_back;
+  end process;
 
 
   -- Bus Response ---------------------------------------------------------------------------
@@ -187,9 +186,9 @@ begin
         bus_rsp_o.data <= rdata;
       end if;
     end if;
-  end process bus_response;
+  end process;
 
-end neorv32_clint_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -208,16 +207,16 @@ use ieee.numeric_std.all;
 
 entity neorv32_clint_mtimecmp is
   port (
-    clk_i   : in  std_ulogic; -- global clock line
-    rstn_i  : in  std_ulogic; -- global reset line, low-active, async
+    clk_i   : in  std_ulogic;                     -- global clock line
+    rstn_i  : in  std_ulogic;                     -- global reset line, low-active, async
     mtime_i : in  std_ulogic_vector(63 downto 0); -- global mtime (async words!)
-    we_i    : in  std_ulogic_vector(1 downto 0); -- HI/LO word write enable
-    re_i    : in  std_ulogic_vector(1 downto 0); -- HI/LO word read enable
+    we_i    : in  std_ulogic_vector(1 downto 0);  -- HI/LO word write enable
+    re_i    : in  std_ulogic_vector(1 downto 0);  -- HI/LO word read enable
     wdata_i : in  std_ulogic_vector(31 downto 0); -- write data
     rdata_o : out std_ulogic_vector(31 downto 0); -- read data
-    mti_o   : out std_ulogic -- interrupt
+    mti_o   : out std_ulogic                      -- interrupt
   );
-end neorv32_clint_mtimecmp;
+end entity;
 
 architecture neorv32_clint_mtimecmp_rtl of neorv32_clint_mtimecmp is
 
@@ -240,7 +239,7 @@ begin
         mtimecmp_q(63 downto 32) <= wdata_i;
       end if;
     end if;
-  end process write_access;
+  end process;
 
   -- read access --
   rdata_o <= mtimecmp_q(63 downto 32) when (re_i(1) = '1') else
@@ -249,16 +248,13 @@ begin
 
   -- Interrupt Generator (comparator is split across two cycles) ----------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_gen: process(rstn_i, clk_i)
+  irq_gen: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      cmp_lo_ge <= '0';
-      mti_o     <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       cmp_lo_ge <= cmp_lo_gt or cmp_lo_eq; -- low word greater-than or equal
       mti_o     <= cmp_hi_gt or (cmp_hi_eq and cmp_lo_ge);
     end if;
-  end process irq_gen;
+  end process;
 
   -- sub-word comparators; there is one cycle delay between low (earlier) and high (later) word --
   cmp_lo_eq <= '1' when (unsigned(mtime_i(31 downto  0)) = unsigned(mtimecmp_q(31 downto  0))) else '0';
@@ -266,4 +262,4 @@ begin
   cmp_hi_eq <= '1' when (unsigned(mtime_i(63 downto 32)) = unsigned(mtimecmp_q(63 downto 32))) else '0';
   cmp_hi_gt <= '1' when (unsigned(mtime_i(63 downto 32)) > unsigned(mtimecmp_q(63 downto 32))) else '0';
 
-end neorv32_clint_mtimecmp_rtl;
+end architecture;

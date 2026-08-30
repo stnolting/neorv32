@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -28,7 +28,7 @@ entity neorv32_dma is
     dma_rsp_i : in  bus_rsp_t;  -- DMA response
     irq_o     : out std_ulogic  -- transfer done interrupt
   );
-end neorv32_dma;
+end entity;
 
 architecture neorv32_dma_rtl of neorv32_dma is
 
@@ -60,7 +60,7 @@ architecture neorv32_dma_rtl of neorv32_dma is
   function rep4_f(b : std_ulogic_vector(7 downto 0)) return std_ulogic_vector is
   begin
     return b & b & b & b;
-  end function rep4_f;
+  end function;
 
   -- one-hot encoding --
   function onehot_f(sel : std_ulogic_vector(1 downto 0)) return std_ulogic_vector is
@@ -73,7 +73,11 @@ architecture neorv32_dma_rtl of neorv32_dma is
       when others  => res_v := "1000";
     end case;
     return res_v;
-  end function onehot_f;
+  end function;
+
+  -- host bus interface --
+  signal bus_ack, bus_rden : std_ulogic;
+  signal bus_rdata : std_ulogic_vector(31 downto 0);
 
   -- control and status register --
   type ctrl_t is record
@@ -119,44 +123,61 @@ begin
 
   -- Control and Status Register ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ctrl_access: process(rstn_i, clk_i)
+  bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o   <= rsp_terminate_c;
+      bus_ack  <= '0';
+      bus_rden <= '0';
+    elsif rising_edge(clk_i) then
+      bus_ack  <= bus_req_i.stb;
+      bus_rden <= bus_req_i.stb and (not bus_req_i.rw);
+    end if;
+  end process;
+
+  -- write access --
+  ctrl_write: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
       ctrl.enable <= '0';
       ctrl.start  <= '0';
       ctrl.err    <= '0';
       ctrl.done   <= '0';
     elsif rising_edge(clk_i) then
-      -- bus handshake --
-      bus_rsp_o.ack  <= bus_req_i.stb;
-      bus_rsp_o.err  <= '0';
-      bus_rsp_o.data <= (others => '0');
       -- defaults --
       ctrl.start <= '0';
       ctrl.err   <= ctrl.enable and (ctrl.err  or engine.err);
       ctrl.done  <= ctrl.enable and (ctrl.done or engine.done);
-      -- bus access --
-      if (bus_req_i.stb = '1') and (bus_req_i.addr(2) = '0') then
-        if (bus_req_i.rw = '1') then -- write access
-          ctrl.enable <= bus_req_i.data(ctrl_en_c);
-          ctrl.start  <= bus_req_i.data(ctrl_start_c);
-          if (bus_req_i.data(ctrl_start_c) = '1') or (bus_req_i.data(ctrl_ack_c) = '1') then -- write 1 to clear
-            ctrl.err  <= '0';
-            ctrl.done <= '0';
-          end if;
-        else -- read access
-          bus_rsp_o.data(ctrl_en_c)     <= ctrl.enable;
-          bus_rsp_o.data(ctrl_fifo3_c downto ctrl_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
-          bus_rsp_o.data(ctrl_dempty_c) <= not fifo.avail;
-          bus_rsp_o.data(ctrl_dfull_c)  <= not fifo.free;
-          bus_rsp_o.data(ctrl_error_c)  <= ctrl.err;
-          bus_rsp_o.data(ctrl_done_c)   <= ctrl.done;
-          bus_rsp_o.data(ctrl_busy_c)   <= engine.run;
+      -- write access --
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '0') then
+        ctrl.enable <= bus_req_i.data(ctrl_en_c);
+        ctrl.start  <= bus_req_i.data(ctrl_start_c);
+        if (bus_req_i.data(ctrl_start_c) = '1') or (bus_req_i.data(ctrl_ack_c) = '1') then -- write 1 to clear
+          ctrl.err  <= '0';
+          ctrl.done <= '0';
         end if;
       end if;
     end if;
-  end process ctrl_access;
+  end process;
+
+  -- read access (asynchronous) --
+  ctrl_read: process(bus_rden, bus_req_i.addr, ctrl, fifo, engine)
+  begin
+    bus_rdata <= (others => '0');
+    if (bus_rden = '1') and (bus_req_i.addr(2) = '0') then -- output gating
+      bus_rdata(ctrl_en_c)                        <= ctrl.enable;
+      bus_rdata(ctrl_fifo3_c downto ctrl_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
+      bus_rdata(ctrl_dempty_c)                    <= not fifo.avail;
+      bus_rdata(ctrl_dfull_c)                     <= not fifo.free;
+      bus_rdata(ctrl_error_c)                     <= ctrl.err;
+      bus_rdata(ctrl_done_c)                      <= ctrl.done;
+      bus_rdata(ctrl_busy_c)                      <= engine.run;
+    end if;
+  end process;
+
+  -- bus response --
+  bus_rsp_o.ack  <= bus_ack;
+  bus_rsp_o.err  <= '0'; -- no access errors supported
+  bus_rsp_o.data <= bus_rdata;
 
   -- transfer-done interrupt --
   irq_o <= ctrl.done;
@@ -298,7 +319,7 @@ begin
 
       end case;
     end if;
-  end process bus_engine;
+  end process;
 
 
   -- Address Increment ----------------------------------------------------------------------
@@ -317,7 +338,7 @@ begin
       when "11"   => dst_add <= to_unsigned(4, 32); -- incrementing word
       when others => dst_add <= to_unsigned(0, 32); -- constant byte/word
     end case;
-  end process address_inc;
+  end process;
 
 
   -- Input Data Alignment -------------------------------------------------------------------
@@ -340,7 +361,7 @@ begin
         end if;
       end if;
     end if;
-  end process src_align;
+  end process;
 
 
   -- Bus Output Control ---------------------------------------------------------------------
@@ -388,7 +409,6 @@ begin
     if (engine.state = S_READ_REQ) or (engine.state = S_WRITE_REQ) then
       dma_req_o.stb <= '1';
     end if;
-  end process bus_control;
+  end process;
 
-
-end neorv32_dma_rtl;
+end architecture;

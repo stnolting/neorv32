@@ -31,7 +31,7 @@ entity neorv32_debug_auth is
     busy_o   : out std_ulogic; -- authenticator is busy when high; no further read/write accesses
     valid_o  : out std_ulogic  -- high when authentication passed; unlocks the on-chip debugger
   );
-end neorv32_debug_auth;
+end entity;
 
 architecture neorv32_debug_auth_rtl of neorv32_debug_auth is
 
@@ -52,7 +52,7 @@ begin
         authenticated_q <= wdata_i(0); -- just write 1 to authenticate
       end if;
     end if;
-  end process auth_ctrl;
+  end process;
 
   -- authenticator busy --
   busy_o <= '0'; -- this simple authenticator is always ready
@@ -66,4 +66,4 @@ begin
   -- warn about default authenticator --
   assert false report "[NEORV32] Using DEFAULT on-chip debugger authenticator. Replace by custom module." severity warning;
 
-end neorv32_debug_auth_rtl;
+end architecture;

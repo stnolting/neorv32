@@ -82,7 +82,7 @@ This transfer type is used by the CPU to perform atomic read-modify-write operat
 This transfer type is used by cache block operations.
 
 .XBUS **Single Access** Transfers: Write (left) and Read (right)
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 {signal: [
   {name: 'clk',         wave: 'p....|......|...'},
@@ -104,13 +104,13 @@ This transfer type is used by cache block operations.
 ----
 
 .XBUS **Atomic Access** Transfer
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 {signal: [
   {name: 'clk',         wave: 'p.......'},
   {name: 'xbus_adr_o',  wave: 'x2.....x', data: ['addr']},
   {name: 'xbus_dat_o',  wave: 'x.......', data: ['wdata']},
-  {name: 'xbus_cti_o',  wave: 'x7.....x', data: ['001 (constant address burst)']},
+  {name: 'xbus_cti_o',  wave: 'x7.....x', data: ['001 (const. address burst)']},
   {name: 'xbus_tag_o',  wave: 'x2.....x'},
   {name: 'xbus_we_o',   wave: 'x0..1..x'},
   {name: 'xbus_sel_o',  wave: 'x2.....x'},
@@ -126,13 +126,13 @@ This transfer type is used by cache block operations.
 ----
 
 .XBUS **Burst Read** Transfer (4-Words)
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 {signal: [
   {name: 'clk',         wave: 'p........'},
   {name: 'xbus_adr_o',  wave: 'x3.456.x.', data: ['0', '4', '8', '12']},
   {name: 'xbus_dat_o',  wave: 'x........'},
-  {name: 'xbus_cti_o',  wave: 'x7.....x.', data: ['010 (incrementing address burst)']},
+  {name: 'xbus_cti_o',  wave: 'x7.....x.', data: ['010 (inc. address burst)']},
   {name: 'xbus_tag_o',  wave: 'x2.....x.'},
   {name: 'xbus_we_o',   wave: 'x0.....x.'},
   {name: 'xbus_sel_o',  wave: 'x2.....x.'},

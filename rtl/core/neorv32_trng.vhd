@@ -31,7 +31,7 @@ entity neorv32_trng is
     bus_rsp_o : out bus_rsp_t;  -- bus response
     irq_o     : out std_ulogic  -- FIFO full interrupt
   );
-end neorv32_trng;
+end entity;
 
 architecture neorv32_trng_rtl of neorv32_trng is
 
@@ -72,6 +72,10 @@ architecture neorv32_trng_rtl of neorv32_trng is
     );
   end component;
 
+  -- bus interface --
+  signal bus_ack, bus_rden : std_ulogic;
+  signal bus_rdata : std_ulogic_vector(31 downto 0);
+
   -- control register --
   signal enable, fifo_clr : std_ulogic;
 
@@ -88,41 +92,56 @@ begin
 
   -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_access: process(rstn_i, clk_i)
+  bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o <= rsp_terminate_c;
-      enable    <= '0';
-      fifo_clr  <= '0';
+      bus_ack  <= '0';
+      bus_rden <= '0';
     elsif rising_edge(clk_i) then
-      -- bus handshake --
-      bus_rsp_o.ack  <= bus_req_i.stb;
-      bus_rsp_o.err  <= '0';
-      bus_rsp_o.data <= (others => '0');
-      -- write access --
+      bus_ack  <= bus_req_i.stb;
+      bus_rden <= bus_req_i.stb and (not bus_req_i.rw);
+    end if;
+  end process;
+
+  -- write access --
+  bus_write: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      enable   <= '0';
       fifo_clr <= '0';
+    elsif rising_edge(clk_i) then
+      fifo_clr <= '0'; -- default
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '0') then -- control register
         enable   <= bus_req_i.data(ctrl_en_c);
         fifo_clr <= bus_req_i.data(ctrl_fifo_clr_c);
       end if;
-      -- read access --
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
-        if (bus_req_i.addr(2) = '0') then -- control register
-          bus_rsp_o.data(ctrl_en_c)                         <= enable;
-          bus_rsp_o.data(ctrl_fifo_clr_c)                   <= '0';
-          bus_rsp_o.data(ctrl_sim_mode_c)                   <= bool_to_ulogic_f(is_simulation_c);
-          bus_rsp_o.data(ctrl_avail_c)                      <= fifo.avail;
-          bus_rsp_o.data(ctrl_fifo3_c  downto ctrl_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
-          bus_rsp_o.data(ctrl_nbit3_c  downto ctrl_nbit0_c) <= std_ulogic_vector(to_unsigned(log2_rbit_c, 4));
-          bus_rsp_o.data(ctrl_nro7_c   downto ctrl_nro0_c)  <= std_ulogic_vector(to_unsigned(NUM_RO, 8));
-          bus_rsp_o.data(ctrl_ninv11_c downto ctrl_ninv0_c) <= std_ulogic_vector(to_unsigned(num_inv_start_c, 12));
-        else -- data register
-          bus_rsp_o.data(7 downto 0) <= fifo.rdata;
-        end if;
+    end if;
+  end process;
+
+  -- read access (asynchronous) --
+  bus_read: process(bus_rden, bus_req_i.addr, enable, fifo)
+  begin
+    bus_rdata <= (others => '0');
+    if (bus_rden = '1') then -- output gating
+      if (bus_req_i.addr(2) = '0') then -- control register
+        bus_rdata(ctrl_en_c)                         <= enable;
+        bus_rdata(ctrl_fifo_clr_c)                   <= '0';
+        bus_rdata(ctrl_sim_mode_c)                   <= bool_to_ulogic_f(is_simulation_c);
+        bus_rdata(ctrl_avail_c)                      <= fifo.avail;
+        bus_rdata(ctrl_fifo3_c  downto ctrl_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
+        bus_rdata(ctrl_nbit3_c  downto ctrl_nbit0_c) <= std_ulogic_vector(to_unsigned(log2_rbit_c, 4));
+        bus_rdata(ctrl_nro7_c   downto ctrl_nro0_c)  <= std_ulogic_vector(to_unsigned(NUM_RO, 8));
+        bus_rdata(ctrl_ninv11_c downto ctrl_ninv0_c) <= std_ulogic_vector(to_unsigned(num_inv_start_c, 12));
+      else -- data register
+        bus_rdata(7 downto 0) <= fifo.rdata;
       end if;
     end if;
-  end process bus_access;
+  end process;
 
+  -- bus response --
+  bus_rsp_o.ack  <= bus_ack;
+  bus_rsp_o.err  <= '0'; -- no access errors supported
+  bus_rsp_o.data <= bus_rdata;
 
   -- neoTRNG True Random Number Generator ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -140,7 +159,6 @@ begin
     valid_o  => fifo.we,
     data_o   => fifo.wdata
   );
-
 
   -- Random Number Buffer --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -165,20 +183,18 @@ begin
     avail_o => fifo.avail
   );
 
-  fifo.clear <= '1' when (enable = '0') or (fifo_clr = '1') else '0';
-  fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
+  fifo.clear <= (not enable) or fifo_clr;
+  fifo.re    <= bus_rden and bus_req_i.addr(2);
 
   -- interrupt generator --
-  irq_gen: process(rstn_i, clk_i)
+  irq_gen: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      irq_o <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       irq_o <= enable and (not fifo.free); -- FIFO full
     end if;
-  end process irq_gen;
+  end process;
 
-end neorv32_trng_rtl;
+end architecture;
 
 
 -- ============================================================================================= --
@@ -246,7 +262,7 @@ entity neoTRNG is
     valid_o  : out std_ulogic; -- data_o is valid when set (high for one cycle)
     data_o   : out std_ulogic_vector(7 downto 0) -- random data byte output
   );
-end neoTRNG;
+end entity;
 
 architecture neoTRNG_rtl of neoTRNG is
 
@@ -259,7 +275,7 @@ architecture neoTRNG_rtl of neoTRNG is
       end if;
     end loop;
     return 0;
-  end function clog2_f;
+  end function;
 
   -- entropy source cell --
   component neoTRNG_cell
@@ -344,7 +360,7 @@ begin
       tmp_v := tmp_v xor cell_rnd(i);
     end loop;
     cell_sum <= tmp_v;
-  end process combine;
+  end process;
 
 
   -- John von Neumann Randomness Extractor (De-Biasing) -------------------------------------
@@ -359,7 +375,7 @@ begin
       -- start operation when last cell is enabled and process in every second cycle --
       debias_state <= (not debias_state) and cell_en_out(cell_en_out'left);
     end if;
-  end process debiasing;
+  end process;
 
   -- check groups of two non-overlapping bits from the random stream for edges --
   debias_valid <= debias_state and (debias_sreg(1) xor debias_sreg(0));
@@ -389,13 +405,13 @@ begin
         end if;
       end if;
     end if;
-  end process sampling_control;
+  end process;
 
   -- TRNG output stream --
   data_o  <= sample_sreg;
   valid_o <= sample_cnt(sample_cnt'left);
 
-end neoTRNG_rtl;
+end architecture;
 
 
 -- ================================================================================================ --
@@ -419,7 +435,7 @@ entity neoTRNG_cell is
     en_o   : out std_ulogic; -- enable-chain output
     rnd_o  : out std_ulogic  -- random data (sync)
   );
-end neoTRNG_cell;
+end entity;
 
 architecture neoTRNG_cell_rtl of neoTRNG_cell is
 
@@ -445,7 +461,7 @@ begin
     elsif rising_edge(clk_i) then
       sreg <= sreg(sreg'left-1 downto 0) & en_i;
     end if;
-  end process en_shift_reg;
+  end process;
 
   -- output for global enable chain --
   en_o <= sreg(sreg'left);
@@ -480,7 +496,7 @@ begin
         elsif rising_edge(clk_i) then
           inv_out(i) <= not inv_in(i);
         end if;
-      end process inverter_sim_ff;
+      end process;
     end generate;
 
   end generate;
@@ -500,9 +516,9 @@ begin
     elsif rising_edge(clk_i) then
       sync <= sync(0) & latch(latch'left);
     end if;
-  end process synchronizer;
+  end process;
 
   -- cell output --
   rnd_o <= sync(1);
 
-end neoTRNG_cell_rtl;
+end architecture;

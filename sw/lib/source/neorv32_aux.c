@@ -31,14 +31,14 @@ void neorv32_aux_delay_ms(uint32_t clock_hz, uint32_t time_ms) {
   uint32_t iterations = (uint32_t)(wait_cycles >> 4);
 
   asm volatile (
-    " __neorv32_aux_delay_ms_start:                   \n"
-    " beq  %[cnt_r], zero, __neorv32_aux_delay_ms_end \n" // 3 cycles (if not taken)
-    " bne  zero,     zero, __neorv32_aux_delay_ms_end \n" // 3 cycles (never taken)
-    " addi %[cnt_w], %[cnt_r], -1                     \n" // 2 cycles
-    " nop                                             \n" // 2 cycles
-    " j    __neorv32_aux_delay_ms_start               \n" // 6 cycles
-    " __neorv32_aux_delay_ms_end:                     \n"
-    : [cnt_w] "=r" (iterations) : [cnt_r] "r" (iterations)
+    " 1:                      \n"
+    " beq  %[cnt], zero,   2f \n" // 3 cycles (if not taken)
+    " bne  zero,   zero,   2f \n" // 3 cycles (never taken)
+    " addi %[cnt], %[cnt], -1 \n" // 2 cycles
+    " nop                     \n" // 2 cycles
+    " j    1b                 \n" // 6 cycles
+    " 2:                      \n"
+    : [cnt] "+r" (iterations) : : "memory"
   );
 }
 
@@ -362,8 +362,6 @@ void neorv32_aux_print_hw_config(void) {
   uint32_t mxisah = neorv32_cpu_csr_read(CSR_MXISAH);
   if (mxisa  & (1<<CSR_MXISA_ZAAMO))     { neorv32_uart0_printf("Zaamo ");     }
   if (mxisa  & (1<<CSR_MXISA_ZALRSC))    { neorv32_uart0_printf("Zalrsc ");    }
-  if (mxisa  & (1<<CSR_MXISA_ZCA))       { neorv32_uart0_printf("Zca ");       }
-  if (mxisa  & (1<<CSR_MXISA_ZCB))       { neorv32_uart0_printf("Zcb ");       }
   if (mxisa  & (1<<CSR_MXISA_ZBA))       { neorv32_uart0_printf("Zba ");       }
   if (mxisa  & (1<<CSR_MXISA_ZBB))       { neorv32_uart0_printf("Zbb ");       }
   if (mxisah & (1<<CSR_MXISAH_ZBC))      { neorv32_uart0_printf("Zbc ");       }
@@ -371,6 +369,9 @@ void neorv32_aux_print_hw_config(void) {
   if (mxisa  & (1<<CSR_MXISA_ZBKC))      { neorv32_uart0_printf("Zbkc ");      }
   if (mxisa  & (1<<CSR_MXISA_ZBKX))      { neorv32_uart0_printf("Zbkx ");      }
   if (mxisa  & (1<<CSR_MXISA_ZBS))       { neorv32_uart0_printf("Zbs ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZCA))       { neorv32_uart0_printf("Zca ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZCB))       { neorv32_uart0_printf("Zcb ");       }
+  if (mxisah & (1<<CSR_MXISAH_ZCMOP))    { neorv32_uart0_printf("Zcmop ");     }
   if (mxisa  & (1<<CSR_MXISA_ZFINX))     { neorv32_uart0_printf("Zfinx ");     }
   if (mxisa  & (1<<CSR_MXISA_ZIBI))      { neorv32_uart0_printf("Zibi ");      }
   if (mxisa  & (1<<CSR_MXISA_ZICNTR))    { neorv32_uart0_printf("Zicntr ");    }
@@ -485,7 +486,7 @@ void neorv32_aux_print_hw_config(void) {
     neorv32_uart0_printf(", uncached: 0x%x..0x%x\n", uncached_beg, uncached_end);
   }
   else {
-    neorv32_uart0_printf("none");
+    neorv32_uart0_printf("none\n");
   }
 
   neorv32_uart0_printf("CPU D-cache:         ");
@@ -500,13 +501,21 @@ void neorv32_aux_print_hw_config(void) {
     neorv32_uart0_printf(", uncached: 0x%x..0x%x\n", uncached_beg, uncached_end);
   }
   else {
-    neorv32_uart0_printf("none");
+    neorv32_uart0_printf("none\n");
+  }
+
+  // serial memory controller
+  neorv32_uart0_printf("Serial MEM ctrl.:    ");
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_SMC)) {
+    neorv32_uart0_printf("enabled, memory base: 0x%x\n", neorv32_smc_get_baseaddr());
+  }
+  else {
+    neorv32_uart0_printf("none\n");
   }
 
   // external bus interface
   neorv32_uart0_printf("Ext. bus interface:  ");
-  tmp = NEORV32_SYSINFO->SOC;
-  if (tmp & (1 << SYSINFO_SOC_XBUS)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) {
     neorv32_uart0_printf("enabled");
   }
   else {
@@ -520,7 +529,7 @@ void neorv32_aux_print_hw_config(void) {
   }
 
   // bus timeouts
-  neorv32_uart0_printf("Bus timeout (int):   %u cycles\n", neorv32_sysinfo_get_extbustimeout());
+  neorv32_uart0_printf("Bus timeout (int):   %u cycles\n", neorv32_sysinfo_get_intbustimeout());
   neorv32_uart0_printf("Bus timeout (ext):   %u cycles\n", neorv32_sysinfo_get_extbustimeout());
 
   // peripherals

@@ -23,8 +23,9 @@ USER_FLAGS += \
 -Wl,--defsym,__neorv32_rom_size=16k \
 -Wl,--defsym,__neorv32_rom_base=0xFFE00000
 
-# define MAKE_BOOTLOADER for bootloader-specific library optimizations and enable link-time-optimization
-USER_FLAGS += -DMAKE_BOOTLOADER -flto
+# define MAKE_BOOTLOADER for bootloader-specific library optimizations,
+# enable link-time-optimization and use routines for function prologue/epilogue
+USER_FLAGS += -DMAKE_BOOTLOADER -flto -msave-restore
 
 # include the main NEORV32 makefile
 NEORV32_HOME ?= ../..

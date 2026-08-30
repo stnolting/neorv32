@@ -72,7 +72,7 @@ void neorv32_gptmr_setup(int prsc) {
 
 
 /**********************************************************************//**
- * Disable single GPTMR timer slice.
+ * Enable single GPTMR timer slice.
  *
  * @param[in] sel Timer slice to enable (0..15).
  **************************************************************************/
@@ -94,7 +94,7 @@ void neorv32_gptmr_disable_single(int sel) {
 
 
 /**********************************************************************//**
- * Disable multiple GPTMR timer slices.
+ * Enable multiple GPTMR timer slices.
  *
  * @param[in] mask Bit mask, one bit for each slice; bit set = enable slice.
  **************************************************************************/

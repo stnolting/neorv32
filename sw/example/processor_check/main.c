@@ -30,8 +30,8 @@
 //** Unreachable word-aligned cached address */
 #define ADDR_UNREACHABLE   (0x70000000U)
 //** Word-aligned cached dummy ROM/RAM address */
-#define ADDR_CACHED_ROM    (0xE0000000U)
-#define ADDR_CACHED_RAM    (0xE1000000U)
+#define ADDR_CACHED_ROM    (0xD0000000U)
+#define ADDR_CACHED_RAM    (0xD1000000U)
 //** Word-aligned address that returns a bus error on write-request */
 #define ADDR_WRERR         (0xFFFE0004U)
 //** External memory base address (uncached) */
@@ -242,13 +242,15 @@ int main() {
   if (num_hpm_cnts_global != 0) {
     cnt_test++;
 
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER3, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT3, 1 << HPMCNT_EVENT_CI);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER4, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT4, 1 << HPMCNT_EVENT_WAIT_DIS);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER5, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT5, 1 << HPMCNT_EVENT_WAIT_ALU);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER6, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT6, 1 << HPMCNT_EVENT_WAIT_LSU);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER7, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT7, 1 << HPMCNT_EVENT_DELTA);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER8, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT8, 1 << HPMCNT_EVENT_LOAD);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER9, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT9, 1 << HPMCNT_EVENT_STORE);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER3, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT3,  1 << HPMCNT_EVENT_CY);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER3, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT4,  1 << HPMCNT_EVENT_IR);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER3, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT5,  1 << HPMCNT_EVENT_CI);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER4, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT6,  1 << HPMCNT_EVENT_WAIT_DIS);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER5, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_WAIT_ALU);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER6, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT8,  1 << HPMCNT_EVENT_WAIT_LSU);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER7, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT9,  1 << HPMCNT_EVENT_DELTA);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER8, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT10, 1 << HPMCNT_EVENT_LOAD);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER9, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT11, 1 << HPMCNT_EVENT_STORE);
 
     // make sure there was no exception
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == trap_never_c) {
@@ -503,47 +505,19 @@ int main() {
       asm volatile ("ecall"); // exit user-mode
     }
 
+    // re-enable base counters for all privilege modes
+    neorv32_cpu_csr_write(CSR_MCYCLECFGH, 0);
+    neorv32_cpu_csr_write(CSR_MINSTRETCFGH, 0);
+
     if ((delta_cy_m != 0) && (delta_cy_u == 0) && (delta_ir_m == 0) && (delta_ir_u != 0)) {
       test_ok();
     }
     else {
       test_fail();
     }
-
-    // re-enable base counters for all privilege modes
-    neorv32_cpu_csr_write(CSR_MCYCLECFGH, 0);
-    neorv32_cpu_csr_write(CSR_MINSTRETCFGH, 0);
   }
   else {
     PRINT("[n.a.]\n");
-  }
-
-
-  // ----------------------------------------------------------
-  // May-be-operation
-  // ----------------------------------------------------------
-  PRINT("[%i] May-be-operations ", cnt_test);
-  neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
-  cnt_test++;
-
-  tmp_a = RISCV_INSTR_R_TYPE(0b1110011, 0b100, 0b1100000, 123456, 0b11100); // mop.r.16
-  tmp_b = RISCV_INSTR_R_TYPE(0b1110011, 0b100, 0b1100111, 654321, 789); // mop.rr.7
-
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIMOP)) {
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == trap_never_c) && (tmp_a == 0) && (tmp_b == 0)) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
   }
 
 
@@ -857,7 +831,6 @@ int main() {
     asm volatile (".balign 4");
     asm volatile (".half 0x0000"); // C0: canonical compressed illegal instruction
     asm volatile (".half 0x6000"); // C0: c.lw (illegal since F ISA extension is not supported)
-    asm volatile (".half 0x6001"); // C1: c.lui with imm=0
     asm volatile (".half 0x9C21"); // C1: c.xor with [12]=1
     asm volatile (".half 0x8002"); // C2: c.jr with rs1=0
     asm volatile (".half 0x66aa"); // C2: c.flwsp (illegal since F ISA extension is not supported)
@@ -868,7 +841,7 @@ int main() {
   // number of traps we are expecting + expected instruction word of last illegal instruction
   uint32_t invalid_instr;
   if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
-    tmp_a += 19;
+    tmp_a += 18;
     invalid_instr = 0x000066aa;
   }
   else { // C extension disabled
@@ -1731,7 +1704,7 @@ int main() {
     asm volatile ("fence");
 
     if ((tmp_a == 0) && // no error during descriptor programming
-        (neorv32_cpu_csr_read(CSR_MCAUSE) ==DMA_TRAP_CODE) && // correct interrupt source
+        (neorv32_cpu_csr_read(CSR_MCAUSE) == DMA_TRAP_CODE) && // correct interrupt source
         (neorv32_dma_status() == DMA_STATUS_DONE) && // DMA transfer completed without errors
         (dma_dst[0] == 0x11ee8877) && (dma_dst[1] == 0xaabbccdd)) { // correct destination data?
       test_ok();
@@ -2043,6 +2016,51 @@ int main() {
   }
   else {
     test_fail();
+  }
+
+
+  // ----------------------------------------------------------
+  // PSRAM access via SMC
+  // ----------------------------------------------------------
+  PRINT("[%i] SMC PSRAM ", cnt_test);
+
+  if ((neorv32_smc_available()) &&  neorv32_sysinfo_is_sim()) {
+    neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
+    cnt_test++;
+
+    // setup SMC
+    neorv32_smc_setup(
+      1,             // dual-chip mode
+      SMC_MSIZE_2MB, // PSRAM size = 2MB
+      1,             // clock prescaler
+      0,             // wait cycles for read access
+      0x03,          // read command
+      0x02,          // write command
+      0x996600       // initialization sequence: 1. NOP (0x00), 2. RESET-EN (0x66), 3. RESET (0x99)
+    );
+
+    tmp_a = neorv32_smc_get_baseaddr();
+
+    // write word to PSRAM_0
+    neorv32_cpu_store_unsigned_word(tmp_a + 0 + 0, 0xfeedcafe);
+    // write bytes to PSRAM_1
+    neorv32_cpu_store_unsigned_byte(tmp_a + 2*1024*1024 + 0, 0x12);
+    neorv32_cpu_store_unsigned_byte(tmp_a + 2*1024*1024 + 1, 0x34);
+    neorv32_cpu_store_unsigned_byte(tmp_a + 2*1024*1024 + 2, 0x56);
+    neorv32_cpu_store_unsigned_byte(tmp_a + 2*1024*1024 + 3, 0x78);
+    asm volatile ("fence");
+
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == trap_never_c) &&
+        (neorv32_cpu_load_unsigned_word(tmp_a + 0 + 0) == 0xfeedcafe) &&
+        (neorv32_cpu_load_unsigned_word(tmp_a + 2*1024*1024 + 0) == 0x78563412)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT("[n.a.]\n");
   }
 
 
@@ -2459,32 +2477,31 @@ int main() {
   // counter reports
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all counters
-  PRINT("\n\nBase Counters & HPMs\n");
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZICNTR)) {
-    PRINT(
-      "[CY]   Clock cycles : %u\n"
-      "[IR]   Instructions : %u\n",
-      neorv32_cpu_csr_read(CSR_CYCLE),
-      neorv32_cpu_csr_read(CSR_INSTRET)
-    );
-  }
+  PRINT("\n\nHPM counters\n");
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIHPM)) {
     PRINT(
-      "[HPM3] Compressed   : %u\n"
-      "[HPM4] DISP waits   : %u\n"
-      "[HPM5] ALU waits    : %u\n"
-      "[HPM6] LSU waits    : %u\n"
-      "[HPM7] Deltas       : %u\n"
-      "[HPM8] Loads        : %u\n"
-      "[HPM9] Stores       : %u\n",
+      "[HPM3]  Clock cycles : %u\n"
+      "[HPM4]  Instructions : %u\n"
+      "[HPM5]  Compressed   : %u\n"
+      "[HPM6]  DISP waits   : %u\n"
+      "[HPM7]  ALU waits    : %u\n"
+      "[HPM8]  LSU waits    : %u\n"
+      "[HPM9]  Deltas       : %u\n"
+      "[HPM10] Loads        : %u\n"
+      "[HPM11] Stores       : %u\n",
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER3),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER4),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER5),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER6),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER7),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER8),
-      neorv32_cpu_csr_read(CSR_MHPMCOUNTER9)
+      neorv32_cpu_csr_read(CSR_MHPMCOUNTER9),
+      neorv32_cpu_csr_read(CSR_MHPMCOUNTER10),
+      neorv32_cpu_csr_read(CSR_MHPMCOUNTER11)
     );
+  }
+  else {
+    PRINT("no HPMs available\n");
   }
 
 

@@ -1,92 +1,125 @@
 .DEFAULT_GOAL := help
 
-PUBLIC_DIR = public
-PUBLIC_IMG_DIR = $(PUBLIC_DIR)/img
+PUBLIC_DIR := public
+PUBLIC_IMG_DIR := $(PUBLIC_DIR)/img
+PUBLIC_PDF_DIR := $(PUBLIC_DIR)/pdf
+PUBLIC_UG_DIR := $(PUBLIC_DIR)/ug
 
-DOXYGEN_IMG_DIR = doxygen_build/html/docs/figures
+DOXYGEN_BUILD_DIR := doxygen_build
+DOXYGEN_IMG_DIR := $(DOXYGEN_BUILD_DIR)/html/docs/figures
+
+.PHONY: all site pdf html ug-pdf ug-html doxygen
+.PHONY: public-images doxygen-images revnumber clean help
 
 all: pdf html ug-pdf ug-html
 
-# Public folder
+# Generate the revision number first and then build all AsciiDoc documents
+site: revnumber
+	$(MAKE) all
+
+# Output directories
 $(PUBLIC_DIR):
-	@mkdir -p $(PUBLIC_DIR)
-
-# Copy images for datasheet and ug html
-$(PUBLIC_IMG_DIR): $(PUBLIC_DIR)
 	@mkdir -p $@
-	cp -vr figures/* $@
 
-# Copy images for doxygen
+$(PUBLIC_IMG_DIR): | $(PUBLIC_DIR)
+	@mkdir -p $@
+
+$(PUBLIC_PDF_DIR): | $(PUBLIC_DIR)
+	@mkdir -p $@
+
+$(PUBLIC_UG_DIR): | $(PUBLIC_DIR)
+	@mkdir -p $@
+
 $(DOXYGEN_IMG_DIR):
 	@mkdir -p $@
-	cp -vr figures/* $@
+
+# Copy images for datasheet and user guide
+public-images: $(PUBLIC_IMG_DIR)
+	cp -a figures/. $(PUBLIC_IMG_DIR)/
+
+# Copy images required by Doxygen
+doxygen-images: $(DOXYGEN_IMG_DIR)
+	cp -a figures/. $(DOXYGEN_IMG_DIR)/
 
 # Generate PDF datasheet
-pdf: $(PUBLIC_DIR)
-	[ -f revnumber.txt ] && REVNUMBER='-a revnumber='"$$(cat revnumber.txt)" || unset REVNUMBER; \
-	asciidoctor-pdf $$REVNUMBER \
+pdf: $(PUBLIC_PDF_DIR)
+	@set -eu; \
+	if [ -f revnumber.txt ]; then \
+	  set -- -a "revnumber=$$(cat revnumber.txt)"; \
+	else \
+	  set --; \
+	fi; \
+	asciidoctor-pdf "$$@" \
 	  -a allow-uri-read \
 	  -a pdf-theme=neorv32-theme.yml \
 	  -r asciidoctor-diagram \
 	  datasheet/main.adoc \
-	  --out-file $(PUBLIC_DIR)/pdf/NEORV32.pdf
+	  --out-file $(PUBLIC_PDF_DIR)/NEORV32.pdf
 
 # Generate HTML datasheet
-html: $(PUBLIC_IMG_DIR) $(PUBLIC_DIR)
-	[ -f revnumber.txt ] && REVNUMBER='-a revnumber='"$$(cat revnumber.txt)" || unset REVNUMBER; \
-	asciidoctor $$REVNUMBER \
+html: public-images
+	@set -eu; \
+	if [ -f revnumber.txt ]; then \
+	  set -- -a "revnumber=$$(cat revnumber.txt)"; \
+	else \
+	  set --; \
+	fi; \
+	asciidoctor "$$@" \
 	  -r asciidoctor-diagram \
 	  datasheet/index.adoc \
 	  --out-file $(PUBLIC_DIR)/index.html
 
 # Generate PDF user guide
-ug-pdf: $(PUBLIC_DIR)
-	[ -f revnumber.txt ] && REVNUMBER='-a revnumber='"$$(cat revnumber.txt)" || unset REVNUMBER; \
-	asciidoctor-pdf $$REVNUMBER \
+ug-pdf: $(PUBLIC_PDF_DIR)
+	@set -eu; \
+	if [ -f revnumber.txt ]; then \
+	  set -- -a "revnumber=$$(cat revnumber.txt)"; \
+	else \
+	  set --; \
+	fi; \
+	asciidoctor-pdf "$$@" \
 	  -a allow-uri-read \
 	  -a pdf-theme=neorv32-theme.yml \
 	  -r asciidoctor-diagram \
 	  userguide/main.adoc \
-	  --out-file $(PUBLIC_DIR)/pdf/NEORV32_UserGuide.pdf
+	  --out-file $(PUBLIC_PDF_DIR)/NEORV32_UserGuide.pdf
 
 # Generate HTML user guide
-ug-html: $(PUBLIC_IMG_DIR) $(PUBLIC_DIR)
-	[ -f revnumber.txt ] && REVNUMBER='-a revnumber='"$$(cat revnumber.txt)" || unset REVNUMBER; \
-	asciidoctor $$REVNUMBER \
+ug-html: public-images $(PUBLIC_UG_DIR)
+	@set -eu; \
+	if [ -f revnumber.txt ]; then \
+	  set -- -a "revnumber=$$(cat revnumber.txt)"; \
+	else \
+	  set --; \
+	fi; \
+	asciidoctor "$$@" \
 	  -r asciidoctor-diagram \
 	  userguide/index.adoc \
-	  --out-file $(PUBLIC_DIR)/ug/index.html
+	  --out-file $(PUBLIC_UG_DIR)/index.html
 
-# Generate DOXYGEN software documentation
-doxygen: $(DOXYGEN_IMG_DIR)
+# Generate Doxygen software documentation
+doxygen: doxygen-images
 	doxygen Doxyfile
 
-# Generate revnumber.txt for overriding the revnumber attribute in 'pdf' and/or 'html'
+# Generate revnumber.txt without modifying local Git tags
 revnumber:
-	if [ `git tag -l | grep nightly_release` ]; then git tag -d nightly_release; fi
 	git describe --long --tags | sed 's#\([^-]*-g\)#r\1#;' > revnumber.txt
 	cat revnumber.txt
 
-# Build 'pdf' and 'html' in an 'asciidoctor-wavedrom' container
-container: revnumber
-	docker run --rm -v /$(shell pwd)://documents/ btdi/asciidoctor make all
-
 clean:
-	@rm -rf $(PUBLIC_IMG_DIR)
 	@rm -rf $(PUBLIC_DIR)
-	@rm -rf doxygen_build
+	@rm -rf $(DOXYGEN_BUILD_DIR)
 	@rm -f revnumber.txt
 
-# Help
 help:
 	@echo "Targets:"
-	@echo " all       - build datasheet and user guide as pdf and HTML file"
+	@echo " all       - build datasheet and user guide as PDF and HTML"
+	@echo " site      - generate revnumber.txt and build all AsciiDoc documents"
+	@echo " pdf       - build datasheet PDF"
+	@echo " html      - build datasheet HTML"
+	@echo " ug-pdf    - build user guide PDF"
+	@echo " ug-html   - build user guide HTML"
+	@echo " doxygen   - build Doxygen software documentation"
+	@echo " revnumber - generate revnumber.txt from the current Git revision"
+	@echo " clean     - delete generated files and directories"
 	@echo " help      - show this text"
-	@echo " pdf       - build datasheet as pdf file (public/pdf/NEORV32.pdf)"
-	@echo " html      - build datasheet as HTML page (public/index.html)"
-	@echo " ug-pdf    - build user guide as pdf file (public/pdf/NEORV32_UserGuide.pdf)"
-	@echo " ug-html   - build user guide as HTML page (public/ug/index.html)"
-	@echo " doxygen   - build software documentation as HTML page (doxygen_build/html/index.html)"
-	@echo " revnumber - for overriding the revnumber attribute in 'pdf' and/or 'html'"
-	@echo " container - Build 'pdf' and 'html' in an 'asciidoctor-wavedrom' container"
-	@echo " clean     - delete output files and directories"

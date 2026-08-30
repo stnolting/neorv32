@@ -33,7 +33,7 @@ int neorv32_gpio_available(void) {
  **************************************************************************/
 void neorv32_gpio_pin_set(int pin, int value) {
 
-  uint32_t mask = (uint32_t)(1 << pin);
+  uint32_t mask = (uint32_t)(1 << (pin & 31u));
 
   if (value) {
     __MMREG32_BSET(NEORV32_GPIO->PORT_OUT, mask);
@@ -51,7 +51,7 @@ void neorv32_gpio_pin_set(int pin, int value) {
  **************************************************************************/
 void neorv32_gpio_pin_toggle(int pin) {
 
-  __MMREG32_BINV(NEORV32_GPIO->PORT_OUT, 1 << pin);
+  __MMREG32_BINV(NEORV32_GPIO->PORT_OUT, 1 << (pin & 31u));
 }
 
 
@@ -63,7 +63,7 @@ void neorv32_gpio_pin_toggle(int pin) {
  **************************************************************************/
 uint32_t neorv32_gpio_pin_get(int pin) {
 
-  return NEORV32_GPIO->PORT_IN & (uint32_t)(1 << pin);
+  return NEORV32_GPIO->PORT_IN & (uint32_t)(1 << (pin & 31u));
 }
 
 
@@ -132,7 +132,7 @@ uint32_t neorv32_gpio_dir_get(void) {
  **************************************************************************/
 void neorv32_gpio_irq_setup(int pin, int trigger) {
 
-  uint32_t mask = (uint32_t)(1 << pin);
+  uint32_t mask = (uint32_t)(1 << (pin & 31u));
 
   // trigger type
   if ((trigger == GPIO_TRIG_EDGE_FALLING) || (trigger == GPIO_TRIG_EDGE_RISING)) {

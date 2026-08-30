@@ -76,7 +76,7 @@ void uart_puts(const char *s) {
 void uart_puth(uint32_t num) {
 
 #if (UART_EN == 1)
-  static const char hex_symbols[16] = "0123456789ABCDEF";
+  static const char hex_symbols[16] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
   uart_putc('0');
   uart_putc('x');
 
@@ -118,11 +118,7 @@ int uart_stream_get(uint32_t* rdata) {
     tmp.uint8[i] = (uint8_t)uart_getc();
   }
   *rdata = tmp.uint32;
-#if (UART_OVERFLOW == 1)
-  return (int)(NEORV32_UART0->CTRL & (1<<UART_CTRL_RX_OVER)); ; // RX overflow?
-#else
   return 0;
-#endif
 #else
   return 1;
 #endif

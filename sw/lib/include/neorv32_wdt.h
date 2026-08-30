@@ -42,12 +42,10 @@ enum NEORV32_WDT_CTRL_enum {
 };
 /**@}*/
 
-
 /**********************************************************************//**
  * Reset Password
  **************************************************************************/
 #define WDT_PASSWORD (0x709D1AB3)
-
 
 /**********************************************************************//**
  * Reset Cause
@@ -58,7 +56,6 @@ enum NEORV32_WDT_RCAUSE_enum {
   WDT_RCAUSE_TMO = 0b10, /**< Reset caused by watchdog timer timeout */
   WDT_RCAUSE_ACC = 0b11  /**< Reset caused by watchdog timer invalid access */
 };
-
 
 /**********************************************************************//**
  * @name Prototypes
@@ -71,6 +68,5 @@ void neorv32_wdt_feed(uint32_t password);
 void neorv32_wdt_force_hwreset(void);
 int  neorv32_wdt_get_cause(void);
 /**@}*/
-
 
 #endif // NEORV32_WDT_H

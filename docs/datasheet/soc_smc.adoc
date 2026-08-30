@@ -1,0 +1,136 @@
+<<<
+:sectnums:
+==== Serial Memory Controller (SMC)
+
+[cols="<3,<3,<4"]
+[grid="none"]
+|=======================
+| Hardware source files:  | neorv32_smc.vhd |
+| Software driver files:  | neorv32_smc.c   | link:https://stnolting.github.io/neorv32/sw/neorv32__smc_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_smc.h   | link:https://stnolting.github.io/neorv32/sw/neorv32__smc_8h.html[Online software reference (Doxygen)]
+| Top entity ports:       | `smc_ioen_o`    | pin enable, can be used for IO multiplexing the external serial memory interface (1-bit)
+|                         | `smc_sck_o`     | serial clock (1-bit)
+|                         | `smc_csn_o`     | bank/chip select, low-active (2-bit, one bit per memory chip)
+|                         | `smc_sdo_o`     | controller data out, memory data in (1-bit)
+|                         | `smc_sdi_i`     | controller data in, memory data out (1-bit)
+| Configuration generics: | `SMC_EN`        | implement serial memory controller when `true`
+|                         | `SMC_BASE`      | serial memory base address (32-bit, has to be 256MB-aligned)
+| CPU interrupts:         | none            |
+|=======================
+
+**Key Features**
+
+* Transparent memory mapping into the processor address space (_execute in-place_, XIP)
+* Based on the SPI protocol (clock mode 0) with programmable clock speed
+* Manages up to two devices as one linear address space (e.g. 2x PSRAM or PSRAM + flash)
+* Fixed protocol frame: 8-bit command + 24-bit address (max 16 MB per memory device)
+* Programmable read/write commands with configurable read dummy/wait cycles
+* Programmable initialization sequence (up to 3 SPI commands)
+
+
+**Theory of Operation**
+
+The SMC transparently maps SPI memory (PSRAM, flash) into the processor's address space so it can be used as normal
+main memory. The controller is enabled via then `SMC_EN` generic. The `SMC_BASE` generic defines the 256MB-aligned
+base address, which must not conflict with other regions in the processor <<_address_space>>.
+
+Configuration is done via two registers: `CSR1` holds the initialization sequence (see below) and provides the 4 most
+significant address bits of the mapped region (read-only, derived from `SMC_BASE`). `CSR0` configures the actual memory
+accesses.
+
+To bring up the controller, set the memory geometry (`SMC_CSR0_DUAL`, `SMC_CSR0_MSIZE`), clock speed (`SMC_CSR0_CDIV`),
+access commands (`SMC_CSR0_RCMD`, `SMC_CSR0_WCMD`) and read wait cycles (`SMC_CSR0_RWAIT`), then set both `SMC_CSR0_EN`
+and `SMC_CSR0_IOEN`. Setting `SMC_CSR0_EN` also starts the automatic initialization sequence; clearing it resets the module.
+`SMC_CSR0_BUSY` indicates an ongoing memory operation (including initialization).
+
+.Access Latency
+[NOTE]
+A single memory word access can take several clock cycles, especially at low SPI clock speeds and with many read wait
+cycles. Using the CPU caches to _hide_ some of the latency is highly recommended.
+
+.Memory Access Range
+[NOTE]
+Transparent memory accesses are only performed when **both** `SMC_CSR0_EN` and `SMC_CSR0_IOEN` are set and the access
+is within the configured memory size; otherwise a load/store access fault is raised. Accesses inside the SMC region but
+outside the configured size are _not_ acknowledged and trigger a bus-error exception via the gateway's bus monitor.
+
+
+**Initialization Sequence**
+
+Right after being enabled, the SMC issues up to three user-defined single-byte commands to reset/initialize both
+serial memory devices (at the same time):
+
+. Eight dummy clock cycles with all chip-selects _disabled_.
+. Command `SMC_CSR1_ICMD0` with both chip-selects _active_.
+. Command `SMC_CSR1_ICMD1` with both chip-selects _active_.
+. Command `SMC_CSR1_ICMD2` with both chip-selects _active_.
+
+Unused command slots can be set to `0x00`.
+
+
+**Serial Clock Speed**
+
+The SPI clock is derived from the processor main clock (_f~main~_) via the 3-bit divider `SMC_CSR0_CDIV`.
+Range: f~main~/2 (max) to f~main~/32 (min). The clock is always symmetric (50% duty cycle, SPI clock mode 0).
+
+****
+_**f~SPI~**_ = _f~main~_ / (2 * (1 + `SMC_CSR0_CDIV`))
+****
+
+
+**Memory Size and Dual-Chip/Bank Mode**
+
+The SMC operates either one device or two **identically-sized** devices combined into a single linear address space,
+selected by `SMC_CSR0_DUAL` together with `SMC_CSR0_MSIZE`. Each device may be up to 16 MB (24-bit address).
+
+.SMC dual-mode and memory size configurations
+[cols="^1,^1,^2,^2,^2",options="header",grid="all"]
+|=======================
+| `DUAL` | `MSIZE` | Configuration | Size per device | Total mapped size
+| `0` | `00` |  1 x 2 MB |  2 MB |  2 MB
+| `0` | `01` |  1 x 4 MB |  4 MB |  4 MB
+| `0` | `10` |  1 x 8 MB |  8 MB |  8 MB
+| `0` | `11` | 1 x 16 MB | 16 MB | 16 MB
+| `1` | `00` |  2 x 2 MB |  2 MB |  4 MB
+| `1` | `01` |  2 x 4 MB |  4 MB |  8 MB
+| `1` | `10` |  2 x 8 MB |  8 MB | 16 MB
+| `1` | `11` | 2 x 16 MB | 16 MB | 32 MB
+|=======================
+
+In dual mode the active device is selected by the address bit right above the per-device range: the first device
+occupies the lower half, the second the upper half of the mapped region. The `smc_csn_o` lines are low-active; in
+single-chip mode (i.e. `SMC_CSR0_DUAL = 0`) only `smc_csn_o(0)` is used.
+
+
+**IO/Pin Control**
+
+The `smc_ioen_o` output signal is controlled by the `SMC_CSR0_IOEN` control bit and can be used to enable/multiplex the
+external serial memory interface pins (`smc_sck_o`, `smc_csn_o`, `smc_sdo_o`, `smc_sdi_i`) on the IO pad ring. This can
+be used, for example, to multiplex the serial memory interface with the <<_serial_peripheral_interface_controller_spi>>
+to provide a software-driven manual access mechanism (e.g. to program an XIP flash, which the SMC is not capable of).
+
+
+**Register Map**
+
+.SMC register map (`struct NEORV32_SMC`)
+[cols="<3,<2,<5,^2,<6"]
+[options="header",grid="all"]
+|=======================
+| Address | Name [C] | Bit(s), Name [C] | R/W | Description
+.11+<| `0xffef0000` .11+<| `CSR0` <| `0`     `SMC_CSR0_EN`                             ^| r/w <| SMC module enable, reset module when cleared
+                                  <| `1`     `SMC_CSR0_IOEN`                           ^| r/w <| Enable control of `smc_*` SMC IO pins
+                                  <| `2`     -                                         ^| r/- <| _reserved_, read as zero
+                                  <| `3`     `SMC_CSR0_DUAL`                           ^| r/w <| Enable dual-chip mode
+                                  <| `4`     `SMC_CSR0_BUSY`                           ^| r/- <| Memory operation in progress when set
+                                  <| `6:5`   -                                         ^| r/- <| _reserved_, read as zero
+                                  <| `8:7`   `SMC_CSR0_MSIZE_MSB : SMC_CSR0_MSIZE_LSB` ^| r/w <| Memory size select
+                                  <| `11:9`  `SMC_CSR0_CDIV_MSB : SMC_CSR0_CDIV_LSB`   ^| r/w <| SPI clock divider
+                                  <| `15:12` `SMC_CSR0_RWAIT_MSB : SMC_CSR0_RWAIT_LSB` ^| r/w <| Read access dummy/wait cycles
+                                  <| `23:16` `SMC_CSR0_RCMD_MSB : SMC_CSR0_RCMD_LSB`   ^| r/w <| Memory read command
+                                  <| `31:24` `SMC_CSR0_WCMD_MSB : SMC_CSR0_WCMD_LSB`   ^| r/w <| Memory write command
+.5+<| `0xffef0004` .5+<| `CSR1` <| `7:0`   `SMC_CSR1_ICMD0_MSB : SMC_CSR1_ICMD0_LSB`       ^| r/w <| 1st memory initialization command
+                                <| `15:8`  `SMC_CSR1_ICMD1_MSB : SMC_CSR1_ICMD1_LSB`       ^| r/w <| 2nd memory initialization command
+                                <| `23:16` `SMC_CSR1_ICMD2_MSB : SMC_CSR1_ICMD2_LSB`       ^| r/w <| 3rd memory initialization command
+                                <| `27:24` -                                               ^| r/- <| _reserved_, read as zero
+                                <| `31:28` `SMC_CSR1_MEM_BASE_MSB : SMC_CSR1_MEM_BASE_LSB` ^| r/- <| Memory base address (top 4 address bits / 256MB page)
+|=======================

@@ -21,16 +21,17 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_frontend is
   generic (
-    HART_ID   : natural; -- hardware thread ID
-    RISCV_C : boolean; -- implement C ISA extension
-    RISCV_ZCB : boolean; -- implement Zcb ISA sub-extension
-    RISCV_ZCMP : boolean -- implement Zcb ISA sub-extension
+    HART_ID     : natural; -- hardware thread ID
+    RISCV_C     : boolean; -- implement C ISA extension
+    RISCV_ZCB   : boolean; -- implement Zcb ISA sub-extension
+    RISCV_ZCMOP : boolean; -- implement Zcmop ISA sub-extension
+    RISCV_ZCMP  : boolean  -- implement Zcmp ISA sub-extension
   );
   port (
     -- global control --
-    clk_i : in std_ulogic; -- global clock, rising edge
-    rstn_i : in std_ulogic; -- global reset, low-active, async
-    ctrl_i : in ctrl_bus_t; -- main control bus
+    clk_i      : in  std_ulogic; -- global clock, rising edge
+    rstn_i     : in  std_ulogic; -- global reset, low-active, async
+    ctrl_i     : in  ctrl_bus_t; -- main control bus
     -- instruction fetch interface --
     ibus_req_o : out bus_req_t; -- request
     ibus_rsp_i : in  bus_rsp_t; -- response
@@ -41,28 +42,27 @@ entity neorv32_cpu_frontend is
     -- back-end interface --
     frontend_o : out if_bus_t -- fetch data and status
   );
-end neorv32_cpu_frontend;
+end entity;
 
 architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
 
+  -- heart ID --
+  constant hid_c : std_ulogic_vector(1 downto 0) := std_ulogic_vector(to_unsigned(HART_ID, 2));
+
   -- instruction prefetch buffer --
   component neorv32_cpu_frontend_ipb
-    generic (
-      AWIDTH : natural;
-      DWIDTH : natural
-    );
-    port (
-      clk_i : in std_ulogic;
-      rstn_i : in std_ulogic;
-      clear_i : in std_ulogic;
-      wdata_i : in std_ulogic_vector(DWIDTH - 1 downto 0);
-      we_i : in std_ulogic;
-      free_o : out std_ulogic;
-      re_i : in std_ulogic;
-      rdata_o : out std_ulogic_vector(DWIDTH - 1 downto 0);
-      avail_o : out std_ulogic
-    );
+  port (
+    clk_i   : in  std_ulogic;
+    clear_i : in  std_ulogic;
+    wdata_i : in  std_ulogic_vector(16 downto 0);
+    we_i    : in  std_ulogic;
+    free_o  : out std_ulogic;
+    re_i    : in  std_ulogic;
+    rdata_o : out std_ulogic_vector(16 downto 0);
+    avail_o : out std_ulogic
+  );
   end component;
+
   -- instruction fetch engine --
   type state_t is (S_RESTART, S_REQUEST, S_PENDING);
   type fetch_t is record
@@ -72,19 +72,16 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
     priv  : std_ulogic; -- fetch privilege level
     debug : std_ulogic; -- debug-mode access
   end record;
-  signal fetch : fetch_t;
+  signal fetch : fetch_t; -- FSM
 
   -- reset instruction fetch after branch --
   signal restart : std_ulogic;
 
   -- instruction prefetch buffer (FIFO) interface --
-  type ipb_data_t is array (0 to 1) of std_ulogic_vector(16 downto 0); -- bus_error & 16-bit instruction
-  type ipb_t is record
-    wdata, rdata : ipb_data_t;
-    we, re : std_ulogic_vector(1 downto 0);
-    free, avail : std_ulogic_vector(1 downto 0);
-  end record;
-  signal ipb : ipb_t;
+  type ipb_data_t is array (1 downto 0) of std_ulogic_vector(16 downto 0); -- bus_error & 16-bit instruction
+  signal ipb_wdata, ipb_rdata : ipb_data_t;
+  signal ipb_we,    ipb_re    : std_ulogic_vector(1 downto 0);
+  signal ipb_free,  ipb_avail : std_ulogic_vector(1 downto 0);
 
   -- instruction issue engine --
   signal align_q, align_set, align_clr : std_ulogic;
@@ -92,21 +89,16 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   signal cmd16 : std_ulogic_vector(15 downto 0);
   signal cmd32 : std_ulogic_vector(31 downto 0);
 
-  type issue_state_type is (S_ISSUE, S_ZCMP);
-  signal issue_state_reg, issue_state_nxt : issue_state_type;
-
-  signal frontend_bus_zcmp, frontend_bus_issue : if_bus_t;
-
-  signal zcmp_instr_reg, zcmp_instr_nxt : std_ulogic_vector(15 downto 0) := (others => '0');
-
-  signal zcmp_detect : std_ulogic;
-  signal zcmp_in_uop_seq : std_ulogic;
-
-  signal issue_valid_zcmp : std_ulogic_vector(1 downto 0);
-
-  -- decompressor signal for Zcmp
-  signal instr_is_zcmp : std_ulogic;
-  signal zcmp_op : zcmp_op_t;
+  -- Zcmp micro-op issue engine --
+  type issue_state_t is (S_ISSUE, S_ZCMP);
+  signal issue_state_reg, issue_state_nxt : issue_state_t;
+  signal frontend_bus_zcmp, frontend_bus_issue : if_bus_t; -- front-end bus sources
+  signal zcmp_instr_reg, zcmp_instr_nxt : std_ulogic_vector(15 downto 0); -- latched Zcmp instruction word
+  signal zcmp_detect : std_ulogic; -- zcmp instruction detected, micro-op sequence starts next cycle
+  signal zcmp_in_uop_seq : std_ulogic; -- micro-op sequence running
+  signal issue_valid_zcmp : std_ulogic_vector(1 downto 0); -- IPB acknowledge at end of micro-op sequence
+  signal instr_is_zcmp : std_ulogic; -- decompressor: instruction is a Zcmp instruction
+  signal zcmp_op : zcmp_op_t; -- decompressor: Zcmp operation type
 
 begin
 
@@ -116,7 +108,7 @@ begin
 
   -- Fetch Engine FSM -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  fetch_fsm : process (rstn_i, clk_i)
+  fetch_fsm: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       fetch.state <= S_RESTART;
@@ -138,7 +130,7 @@ begin
         when S_REQUEST => -- request next 32-bit-aligned instruction word
         -- ------------------------------------------------------------
           fetch.reset <= restart; -- buffer restart request
-          if (ipb.free = "11") then -- free IPB space?
+          if (ipb_free = "11") then -- free IPB space?
             fetch.state <= S_PENDING;
           elsif (restart = '1') then -- restart request due to branch
             fetch.state <= S_RESTART;
@@ -148,8 +140,7 @@ begin
         -- ------------------------------------------------------------
           fetch.reset <= restart; -- buffer restart request
           if (ibus_rsp_i.ack = '1') then -- wait for bus response
-            fetch.addr    <= std_ulogic_vector(unsigned(fetch.addr) + 4); -- next word
-            fetch.addr(1) <= '0'; -- (re-)align to 32-bit
+            fetch.addr <= std_ulogic_vector(unsigned(fetch.addr(31 downto 2)) + 1) & "00"; -- next (re-)aligned word
             if (restart = '1') then -- restart request due to branch
               fetch.state <= S_RESTART;
             else -- request next linear instruction word
@@ -157,13 +148,9 @@ begin
             end if;
           end if;
 
-        when others => -- undefined
-          -- ------------------------------------------------------------
-          fetch.state <= S_RESTART;
-
       end case;
     end if;
-  end process fetch_fsm;
+  end process;
 
   -- reset instruction fetch after branch --
   restart <= fetch.reset or ctrl_i.if_reset;
@@ -173,9 +160,9 @@ begin
   pmp_priv_o <= fetch.priv;
 
   -- instruction bus request --
-  ibus_req_o.meta  <= std_ulogic_vector(to_unsigned(HART_ID, 2)) & fetch.debug & fetch.priv & '1';
+  ibus_req_o.meta  <= hid_c & fetch.debug & fetch.priv & '1';
   ibus_req_o.addr  <= fetch.addr(31 downto 2) & "00"; -- word aligned
-  ibus_req_o.stb   <= '1' when (fetch.state = S_REQUEST) and (ipb.free = "11") else '0';
+  ibus_req_o.stb   <= '1' when (fetch.state = S_REQUEST) and (ipb_free = "11") else '0';
   ibus_req_o.data  <= (others => '0'); -- read-only
   ibus_req_o.ben   <= (others => '1'); -- always full-word access
   ibus_req_o.rw    <= '0'; -- read-only
@@ -185,35 +172,30 @@ begin
   ibus_req_o.lock  <= '0'; -- always unlocked access
 
   -- IPB instruction data and status --
-  ipb.wdata(0) <= (ibus_rsp_i.err or pmp_err_i) & ibus_rsp_i.data(15 downto 0);
-  ipb.wdata(1) <= (ibus_rsp_i.err or pmp_err_i) & ibus_rsp_i.data(31 downto 16);
+  ipb_wdata(0) <= (ibus_rsp_i.err or pmp_err_i) & ibus_rsp_i.data(15 downto 0);
+  ipb_wdata(1) <= (ibus_rsp_i.err or pmp_err_i) & ibus_rsp_i.data(31 downto 16);
 
   -- IPB write enable --
-  ipb.we(0) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') and ((fetch.addr(1) = '0') or (not RISCV_C)) else '0';
-  ipb.we(1) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') else '0';
+  ipb_we(0) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') and ((fetch.addr(1) = '0') or (not RISCV_C)) else '0';
+  ipb_we(1) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') else '0';
 
-  -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
+  -- Instruction Prefetch Buffer ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  prefetch_buffer :
+  prefetch_buffer:
   for i in 0 to 1 generate
-    ipb_inst : neorv32_cpu_frontend_ipb
-    generic map(
-      AWIDTH => 1, -- 1 address bit = 2 entries
-      DWIDTH => 17 -- error status & instruction half-word data
-    )
-    port map(
+    ipb_inst: neorv32_cpu_frontend_ipb
+    port map (
       -- global control --
-      clk_i   => clk_i,        -- clock, rising edge
-      rstn_i  => rstn_i,       -- async reset, low-active
-      clear_i => restart,      -- sync reset, high-active
+      clk_i   => clk_i,
+      clear_i => restart,
       -- write port --
-      wdata_i => ipb.wdata(i), -- write data
-      we_i    => ipb.we(i),    -- write enable
-      free_o  => ipb.free(i),  -- at least one entry is free when set
+      wdata_i => ipb_wdata(i),
+      we_i    => ipb_we(i),
+      free_o  => ipb_free(i),
       -- read port --
-      re_i    => ipb.re(i),    -- read enable
-      rdata_o => ipb.rdata(i), -- read data
-      avail_o => ipb.avail(i)  -- data available when set
+      re_i    => ipb_re(i),
+      rdata_o => ipb_rdata(i),
+      avail_o => ipb_avail(i)
     );
   end generate;
 
@@ -221,197 +203,191 @@ begin
   -- Instruction Issue (decompress 16-bit instruction and/or assemble a 32-bit instruction word)
   -- ******************************************************************************************************************
 
-  issue_enabled :
+  issue_enabled:
   if RISCV_C generate
 
     -- Compressed Instructions Decoder --------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_cpu_decompressor_inst : entity neorv32.neorv32_cpu_decompressor
-      generic map(
-        ZCB_EN => RISCV_ZCB,
-        ZCMP_EN => RISCV_ZCMP
-      )
-      port map(
-        instr_i => cmd16,
-        instr_o => cmd32,
-        instr_is_zcmp => instr_is_zcmp,
-        zcmp_op => zcmp_op
-      );
+    neorv32_cpu_decompressor_inst: entity neorv32.neorv32_cpu_decompressor
+    generic map (
+      ZCB_EN   => RISCV_ZCB,
+      ZCMOP_EN => RISCV_ZCMOP,
+      ZCMP_EN  => RISCV_ZCMP
+    )
+    port map (
+      instr_i       => cmd16,
+      instr_o       => cmd32,
+      instr_is_zcmp => instr_is_zcmp,
+      zcmp_op       => zcmp_op
+    );
 
     -- half-word select --
-    cmd16 <= ipb.rdata(0)(15 downto 0) when (align_q = '0') else ipb.rdata(1)(15 downto 0);
+    cmd16 <= ipb_rdata(0)(15 downto 0) when (align_q = '0') else ipb_rdata(1)(15 downto 0);
     frontend_bus_issue.i16 <= cmd16; -- original 16-bit instruction
 
     -- Issue Engine FSM -----------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    issue_fsm_sync : process (rstn_i, clk_i)
+    issue_fsm_sync: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        align_q <= '0'; -- start aligned after reset
-        zcmp_instr_reg <= (others => '0');
         issue_state_reg <= S_ISSUE;
+        zcmp_instr_reg  <= (others => '0');
       elsif rising_edge(clk_i) then
-        zcmp_instr_reg <= zcmp_instr_nxt;
         issue_state_reg <= issue_state_nxt;
+        zcmp_instr_reg  <= zcmp_instr_nxt;
         if (fetch.reset = '1') then
-          align_q <= ctrl_i.pc_nxt(1); -- branch to unaligned address?
-        elsif (ipb.re(0) = '1') or (ipb.re(1) = '1') or (issue_valid_zcmp /= "00") then
+          align_q <= ctrl_i.pc_nxt(1); -- restart at unaligned address?
+        elsif (ipb_re /= "00") then
           align_q <= (align_q and (not align_clr)) or align_set; -- alignment "RS flip-flop"
         end if;
       end if;
-    end process issue_fsm_sync;
+    end process;
 
-    issue_fsm_comb : process (align_q, fetch, ipb, cmd32, zcmp_instr_reg, instr_is_zcmp, issue_state_reg, zcmp_in_uop_seq)
+    issue_fsm_comb: process(align_q, fetch, ipb_avail, ipb_rdata, cmd32, zcmp_instr_reg, instr_is_zcmp, issue_state_reg, zcmp_in_uop_seq)
     begin
       -- defaults --
       align_set <= '0';
       align_clr <= '0';
-
       issue_state_nxt <= issue_state_reg;
-
-      issue_valid_zcmp <= "00";
       issue_valid <= "00";
+      issue_valid_zcmp <= "00";
+      zcmp_instr_nxt <= zcmp_instr_reg;
+      zcmp_detect <= '0';
       frontend_bus_issue.i32   <= (others => '0');
       frontend_bus_issue.compr <= '0';
       frontend_bus_issue.fault <= '0';
-
-      frontend_bus_issue.zcmp_in_uop_seq <= '0';
+      frontend_bus_issue.zcmp_in_uop_seq  <= '0';
       frontend_bus_issue.zcmp_atomic_tail <= '0';
 
-      zcmp_instr_nxt <= zcmp_instr_reg;
-      zcmp_detect <= '0';
-
       case issue_state_reg is
-        when S_ISSUE =>
+
+        when S_ISSUE => -- regular instruction issue
+        -- ------------------------------------------------------------
           -- start at LOW half-word --
           if (align_q = '0') then
-            if (ipb.rdata(0)(1 downto 0) /= "11") and (ipb.avail(0) = '1') then -- compressed, consume IPB(0) entry
-
-              if (instr_is_zcmp = '1') and (ipb.rdata(0)(16) = '0') then -- zcmp instruction without fetch fault (faulted words use the regular path to raise an access fault)
-                zcmp_instr_nxt <= ipb.rdata(0)(15 downto 0); -- save zcmp instruction
+            if (ipb_rdata(0)(1 downto 0) /= "11") and (ipb_avail(0) = '1') then -- compressed, consume IPB(0) entry
+              if (instr_is_zcmp = '1') and (ipb_rdata(0)(16) = '0') then -- Zcmp instruction without fetch fault (faulted words use the regular path to raise an access fault)
+                zcmp_instr_nxt  <= ipb_rdata(0)(15 downto 0); -- save Zcmp instruction
                 issue_state_nxt <= S_ZCMP;
-                zcmp_detect <= '1';
+                zcmp_detect     <= '1'; -- Zcmp micro-op sequence is about to start
               else
-                align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
-                issue_valid(0) <= ipb.avail(0);
-                issue_valid(1) <= '0';
-                frontend_bus_issue.fault <= ipb.rdata(0)(16);
+                align_set <= ipb_avail(0); -- start of next instruction word is NOT 32-bit-aligned
+                issue_valid <= '0' & ipb_avail(0);
+                frontend_bus_issue.fault <= ipb_rdata(0)(16);
                 frontend_bus_issue.i32   <= cmd32;
                 frontend_bus_issue.compr <= '1';
               end if;
-            elsif (ipb.avail = "11") then -- aligned uncompressed, consume both IPB entries
-              issue_valid(0) <= ipb.avail(1) and ipb.avail(0);
-              issue_valid(1) <= ipb.avail(1) and ipb.avail(0);
-              frontend_bus_issue.fault <= ipb.rdata(1)(16) or ipb.rdata(0)(16);
-              frontend_bus_issue.i32   <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
+            elsif (ipb_avail = "11") then -- aligned uncompressed, consume both IPB entries
+              issue_valid <= (others => (ipb_avail(1) and ipb_avail(0)));
+              frontend_bus_issue.fault <= ipb_rdata(1)(16) or ipb_rdata(0)(16);
+              frontend_bus_issue.i32   <= ipb_rdata(1)(15 downto 0) & ipb_rdata(0)(15 downto 0);
               frontend_bus_issue.compr <= '0';
             end if;
-            -- start at HIGH half-word --
-          elsif (ipb.avail(1) = '1') then
-            if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
-
-              if (instr_is_zcmp = '1') and (ipb.rdata(1)(16) = '0') then -- zcmp instruction without fetch fault (faulted words use the regular path to raise an access fault)
-                zcmp_instr_nxt <= ipb.rdata(1)(15 downto 0); -- save zcmp instruction
+          -- start at HIGH half-word --
+          elsif (ipb_avail(1) = '1') then
+            if (ipb_rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
+              if (instr_is_zcmp = '1') and (ipb_rdata(1)(16) = '0') then -- Zcmp instruction without fetch fault (faulted words use the regular path to raise an access fault)
+                zcmp_instr_nxt  <= ipb_rdata(1)(15 downto 0); -- save Zcmp instruction
                 issue_state_nxt <= S_ZCMP;
-                zcmp_detect <= '1'; -- signal that zcmp sequence is about to start
+                zcmp_detect     <= '1'; -- Zcmp micro-op sequence is about to start
               else
-                align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
-                issue_valid(0) <= '0';
-                issue_valid(1) <= ipb.avail(1);
-                frontend_bus_issue.fault <= ipb.rdata(1)(16);
+                align_clr <= ipb_avail(1); -- start of next instruction word IS 32-bit-aligned again
+                issue_valid <= ipb_avail(1) & '0';
+                frontend_bus_issue.fault <= ipb_rdata(1)(16);
                 frontend_bus_issue.i32   <= cmd32;
                 frontend_bus_issue.compr <= '1';
               end if;
-            elsif (ipb.avail = "11") then -- unaligned uncompressed, consume both IPB entries
-              issue_valid(0) <= ipb.avail(0) and ipb.avail(1);
-              issue_valid(1) <= ipb.avail(0) and ipb.avail(1);
-              frontend_bus_issue.fault <= ipb.rdata(0)(16) or ipb.rdata(1)(16);
-              frontend_bus_issue.i32   <= ipb.rdata(0)(15 downto 0) & ipb.rdata(1)(15 downto 0);
+            elsif (ipb_avail = "11") then -- unaligned uncompressed, consume both IPB entries
+              issue_valid <= (others => (ipb_avail(0) and ipb_avail(1)));
+              frontend_bus_issue.fault <= ipb_rdata(0)(16) or ipb_rdata(1)(16);
+              frontend_bus_issue.i32   <= ipb_rdata(0)(15 downto 0) & ipb_rdata(1)(15 downto 0);
               frontend_bus_issue.compr <= '0';
             end if;
           end if;
-        when S_ZCMP =>
-          -- during zcmp micro-op issuing this fsm is not active. uop_fsm takes over 
-          if zcmp_in_uop_seq = '0' then
+
+        when S_ZCMP => -- Zcmp micro-op sequence in progress; the sequencer drives the front-end bus
+        -- ------------------------------------------------------------
+          if (zcmp_in_uop_seq = '0') then -- sequence has completed
             issue_state_nxt <= S_ISSUE;
-            zcmp_instr_nxt <= (others => '0');
+            zcmp_instr_nxt  <= (others => '0');
             if (align_q = '0') then
-              align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
-              issue_valid_zcmp <= "01";
+              align_set <= ipb_avail(0); -- start of next instruction word is NOT 32-bit-aligned
+              issue_valid_zcmp <= "01"; -- consume the Zcmp instruction's IPB entry
             else
-              align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
-              issue_valid_zcmp <= "10";
+              align_clr <= ipb_avail(1); -- start of next instruction word IS 32-bit-aligned again
+              issue_valid_zcmp <= "10"; -- consume the Zcmp instruction's IPB entry
             end if;
           end if;
-
-          if (fetch.reset = '1') then -- on branch ipb's must not be acknowledged as they contain old instructions 
+          if (fetch.reset = '1') then -- on branch the IPBs must not be acknowledged as they contain outdated instructions
             issue_valid_zcmp <= "00";
-            issue_state_nxt <= S_ISSUE;
+            issue_state_nxt  <= S_ISSUE;
           end if;
-      end case;
-    end process issue_fsm_comb;
 
-    -- original 16-bit instruction word --
+      end case;
+    end process;
 
     -- issue valid instruction word to execution stage --
     frontend_bus_issue.valid <= issue_valid(1) or issue_valid(0);
+    frontend_bus_issue.zcmp_start <= zcmp_detect; -- Zcmp micro-op sequence is about to start
 
-    frontend_bus_issue.zcmp_start <= zcmp_detect; -- zcmp sequence is about to start
- 
-    -- small bus switch, if zcmp uop sequence is being issued, a separate bus is wired to the control unit
-    frontend_o <= frontend_bus_zcmp when zcmp_in_uop_seq = '1' else
-                  frontend_bus_issue;
+    -- bus switch: while a Zcmp micro-op sequence is being issued the sequencer drives the front-end bus --
+    frontend_o <= frontend_bus_zcmp when (zcmp_in_uop_seq = '1') else frontend_bus_issue;
 
     -- IPB read access --
-    ipb.re(0) <= (issue_valid(0) and ctrl_i.if_ready) or (issue_valid_zcmp(0));
-    ipb.re(1) <= (issue_valid(1) and ctrl_i.if_ready) or (issue_valid_zcmp(1));
+    ipb_re(0) <= (issue_valid(0) and ctrl_i.if_ready) or issue_valid_zcmp(0);
+    ipb_re(1) <= (issue_valid(1) and ctrl_i.if_ready) or issue_valid_zcmp(1);
 
-  zcmp_enabled :
-  if RISCV_ZCMP generate
-
-    neorv32_cpu_zcmp_inst : entity neorv32.neorv32_cpu_zcmp
-      port map(
-        clk_i => clk_i,
-        rstn_i => rstn_i,
-        ctrl_i => ctrl_i,
-        zcmp_detect => zcmp_detect,
-        fetch_restart => fetch.reset,
-        ipb_avail => ipb.avail,
-        zcmp_instr_reg => zcmp_instr_reg,
-        zcmp_op => zcmp_op,
+    -- Zcmp Micro-Op Sequencer ----------------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    zcmp_enabled:
+    if RISCV_ZCMP generate
+      neorv32_cpu_zcmp_inst: entity neorv32.neorv32_cpu_zcmp
+      port map (
+        clk_i             => clk_i,
+        rstn_i            => rstn_i,
+        ctrl_i            => ctrl_i,
+        zcmp_detect       => zcmp_detect,
+        fetch_restart     => fetch.reset,
+        ipb_avail         => ipb_avail,
+        zcmp_instr_reg    => zcmp_instr_reg,
+        zcmp_op           => zcmp_op,
         frontend_bus_zcmp => frontend_bus_zcmp,
-        zcmp_in_uop_seq => zcmp_in_uop_seq
+        zcmp_in_uop_seq   => zcmp_in_uop_seq
       );
-  end generate;
+    end generate;
 
-  zcmp_disabled :
-  if not RISCV_ZCMP generate
-    zcmp_in_uop_seq <= '0';
-  end generate;
+    zcmp_disabled:
+    if not RISCV_ZCMP generate
+      zcmp_in_uop_seq <= '0';
+    end generate;
 
   end generate; -- /issue_enabled
 
   -- issue engine disabled --
-  issue_disabled :
+  issue_disabled:
   if not RISCV_C generate
-    align_q <= '0';
-    align_set <= '0';
-    align_clr <= '0';
-    issue_valid <= (others => '0');
-    cmd16 <= (others => '0');
-    cmd32 <= (others => '0');
-    ipb.re <= (others => (ctrl_i.if_ready and ipb.avail(0)));
-    frontend_o.valid <= ipb.avail(0);
-    frontend_o.i32   <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
+    align_q          <= '0';
+    align_set        <= '0';
+    align_clr        <= '0';
+    issue_valid      <= (others => '0');
+    cmd16            <= (others => '0');
+    cmd32            <= (others => '0');
+    ipb_re           <= (others => (ctrl_i.if_ready and ipb_avail(0)));
+    frontend_o.valid <= ipb_avail(0);
+    frontend_o.i32   <= ipb_rdata(1)(15 downto 0) & ipb_rdata(0)(15 downto 0);
     frontend_o.i16   <= (others => '0');
     frontend_o.compr <= '0';
-    frontend_o.fault <= ipb.rdata(0)(16);
+    frontend_o.fault <= ipb_rdata(0)(16);
+    frontend_o.zcmp_in_uop_seq  <= '0';
+    frontend_o.zcmp_start       <= '0';
+    frontend_o.zcmp_atomic_tail <= '0';
   end generate;
 
-end neorv32_cpu_frontend_rtl;
+end architecture;
+
 
 -- ================================================================================ --
--- NEORV32 CPU - Instruction Prefetch Buffer                                        --
+-- NEORV32 CPU - Instruction Prefetch Buffer (FIFO)                                 --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -428,79 +404,72 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_frontend_ipb is
-  generic (
-    AWIDTH : natural; -- address width
-    DWIDTH : natural -- data width
-  );
   port (
     -- global control --
-    clk_i : in std_ulogic; -- clock, rising edge
-    rstn_i : in std_ulogic; -- async reset, low-active
-    clear_i : in std_ulogic; -- sync reset, high-active
+    clk_i   : in  std_ulogic; -- clock, rising edge
+    clear_i : in  std_ulogic; -- sync reset, high-active
     -- write port --
-    wdata_i : in std_ulogic_vector(DWIDTH - 1 downto 0); -- write data
-    we_i : in std_ulogic; -- write enable
-    free_o : out std_ulogic; -- at least one entry is free when set
+    wdata_i : in  std_ulogic_vector(16 downto 0); -- write data
+    we_i    : in  std_ulogic; -- write enable
+    free_o  : out std_ulogic; -- at least one entry is free when set
     -- read port --
-    re_i : in std_ulogic; -- read enable
-    rdata_o : out std_ulogic_vector(DWIDTH - 1 downto 0); -- read data
-    avail_o : out std_ulogic -- data available when set
+    re_i    : in  std_ulogic; -- read enable
+    rdata_o : out std_ulogic_vector(16 downto 0); -- read data
+    avail_o : out std_ulogic  -- data available when set
   );
-end neorv32_cpu_frontend_ipb;
+end entity;
 
 architecture neorv32_cpu_frontend_ipb_rtl of neorv32_cpu_frontend_ipb is
 
+  -- IPB depth --
+  constant awidth_c : natural := 1; -- 1 address bit = 2 entries
+
   -- pointers and status --
-  signal w_pnt, r_pnt : std_ulogic_vector(AWIDTH downto 0);
+  signal w_pnt, r_pnt : std_ulogic_vector(awidth_c downto 0);
   signal match : std_ulogic;
 
   -- memory core --
-  type ipb_t is array (0 to (2 ** AWIDTH) - 1) of std_ulogic_vector(DWIDTH - 1 downto 0);
+  type ipb_t is array (0 to (2**awidth_c)-1) of std_ulogic_vector(16 downto 0);
   signal ipb : ipb_t;
 
 begin
 
   -- Pointers -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  pointer_reg : process (rstn_i, clk_i)
+  pointer_reg: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      w_pnt <= (others => '0');
-      r_pnt <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (clear_i = '1') then
         w_pnt <= (others => '0');
-      elsif (we_i = '1') then
-        w_pnt <= std_ulogic_vector(unsigned(w_pnt) + 1);
-      end if;
-      if (clear_i = '1') then
         r_pnt <= (others => '0');
-      elsif (re_i = '1') then
-        r_pnt <= std_ulogic_vector(unsigned(r_pnt) + 1);
+      else
+        if (we_i = '1') then
+          w_pnt <= std_ulogic_vector(unsigned(w_pnt) + 1);
+        end if;
+        if (re_i = '1') then
+          r_pnt <= std_ulogic_vector(unsigned(r_pnt) + 1);
+        end if;
       end if;
     end if;
-  end process pointer_reg;
+  end process;
 
   -- status --
-  match <= '1' when (r_pnt(AWIDTH - 1 downto 0) = w_pnt(AWIDTH - 1 downto 0)) else
-           '0';
-  free_o <= '0' when (r_pnt(AWIDTH) /= w_pnt(AWIDTH)) and (match = '1') else
-            '1';
-  avail_o <= '0' when (r_pnt(AWIDTH) = w_pnt(AWIDTH)) and (match = '1') else
-             '1';
+  match   <= '1' when (r_pnt(awidth_c-1 downto 0) = w_pnt(awidth_c-1 downto 0)) else '0';
+  free_o  <= '0' when (r_pnt(awidth_c) /= w_pnt(awidth_c)) and (match = '1') else '1';
+  avail_o <= '0' when (r_pnt(awidth_c)  = w_pnt(awidth_c)) and (match = '1') else '1';
 
   -- Memory Core ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_write : process (clk_i)
+  mem_write: process(clk_i)
   begin
     if rising_edge(clk_i) then
       if (we_i = '1') then
-        ipb(to_integer(unsigned(w_pnt(AWIDTH - 1 downto 0)))) <= wdata_i;
+        ipb(to_integer(unsigned(w_pnt(awidth_c-1 downto 0)))) <= wdata_i;
       end if;
     end if;
-  end process mem_write;
+  end process;
 
-  -- asynchronous(!) read --
-  rdata_o <= ipb(to_integer(unsigned(r_pnt(AWIDTH - 1 downto 0))));
+  -- asynchronous read --
+  rdata_o <= ipb(to_integer(unsigned(r_pnt(awidth_c-1 downto 0))));
 
-end neorv32_cpu_frontend_ipb_rtl;
+end architecture;

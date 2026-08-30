@@ -10,7 +10,7 @@
 The NEORV32 Processor is a **customizable microcontroller-like system on chip (SoC)** built around the NEORV32
 [RISC-V](https://riscv.org/) CPU that is written in **platform-independent VHDL**. The processor is intended as auxiliary
 controller in larger SoC designs or as tiny and customized microcontroller. The project is intended to work _out of the box_
-and targets FPGA / RISC-V beginners as well as experienced users.
+and targets digital design / RISC-V beginners as well as experienced users.
 
 ![neorv32 Overview](docs/figures/neorv32_processor.png)
 
@@ -28,6 +28,7 @@ and targets FPGA / RISC-V beginners as well as experienced users.
 
 * :recycle: Looking for an **all-Verilog** version? Have a look at the [auto-conversion setup](rtl/verilog).
 * :mag: [Continuous integration](#project-status) to check for regressions.
+* :heavy_check_mark: Passes the official RISC-V [Architectural Certification Tests](https://github.com/stnolting/neorv32-riscv-act).
 * :open_file_folder: [Exemplary setups](https://github.com/stnolting/neorv32-setups) and
 [community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#Community-Projects)
 targeting various FPGA boards and toolchains to get started.
@@ -58,7 +59,7 @@ targeting various FPGA boards and toolchains to get started.
 | [RISC-V compliance](https://github.com/stnolting/neorv32-riscv-act) | [![neorv32-riscv-act](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32-riscv-act/riscv-act.yml?branch=main&longCache=true&style=flat-square&label=RISC-V%20ACT&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-riscv-act/actions/workflows/riscv-act.yml) |
 
 The processor passes the official [RISC-V Architectural Certification Tests (ACT)](https://github.com/stnolting/neorv32-riscv-act).
-It can successfully run _any_ C program including CoreMark and FreeRTOS and can be synthesized for _any_ target
+It can successfully run any software including CoreMark and FreeRTOS and can be synthesized for any target
 technology - [tested](https://github.com/stnolting/neorv32-setups) on AMD, Intel, Lattice, Microchip, Gowin and
 Cologne Chip FPGAs. The processor has also been taped out several times as an ASIC.
 
@@ -99,6 +100,7 @@ setup according to your needs. Note that all of the following SoC modules are en
 [`Zbkx`](https://stnolting.github.io/neorv32/#_zbkx_isa_extension)
 [`Zbs`](https://stnolting.github.io/neorv32/#_zbs_isa_extension)
 [`Zcb`](https://stnolting.github.io/neorv32/#_zcb_isa_extension)
+[`Zcmop`](https://stnolting.github.io/neorv32/#_zcmop_isa_extension)
 [`Zfinx`](https://stnolting.github.io/neorv32/#_zfinx_isa_extension)
 [`Zibi`](https://stnolting.github.io/neorv32/#_zibi_isa_extension)
 [`Zicntr`](https://stnolting.github.io/neorv32/#_zicntr_isa_extension)
@@ -117,9 +119,9 @@ setup according to your needs. Note that all of the following SoC modules are en
 [`Zksed`](https://stnolting.github.io/neorv32/#_zksed_isa_extension)
 [`Zksh`](https://stnolting.github.io/neorv32/#_zksh_isa_extension)
 [`Xcfu`](https://stnolting.github.io/neorv32/#_xcfu_isa_extension)
-* compatible to subsets of the RISC-V "Unprivileged ISA Specification" and "Privileged Architecture Specification"
-* `machine` and optional `user` and privilege modes
-* implements **all** standard RISC-V exceptions and interrupts + 16 fast interrupt request channels as NEORV32-specific extension
+* compliant with subsets of the RISC-V "Unprivileged ISA Specification" and "Privileged Architecture Specification"
+* `machine` and optional `user` privilege modes
+* implements all RISC-V machine-level exceptions and interrupts + 16 fast interrupt request channels as NEORV32-specific extension
 * custom functions unit ([CFU](https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu) as custom `Xcfu` ISA extension)
 for **custom RISC-V instructions**
 
@@ -129,6 +131,8 @@ for **custom RISC-V instructions**
 [IMEM](https://stnolting.github.io/neorv32/#_instruction_memory_imem)) and
 caches ([iCACHE](https://stnolting.github.io/neorv32/#_instruction_cache_icache) &
 [dCACHE](https://stnolting.github.io/neorv32/#_data_cache_dcache))
+* serial memory controller ([SMC](https://stnolting.github.io/neorv32/#_serial_memory_controller_smc)) for transparent access to
+up to 2x PSRAM/flash chips (supporting XIP)
 * pre-installed bootloader ([BOOTLDROM](https://stnolting.github.io/neorv32/#_bootloader_rom_bootrom)) with serial user interface;
 allows booting application code via UART, I²C or SPI flash and from SD card
 
@@ -199,7 +203,7 @@ This overview provides some *quick links* to the most important sections of the
 
 * [Key Features](https://stnolting.github.io/neorv32/#_project_key_features) - what makes it special
 * [Structure](https://stnolting.github.io/neorv32/#_project_folder_structure) - folders, RTL files and compile order
-* [File-List Files](https://stnolting.github.io/neorv32/#_file_list_files) - to simplify HDL setup
+* [HDL File-List File](https://stnolting.github.io/neorv32/#_file_list_file) - to simplify HDL setup
 * [Metrics](https://stnolting.github.io/neorv32/#_performance) - FPGA implementation and performance evaluation
 
 ### :desktop_computer: [NEORV32 Processor](https://stnolting.github.io/neorv32/#_neorv32_processor_soc) - The SoC
@@ -232,9 +236,8 @@ This overview provides some *quick links* to the most important sections of the
 ### :rocket: [User Guide](https://stnolting.github.io/neorv32/ug/) - Getting Started
 
 * [Toolchain Setup](https://stnolting.github.io/neorv32/ug/#_software_toolchain_setup) - install and set up the RISC-V GCC toolchain
-* [General Hardware Setup](https://stnolting.github.io/neorv32/ug/#_general_hardware_setup) - set up a new NEORV32 FPGA project
+* [General Hardware Setup](https://stnolting.github.io/neorv32/ug/#_general_hardware_setup) - set up a new NEORV32 project
 * [Adding Custom Hardware Modules](https://stnolting.github.io/neorv32/ug/#_adding_custom_hardware_modules) - add _your_ custom hardware
-* [Convert to Verilog](https://stnolting.github.io/neorv32/ug/#_neorv32_in_verilog) - turn the NEORV32 into an all-Verilog design
 * [Package as Vivado IP block](https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block) - turn the entire processor into an interactive AMD Vivado IP block
 * [Using Eclipse](https://stnolting.github.io/neorv32/ug/#_eclipse_ide) - use the Eclipse IDE for developing and debugging
 

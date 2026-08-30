@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -41,24 +41,55 @@ entity xbus_gateway is
     dev_6_req_o : out xbus_req_t; dev_6_rsp_i : in xbus_rsp_t;
     dev_7_req_o : out xbus_req_t; dev_7_rsp_i : in xbus_rsp_t
   );
-end xbus_gateway;
+end entity;
 
 architecture xbus_gateway_rtl of xbus_gateway is
 
   -- module configuration --
   constant num_devs_c : natural := 8; -- number of device ports
 
-  -- list of device base address and address size --
-  type dev_en_list_t   is array (0 to num_devs_c-1) of boolean;
-  type dev_base_list_t is array (0 to num_devs_c-1) of std_ulogic_vector(31 downto 0);
-  type dev_size_list_t is array (0 to num_devs_c-1) of natural;
-  constant dev_en_list_c   : dev_en_list_t   := (DEV_0_EN, DEV_1_EN, DEV_2_EN, DEV_3_EN, DEV_4_EN, DEV_5_EN, DEV_6_EN, DEV_7_EN);
-  constant dev_base_list_c : dev_base_list_t := (DEV_0_BASE, DEV_1_BASE, DEV_2_BASE, DEV_3_BASE, DEV_4_BASE, DEV_5_BASE, DEV_6_BASE, DEV_7_BASE);
-  constant dev_size_list_c : dev_size_list_t := (DEV_0_SIZE, DEV_1_SIZE, DEV_2_SIZE, DEV_3_SIZE, DEV_4_SIZE, DEV_5_SIZE, DEV_6_SIZE, DEV_7_SIZE);
+  -- list of enabled device ports --
+  type dev_en_list_t is array (num_devs_c-1 downto 0) of boolean;
+  constant dev_en_list_c : dev_en_list_t := (
+    0 => DEV_0_EN,
+    1 => DEV_1_EN,
+    2 => DEV_2_EN,
+    3 => DEV_3_EN,
+    4 => DEV_4_EN,
+    5 => DEV_5_EN,
+    6 => DEV_6_EN,
+    7 => DEV_7_EN
+  );
+
+  -- list of device base addresses --
+  type dev_base_list_t is array (num_devs_c-1 downto 0) of std_ulogic_vector(31 downto 0);
+  constant dev_base_list_c : dev_base_list_t := (
+    0 => DEV_0_BASE,
+    1 => DEV_1_BASE,
+    2 => DEV_2_BASE,
+    3 => DEV_3_BASE,
+    4 => DEV_4_BASE,
+    5 => DEV_5_BASE,
+    6 => DEV_6_BASE,
+    7 => DEV_7_BASE
+  );
+
+  -- list of device address sizes --
+  type dev_size_list_t is array (num_devs_c-1 downto 0) of natural;
+  constant dev_size_list_c : dev_size_list_t := (
+    0 => DEV_0_SIZE,
+    1 => DEV_1_SIZE,
+    2 => DEV_2_SIZE,
+    3 => DEV_3_SIZE,
+    4 => DEV_4_SIZE,
+    5 => DEV_5_SIZE,
+    6 => DEV_6_SIZE,
+    7 => DEV_7_SIZE
+  );
 
   -- device ports combined as arrays --
-  type dev_req_t is array (0 to num_devs_c-1) of xbus_req_t;
-  type dev_rsp_t is array (0 to num_devs_c-1) of xbus_rsp_t;
+  type dev_req_t is array (num_devs_c-1 downto 0) of xbus_req_t;
+  type dev_rsp_t is array (num_devs_c-1 downto 0) of xbus_rsp_t;
   signal dev_req : dev_req_t;
   signal dev_rsp : dev_rsp_t;
 
@@ -96,7 +127,7 @@ begin
         dev_req(i).cyc <= host_req_i.cyc and acc_en(i);
         dev_req(i).stb <= host_req_i.stb and acc_en(i);
       end if;
-    end process bus_request;
+    end process;
   end generate;
 
   -- response --
@@ -114,6 +145,6 @@ begin
       end if;
     end loop;
     host_rsp_o <= tmp_v;
-  end process bus_response;
+  end process;
 
-end xbus_gateway_rtl;
+end architecture;

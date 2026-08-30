@@ -19,7 +19,7 @@ Several example/demo programs for testing and for getting started.
 
 ### > [`image_gen`](image_gen)
 
-Helper program to generate NEORV32 executables (for upload via bootloader) and VHDL
+Helper program to generate NEORV32 executables (e.g. for upload via bootloader) and
 memory initialization files. This program is automatically compiled when
 executing one of the application compilation makefile targets.
 

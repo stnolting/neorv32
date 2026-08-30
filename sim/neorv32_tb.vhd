@@ -21,6 +21,8 @@ use work.jtag_dmi_pkg.all;
 entity neorv32_tb is
   generic (
     JTAG_TESTS_EN     : boolean                        := true;        -- enable JTAG/DMI tests in testbench
+    SMC_PSRAM_EN      : boolean                        := true;        -- enable 2xPSRAM models for SMC
+    PSRAM_SIZE        : natural                        := 8*1024;      -- size of each PSRAM in bytes
     -- processor --
     CLOCK_FREQUENCY   : natural                        := 100_000_000; -- clock frequency of clk_i in Hz
     DUAL_CORE_EN      : boolean                        := false;        -- enable dual-core homogeneous SMP
@@ -32,8 +34,6 @@ entity neorv32_tb is
     RISCV_ISA_U       : boolean                        := true;        -- user mode extension
     RISCV_ISA_Zaamo   : boolean                        := true;        -- atomic read-modify-write operations extension
     RISCV_ISA_Zalrsc  : boolean                        := true;        -- atomic reservation-set operations extension
-    RISCV_ISA_Zcb     : boolean                        := true;        -- additional code size reduction instructions
-    RISCV_ISA_Zcmp    : boolean                        := false;        -- implement additional code size reduction instructions
     RISCV_ISA_Zba     : boolean                        := true;        -- shifted-add bit-manipulation extension
     RISCV_ISA_Zbb     : boolean                        := true;        -- basic bit-manipulation extension
     RISCV_ISA_Zbc     : boolean                        := true;        -- carry-less multiplication instructions
@@ -41,6 +41,9 @@ entity neorv32_tb is
     RISCV_ISA_Zbkc    : boolean                        := true;        -- carry-less multiplication instructions
     RISCV_ISA_Zbkx    : boolean                        := true;        -- cryptography crossbar permutation extension
     RISCV_ISA_Zbs     : boolean                        := true;        -- single-bit bit-manipulation extension
+    RISCV_ISA_Zcb     : boolean                        := true;        -- additional code size reduction instructions
+    RISCV_ISA_Zcmop   : boolean                        := true;        -- compressed may-be-operations
+    RISCV_ISA_Zcmp    : boolean                        := true;        -- additional code size reduction instructions
     RISCV_ISA_Zfinx   : boolean                        := true;        -- 32-bit floating-point extension
     RISCV_ISA_Zibi    : boolean                        := true;        -- branch with immediate
     RISCV_ISA_Zicntr  : boolean                        := true;        -- base counters
@@ -56,6 +59,7 @@ entity neorv32_tb is
     RISCV_ISA_Xcfu    : boolean                        := true;        -- custom (instr.) functions unit
     CPU_CONSTT_BR_EN  : boolean                        := false;       -- constant-time branches
     CPU_FAST_MUL_EN   : boolean                        := true;        -- use DSPs for M extension's multiplier
+    CPU_FAST_MUL_REGS : natural range 1 to 3           := 1;           -- number of fast multiplier register stages
     CPU_FAST_SHIFT_EN : boolean                        := true;        -- use barrel shifter for shift operations
     CPU_RF_ARCH_SEL   : natural range 0 to 3           := 0;           -- register file implementation style select
     IMEM_EN           : boolean                        := true;        -- implement processor-internal instruction memory
@@ -84,7 +88,7 @@ entity neorv32_tb is
     EXT_MEM_B_LATE    : natural range 1 to 4096        := 40;          -- access latency cycles
     EXT_MEM_B_FILE    : string                         := ""           -- memory initialization file (plain HEX), no initialization if empty
   );
-end neorv32_tb;
+end entity;
 
 architecture neorv32_tb_rtl of neorv32_tb is
 
@@ -106,6 +110,9 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal sdi_di, sdi_do, sdi_clk, sdi_csn : std_ulogic;
   signal msi, mei, mti : std_ulogic;
   signal jtag_tck, jtag_tms, jtag_tdi, jtag_tdo : std_ulogic;
+  signal smc_csn : std_ulogic_vector(1 downto 0);
+  signal smc_clk, smc_do, smc_di: std_ulogic;
+  signal psram_data : std_logic_vector(3 downto 0);
 
   -- slink --
   type slink_t is record
@@ -179,7 +186,7 @@ begin
 
       -- write data word to testbench "external IO memory" --
       wait for 10*t_cpu_c;
-      report "[TB:JTAG] Writing to memory via program buffer...";
+      report "[TB:JTAG] Writing to memory (0xF0000000) via program buffer...";
       dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0100000", x"00942023"); -- progbuf0 = sw x9, 0(x8)
       dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0100001", x"00000013"); -- progbuf1 = nop
       dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0000100", x"F0000000"); -- data0 = memory address
@@ -242,7 +249,7 @@ begin
     end if;
 
     wait;
-  end process jtag_test;
+  end process;
 
 
   -- The Core of the Problem ----------------------------------------------------------------
@@ -261,22 +268,23 @@ begin
     OCD_NUM_HW_TRIGGERS => 3,
     OCD_AUTHENTICATION  => true,
     -- RISC-V CPU Extensions --
-    RISCV_ISA_C => RISCV_ISA_C,
-    RISCV_ISA_E => RISCV_ISA_E,
-    RISCV_ISA_M => RISCV_ISA_M,
-    RISCV_ISA_U => RISCV_ISA_U,
-    RISCV_ISA_Zaamo => RISCV_ISA_Zaamo,
-    RISCV_ISA_Zalrsc => RISCV_ISA_Zalrsc,
-    RISCV_ISA_Zcb => RISCV_ISA_Zcb,
-    RISCV_ISA_Zcmp => RISCV_ISA_Zcmp,
-    RISCV_ISA_Zba => RISCV_ISA_Zba,
-    RISCV_ISA_Zbb => RISCV_ISA_Zbb,
+    RISCV_ISA_C         => RISCV_ISA_C,
+    RISCV_ISA_E         => RISCV_ISA_E,
+    RISCV_ISA_M         => RISCV_ISA_M,
+    RISCV_ISA_U         => RISCV_ISA_U,
+    RISCV_ISA_Zaamo     => RISCV_ISA_Zaamo,
+    RISCV_ISA_Zalrsc    => RISCV_ISA_Zalrsc,
+    RISCV_ISA_Zba       => RISCV_ISA_Zba,
+    RISCV_ISA_Zbb       => RISCV_ISA_Zbb,
     RISCV_ISA_Zbc       => RISCV_ISA_Zbc,
-    RISCV_ISA_Zbkb => RISCV_ISA_Zbkb,
-    RISCV_ISA_Zbkc => RISCV_ISA_Zbkc,
-    RISCV_ISA_Zbkx => RISCV_ISA_Zbkx,
-    RISCV_ISA_Zbs => RISCV_ISA_Zbs,
-    RISCV_ISA_Zfinx => RISCV_ISA_Zfinx,
+    RISCV_ISA_Zbkb      => RISCV_ISA_Zbkb,
+    RISCV_ISA_Zbkc      => RISCV_ISA_Zbkc,
+    RISCV_ISA_Zbkx      => RISCV_ISA_Zbkx,
+    RISCV_ISA_Zbs       => RISCV_ISA_Zbs,
+    RISCV_ISA_Zcb       => RISCV_ISA_Zcb,
+    RISCV_ISA_Zcmop     => RISCV_ISA_Zcmop,
+    RISCV_ISA_Zcmp      => RISCV_ISA_Zcmp,
+    RISCV_ISA_Zfinx     => RISCV_ISA_Zfinx,
     RISCV_ISA_Zibi      => RISCV_ISA_Zibi,
     RISCV_ISA_Zicntr    => RISCV_ISA_Zicntr,
     RISCV_ISA_Zicond    => RISCV_ISA_Zicond,
@@ -293,6 +301,7 @@ begin
     -- Extension Options --
     CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
     CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
+    CPU_FAST_MUL_REGS   => CPU_FAST_MUL_REGS,
     CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
     CPU_RF_ARCH_SEL     => CPU_RF_ARCH_SEL,
     -- Physical Memory Protection (PMP) --
@@ -321,6 +330,9 @@ begin
     CACHE_BLOCK_SIZE    => CACHE_BLOCK_SIZE,
     CACHE_BURSTS_EN     => CACHE_BURSTS_EN,
     CACHE_UC_BASE       => x"F0000000",
+    -- Serial Memory Controller (SMC) --
+    SMC_EN              => true,
+    SMC_BASE            => x"E0000000",
     -- External Bus Interface (XBUS) --
     XBUS_EN             => true,
     XBUS_TIMEOUT        => 2048,
@@ -394,6 +406,12 @@ begin
     jtag_tdi_i     => jtag_tdi,
     jtag_tdo_o     => jtag_tdo,
     jtag_tms_i     => jtag_tms,
+    -- Serial memory controller interface --
+    smc_ioen_o     => open,
+    smc_sck_o      => smc_clk,
+    smc_csn_o      => smc_csn,
+    smc_sdo_o      => smc_do,
+    smc_sdi_i      => smc_di,
     -- External bus interface --
     xbus_adr_o => xbus_core_req.addr,
     xbus_dat_o => xbus_core_req.data,
@@ -507,6 +525,39 @@ begin
   -- 1-Wire bus termination with weak pull-up --
   onewire <= 'H';
 
+
+  -- Serial Memory Controller - Dual-PSRAM --------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  psram_data(0) <= std_logic(smc_do);
+  smc_di        <= std_ulogic(psram_data(1));
+
+  -- weak pull-downs --
+  psram_data <= (others => 'L');
+
+  -- PSRAM models --
+  psram_gen:
+  if SMC_PSRAM_EN generate
+    psram_model_0_inst: entity neorv32.psram_model
+    generic map (
+      MEM_BYTES => PSRAM_SIZE
+    )
+    port map (
+      sck  => std_logic(smc_clk),
+      cs_n => std_logic(smc_csn(0)),
+      sio  => psram_data
+    );
+    psram_model_1_inst: entity neorv32.psram_model
+    generic map (
+      MEM_BYTES => PSRAM_SIZE
+    )
+    port map (
+      sck  => std_logic(smc_clk),
+      cs_n => std_logic(smc_csn(1)),
+      sio  => psram_data
+    );
+  end generate;
+
+
   -- SPI/SDI Loop-Back ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   sdi_clk <= spi_clk;
@@ -577,8 +628,8 @@ begin
     DEV_3_EN => true,         DEV_3_SIZE => 4,                DEV_3_BASE => x"FF000000",
     DEV_4_EN => true,         DEV_4_SIZE => 16,               DEV_4_BASE => x"FF100000",
     DEV_5_EN => true,         DEV_5_SIZE => 16,               DEV_5_BASE => x"FF200000",
-    DEV_6_EN => true,         DEV_6_SIZE => CACHE_BLOCK_SIZE, DEV_6_BASE => x"E0000000",
-    DEV_7_EN => true,         DEV_7_SIZE => CACHE_BLOCK_SIZE, DEV_7_BASE => x"E1000000"
+    DEV_6_EN => true,         DEV_6_SIZE => CACHE_BLOCK_SIZE, DEV_6_BASE => x"D0000000",
+    DEV_7_EN => true,         DEV_7_SIZE => CACHE_BLOCK_SIZE, DEV_7_BASE => x"D1000000"
   )
   port map (
     -- host port --
@@ -666,7 +717,7 @@ begin
         xbus_ram_rsp.err  <= '0';
       end if;
     end if;
-  end process xbus_mem_dummy;
+  end process;
 
 
   -- XBUS: External Memory-Mapped IO (uncached) ---------------------------------------------
@@ -707,7 +758,7 @@ begin
         mei <= xbus_trig_req.data(11); -- machine external interrupt
       end if;
     end if;
-  end process xbus_irq_trigger;
+  end process;
 
 
   -- XBUS: Bus-Error-Test-Memory ------------------------------------------------------------
@@ -725,4 +776,4 @@ begin
     mem_rsp_o => xbus_fmem_data_rsp
   );
 
-end neorv32_tb_rtl;
+end architecture;

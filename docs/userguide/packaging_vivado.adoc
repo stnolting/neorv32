@@ -82,8 +82,8 @@ Finally, Vivado will prompt to upgrade the NEORV32 IP.
 [IMPORTANT]
 If NEORV32 configurations do not take effect, try using the out-of-context synthesis option.
 
-. Incremental Compilation of Simulation Sources (ISIM)
+.Incremental Compilation of Simulation Sources (ISIM)
 [IMPORTANT]
-When using AMD Vivado (ISIM for simulation) make sure to **TURN OFF** "incremental compilation" (_Project Setting_
+When using AMD Vivado (XSIM for simulation) make sure to **TURN OFF** "incremental compilation" (_Project Setting_
 -> _Simulation_ -> _Advanced_ -> _Enable incremental compilation). This will slow down simulation relaunch but will
 ensure that all application images (`*_image.vhd`) are reanalyzed when recompiling the NEORV32 application or bootloader.

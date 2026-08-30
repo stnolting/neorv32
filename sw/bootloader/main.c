@@ -43,7 +43,7 @@ int main(void) {
   // wait for timeout or user abort
   if (neorv32_clint_available()) {
     uart_puts(" in "xstr(AUTO_BOOT_TIMEOUT)"s. Press any key to abort.\n");
-    uint64_t timeout_time = neorv32_clint_time_get() + (uint64_t)(AUTO_BOOT_TIMEOUT * NEORV32_SYSINFO->CLK);
+    uint64_t timeout_time = neorv32_clint_time_get() + (AUTO_BOOT_TIMEOUT * (uint64_t)(NEORV32_SYSINFO->CLK));
     while (1) {
 
       // wait for user input via UART0
@@ -87,6 +87,13 @@ int main(void) {
   if (system_app_load(sdcard_setup, sdcard_stream_get) == 0) {
     system_app_boot();
   }
+#endif
+
+  // directly execute from memory address
+#if (DIRECT_BOOT_EN == 1)
+  uart_putc('\n');
+  uart_puts("Direct boot...\n");
+  system_direct_boot((uint32_t)DIRECT_BOOT_ADDR);
 #endif
 
 skip_auto_boot:
@@ -137,6 +144,9 @@ skip_auto_boot:
         "h: Help\n"
         "i: System info\n"
         "r: Restart\n"
+#if (DIRECT_BOOT_EN == 1)
+        "d: Direct boot\n"
+#endif
         "u: Upload via UART\n"
 #if (TWI_FLASH_EN == 1)
         "t: TWI flash - load\n"
@@ -208,6 +218,14 @@ skip_auto_boot:
     if (cmd == 'c') {
       uart_puts("Loading SD card file "SPI_SDCARD_FILE"... ");
       system_app_load(sdcard_setup, sdcard_stream_get);
+    }
+#endif
+
+    /**** direct boot / execute in-place ****/
+#if (DIRECT_BOOT_EN == 1)
+    if (cmd == 'd') {
+      uart_puts("Direct execute in-place...\n");
+      system_direct_boot((uint32_t)DIRECT_BOOT_ADDR);
     }
 #endif
 

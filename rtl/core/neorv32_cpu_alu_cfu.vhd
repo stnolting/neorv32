@@ -24,7 +24,7 @@ entity neorv32_cpu_alu_cfu is
     clk_i    : in  std_ulogic; -- global clock, rising edge
     rstn_i   : in  std_ulogic; -- global reset, low-active, async
     -- request --
-    start_i  : in  std_ulogic; -- start trigger, single-shot
+    start_i  : in  std_ulogic;                     -- start trigger, single-shot
     inst_i   : in  std_ulogic_vector(31 downto 0); -- full instruction word
     rs1_i    : in  std_ulogic_vector(31 downto 0); -- register source operand 1
     rs2_i    : in  std_ulogic_vector(31 downto 0); -- register source operand 2
@@ -32,15 +32,15 @@ entity neorv32_cpu_alu_cfu is
     result_o : out std_ulogic_vector(31 downto 0); -- operation result
     valid_o  : out std_ulogic                      -- operation done; result valid
   );
-end neorv32_cpu_alu_cfu;
+end entity;
 
 architecture neorv32_cpu_alu_cfu_rtl of neorv32_cpu_alu_cfu is
 
   -- supported CFU opcodes --
   constant opcode_custom0_c : std_ulogic_vector(6 downto 0) := "0001011"; -- CUSTOM-0 opcode
   constant opcode_custom1_c : std_ulogic_vector(6 downto 0) := "0101011"; -- CUSTOM-1 opcode
-  constant opcode_op32_c    : std_ulogic_vector(6 downto 0) := "0011011"; -- OP-32 opcode
-  constant opcode_opimm32_c : std_ulogic_vector(6 downto 0) := "0111011"; -- OP-IMM-32 opcode
+  constant opcode_op32_c    : std_ulogic_vector(6 downto 0) := "0111011"; -- OP-32 opcode
+  constant opcode_opimm32_c : std_ulogic_vector(6 downto 0) := "0011011"; -- OP-IMM-32 opcode
 
   -- **********************************************************
   -- CFU Example: XTEA - Extended Tiny Encryption Algorithm
@@ -77,9 +77,9 @@ architecture neorv32_cpu_alu_cfu_rtl of neorv32_cpu_alu_cfu is
   type key_mem_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
   signal key_mem : key_mem_t;
 
-  -- processing logic --
+  -- processing state --
   type xtea_t is record
-    done : std_ulogic_vector(1 downto 0); -- multi-cycle done shift register; 2 stages = 2 cyles latency
+    done : std_ulogic_vector(1 downto 0);  -- multi-cycle done shift register; 2 stages = 2 cycles latency
     opa  : std_ulogic_vector(31 downto 0); -- input operand a
     opb  : std_ulogic_vector(31 downto 0); -- input operand b
     sum  : std_ulogic_vector(31 downto 0); -- round key buffer
@@ -148,7 +148,7 @@ begin
       end if;
 
     end if;
-  end process xtea_core;
+  end process;
 
   -- helpers --
   tmp_a <= xtea.opb when (funct3(0) = '0') else xtea.opa; -- v1 / v0 select
@@ -182,7 +182,6 @@ begin
       result_o <= key_mem(to_integer(unsigned(imm12(1 downto 0))));
       valid_o  <= '1'; -- pure-combinatorial, so we are done "immediately"
     end if;
-  end process result_select;
+  end process;
 
-
-end neorv32_cpu_alu_cfu_rtl;
+end architecture;
