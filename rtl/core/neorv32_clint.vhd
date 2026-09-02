@@ -63,10 +63,7 @@ architecture neorv32_clint_rtl of neorv32_clint is
   signal mtime_we : std_ulogic_vector(1 downto 0);
 
   -- mtimecmp access --
-  type mtimecmp_rwe_t is array (NUM_HARTS-1 downto 0) of std_ulogic_vector(1 downto 0);
-  signal mtimecmp_we : mtimecmp_rwe_t;
-  signal mtimecmp_re : mtimecmp_rwe_t;
-  signal mtimecmp_en : std_ulogic_vector(NUM_HARTS-1 downto 0);
+  signal mtimecmp_en, mtimecmp_re, mtimecmp_we : std_ulogic_vector(NUM_HARTS-1 downto 0);
 
   -- mswi access --
   signal mswi_en, mswi : std_ulogic_vector(NUM_HARTS-1 downto 0);
@@ -93,21 +90,21 @@ begin
     inc_i  => '1', -- permanent increment
     we_i   => mtime_we,
     data_i => bus_req_i.data,
-    oe_i   => '1', -- permanent output (required for MTIME comparators)
+    oe_i   => '1', -- permanent output (required for comparators)
     cnt_o  => mtime
   );
 
   -- device access --
-  mtime_en <= '1' when (bus_req_i.stb = '1') and (unsigned(bus_req_i.addr(15 downto 3)) = base_mtime_c(15 downto 3)) else '0';
-  mtime_we(0) <= mtime_en and bus_req_i.rw and (not bus_req_i.addr(2));
-  mtime_we(1) <= mtime_en and bus_req_i.rw and (    bus_req_i.addr(2));
+  mtime_en    <= '1' when (unsigned(bus_req_i.addr(15 downto 3)) = base_mtime_c(15 downto 3)) else '0';
+  mtime_we(0) <= bus_req_i.stb and mtime_en and bus_req_i.rw and (not bus_req_i.addr(2));
+  mtime_we(1) <= bus_req_i.stb and mtime_en and bus_req_i.rw and (    bus_req_i.addr(2));
 
   -- subword read-back --
-  mtime_rd <= (others => '0') when (mtime_en = '0') else mtime(63 downto 32) when (bus_req_i.addr(2) = '1') else mtime(31 downto 0);
+  mtime_rd <= (others => '0') when (mtime_en = '0') else
+              mtime(63 downto 32) when (bus_req_i.addr(2) = '1') else mtime(31 downto 0);
 
   -- system time output: high and low word are NOT synchronized! --
   time_o <= mtime;
-
 
   -- MTIMECMP - Per-Hart Time Comparator / Interrupt Generator ------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -128,14 +125,11 @@ begin
     );
 
     -- device access --
-    mtimecmp_en(i) <= '1' when (bus_req_i.stb = '1') and (unsigned(bus_req_i.addr(15 downto 3)) = (base_mtimecmp_c(15 downto 3) + i)) else '0';
-    mtimecmp_we(i)(0) <= mtimecmp_en(i) and (    bus_req_i.rw) and (not bus_req_i.addr(2));
-    mtimecmp_we(i)(1) <= mtimecmp_en(i) and (    bus_req_i.rw) and (    bus_req_i.addr(2));
-    mtimecmp_re(i)(0) <= mtimecmp_en(i) and (not bus_req_i.rw) and (not bus_req_i.addr(2));
-    mtimecmp_re(i)(1) <= mtimecmp_en(i) and (not bus_req_i.rw) and (    bus_req_i.addr(2));
+    mtimecmp_en(i) <= '1' when (unsigned(bus_req_i.addr(15 downto 3)) = (base_mtimecmp_c(15 downto 3) + i)) else '0';
+    mtimecmp_we(i) <= mtimecmp_en(i) and (    bus_req_i.rw) and bus_req_i.stb;
+    mtimecmp_re(i) <= mtimecmp_en(i) and (not bus_req_i.rw);
 
   end generate;
-
 
   -- MSWI - Per-Hart Machine Software Interrupt Trigger -------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -147,7 +141,7 @@ begin
       if (rstn_i = '0') then
         mswi(i) <= '0';
       elsif rising_edge(clk_i) then
-        if (mswi_en(i) = '1') and (bus_req_i.rw = '1') then
+        if (bus_req_i.stb = '1') and (mswi_en(i) = '1') and (bus_req_i.rw = '1') then
           mswi(i) <= bus_req_i.data(0);
         end if;
       end if;
@@ -157,10 +151,10 @@ begin
     msi_o(i) <= mswi(i);
 
     -- device access --
-    mswi_en(i) <= '1' when (bus_req_i.stb = '1') and (unsigned(bus_req_i.addr(15 downto 2)) = (base_mswi_c(15 downto 2) + i)) else '0';
+    mswi_en(i) <= '1' when (unsigned(bus_req_i.addr(15 downto 2)) = (base_mswi_c(15 downto 2) + i)) else '0';
 
     -- read-back --
-    mswi_rd(i) <= (others => '0') when (mswi_en(i) = '0') else (x"0000000" & "000" & mswi(i));
+    mswi_rd(i) <= x"0000000" & "000" & (mswi_en(i) and mswi(i));
 
   end generate;
 
