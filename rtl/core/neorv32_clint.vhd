@@ -2,7 +2,7 @@
 -- NEORV32 SoC - RISC-V Core-Local Interruptor (CLINT)                              --
 -- -------------------------------------------------------------------------------- --
 -- Compatible to the RISC-V & SiFive(R) CLINT specifications. Supports machine      --
--- software interrupts and machine timer interrupts for up to 4095 harts.           --
+-- software interrupts and machine timer interrupts for up to 4 (4095) harts.       --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -20,7 +20,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_clint is
   generic (
-    NUM_HARTS : natural range 1 to 4095 -- number of physical CPU cores
+    NUM_HARTS : natural range 1 to 4 -- number of physical CPU cores
   );
   port (
     clk_i     : in  std_ulogic;                              -- global clock line
