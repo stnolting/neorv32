@@ -35,14 +35,15 @@ end entity;
 
 architecture neorv32_clint_rtl of neorv32_clint is
 
-  -- timer interrupt generator --
+  -- comparator slice --
   component neorv32_clint_mtimecmp
   port (
     clk_i   : in  std_ulogic;
     rstn_i  : in  std_ulogic;
     mtime_i : in  std_ulogic_vector(63 downto 0);
-    we_i    : in  std_ulogic_vector(1 downto 0);
-    re_i    : in  std_ulogic_vector(1 downto 0);
+    we_i    : in  std_ulogic;
+    re_i    : in  std_ulogic;
+    addr_i  : in  std_ulogic;
     wdata_i : in  std_ulogic_vector(31 downto 0);
     rdata_o : out std_ulogic_vector(31 downto 0);
     mti_o   : out std_ulogic
@@ -117,6 +118,7 @@ begin
       mtime_i => mtime,
       we_i    => mtimecmp_we(i),
       re_i    => mtimecmp_re(i),
+      addr_i  => bus_req_i.addr(2),
       wdata_i => bus_req_i.data,
       rdata_o => mtimecmp_rd(i),
       mti_o   => mti_o(i)
@@ -210,8 +212,9 @@ entity neorv32_clint_mtimecmp is
     clk_i   : in  std_ulogic;                     -- global clock line
     rstn_i  : in  std_ulogic;                     -- global reset line, low-active, async
     mtime_i : in  std_ulogic_vector(63 downto 0); -- global mtime (async words!)
-    we_i    : in  std_ulogic_vector(1 downto 0);  -- HI/LO word write enable
-    re_i    : in  std_ulogic_vector(1 downto 0);  -- HI/LO word read enable
+    we_i    : in  std_ulogic;                     -- write enable
+    re_i    : in  std_ulogic;                     -- read enable
+    addr_i  : in  std_ulogic;                     -- HI/LO word select
     wdata_i : in  std_ulogic_vector(31 downto 0); -- write data
     rdata_o : out std_ulogic_vector(31 downto 0); -- read data
     mti_o   : out std_ulogic                      -- interrupt
@@ -220,7 +223,7 @@ end entity;
 
 architecture neorv32_clint_mtimecmp_rtl of neorv32_clint_mtimecmp is
 
-  signal mtimecmp_q : std_ulogic_vector(63 downto 0);
+  signal mtimecmp_lo, mtimecmp_hi : std_ulogic_vector(31 downto 0);
   signal cmp_lo_eq, cmp_lo_gt, cmp_lo_ge, cmp_hi_eq, cmp_hi_gt : std_ulogic;
 
 begin
@@ -230,23 +233,23 @@ begin
   write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      mtimecmp_q <= (others => '0');
+      mtimecmp_lo <= (others => '0');
+      mtimecmp_hi <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (we_i(0) = '1') then
-        mtimecmp_q(31 downto 0) <= wdata_i;
-      end if;
-      if (we_i(1) = '1') then
-        mtimecmp_q(63 downto 32) <= wdata_i;
+      if (we_i = '1') then
+        if (addr_i = '0') then
+          mtimecmp_lo <= wdata_i;
+        else
+          mtimecmp_hi <= wdata_i;
+        end if;
       end if;
     end if;
   end process;
 
   -- read access --
-  rdata_o <= mtimecmp_q(63 downto 32) when (re_i(1) = '1') else
-             mtimecmp_q(31 downto 00) when (re_i(0) = '1') else (others => '0');
+  rdata_o <= (others => '0') when (re_i = '0') else mtimecmp_lo when (addr_i = '0') else mtimecmp_hi;
 
-
-  -- Interrupt Generator (comparator is split across two cycles) ----------------------------
+  -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   irq_gen: process(clk_i)
   begin
@@ -256,10 +259,10 @@ begin
     end if;
   end process;
 
-  -- sub-word comparators; there is one cycle delay between low (earlier) and high (later) word --
-  cmp_lo_eq <= '1' when (unsigned(mtime_i(31 downto  0)) = unsigned(mtimecmp_q(31 downto  0))) else '0';
-  cmp_lo_gt <= '1' when (unsigned(mtime_i(31 downto  0)) > unsigned(mtimecmp_q(31 downto  0))) else '0';
-  cmp_hi_eq <= '1' when (unsigned(mtime_i(63 downto 32)) = unsigned(mtimecmp_q(63 downto 32))) else '0';
-  cmp_hi_gt <= '1' when (unsigned(mtime_i(63 downto 32)) > unsigned(mtimecmp_q(63 downto 32))) else '0';
+  -- sub-word comparators; there is one cycle delay between low (earlier) and high (later) words --
+  cmp_lo_eq <= '1' when (unsigned(mtime_i(31 downto  0)) = unsigned(mtimecmp_lo)) else '0';
+  cmp_lo_gt <= '1' when (unsigned(mtime_i(31 downto  0)) > unsigned(mtimecmp_lo)) else '0';
+  cmp_hi_eq <= '1' when (unsigned(mtime_i(63 downto 32)) = unsigned(mtimecmp_hi)) else '0';
+  cmp_hi_gt <= '1' when (unsigned(mtime_i(63 downto 32)) > unsigned(mtimecmp_hi)) else '0';
 
 end architecture;
