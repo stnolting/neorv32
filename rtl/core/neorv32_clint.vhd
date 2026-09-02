@@ -55,6 +55,9 @@ architecture neorv32_clint_rtl of neorv32_clint is
   constant base_mtimecmp_c : unsigned(15 downto 0) := x"4000";
   constant base_mtime_c    : unsigned(15 downto 0) := x"bff8";
 
+  -- bus interface --
+  signal bus_ack, bus_rden : std_ulogic;
+
   -- mtime access --
   signal mtime_en : std_ulogic;
   signal mtime_we : std_ulogic_vector(1 downto 0);
@@ -161,34 +164,34 @@ begin
 
   end generate;
 
-
-  -- Data Read-Back (OR all device read-backs) ----------------------------------------------
+  -- Bus Response ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  bus_handshake: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      bus_ack  <= '0';
+      bus_rden <= '0';
+    elsif rising_edge(clk_i) then
+      bus_ack  <= bus_req_i.stb and (mtime_en or or_reduce_f(mtimecmp_en) or or_reduce_f(mswi_en));
+      bus_rden <= bus_req_i.stb and (not bus_req_i.rw);
+    end if;
+  end process;
+
+  -- data read-back --
   read_back: process(mtime_rd, mtimecmp_rd, mswi_rd)
     variable tmp_v : std_ulogic_vector(31 downto 0);
   begin
     tmp_v := (others => '0');
-    for i in 0 to NUM_HARTS-1 loop
+    for i in 0 to NUM_HARTS-1 loop -- OR all
       tmp_v := tmp_v or mtimecmp_rd(i) or mswi_rd(i);
     end loop;
     rdata <= mtime_rd or tmp_v;
   end process;
 
-
-  -- Bus Response ---------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  bus_response: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      bus_rsp_o <= rsp_terminate_c;
-    elsif rising_edge(clk_i) then
-      bus_rsp_o <= rsp_terminate_c;
-      bus_rsp_o.ack <= mtime_en or or_reduce_f(mtimecmp_en) or or_reduce_f(mswi_en);
-      if (bus_req_i.stb = '1') then
-        bus_rsp_o.data <= rdata;
-      end if;
-    end if;
-  end process;
+  -- bus response --
+  bus_rsp_o.ack  <= bus_ack;
+  bus_rsp_o.err  <= '0'; -- no access errors supported
+  bus_rsp_o.data <= rdata when (bus_rden = '1') else (others => '0'); -- output gating
 
 end architecture;
 
