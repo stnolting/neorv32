@@ -1578,10 +1578,20 @@ int main() {
 
   if (neorv32_gpio_available()) {
     neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
+
+    uint32_t gpio_pattern = 0b0101;
+    uint32_t gpio_mask = 0x0000000F;
+
     cnt_test++;
 
     gpio_trap_handler_ack = 0;
-    neorv32_gpio_port_set(0b0101);
+    neorv32_gpio_port_set(gpio_pattern);
+
+    // Test GPIO input readback via simulation loopback
+    neorv32_aux_delay_ms(neorv32_sysinfo_get_clk(), 1);
+    if ((neorv32_gpio_port_get() & gpio_mask) != gpio_pattern) {
+      test_fail();
+    }
 
     // install GPIO input trap handler and enable GPIO IRQ source
     neorv32_rte_handler_install(GPIO_TRAP_CODE, gpio_trap_handler);
