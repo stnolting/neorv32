@@ -9,8 +9,8 @@ GHDL="${GHDL:-ghdl}"
 mkdir -p build
 
 # GHDL import
-find ../rtl/core ../sim -type f -name '*.vhd'  -exec \
-  ghdl -i --std=08 --workdir=build --ieee=standard --work=neorv32 {} \;
+find ../rtl/core ../rtl/system_integration ../rtl/test_setups ../sim -type f -name '*.vhd' \
+  -exec ghdl -i --std=08 --workdir=build --ieee=standard --work=neorv32 {} \;
 
 # GHDL analyze
 $GHDL -m --work=neorv32 --workdir=build --std=08 neorv32_tb
