@@ -5,8 +5,8 @@
 -- word appears directly at the output (after the synchronous-read delay) without   --
 -- any explicit read access.                                                        --
 --                                                                                  --
--- The status signals "free space left" (free_o) and "data available" (avail_o)     --
--- are synchronized to the according port:                                          --
+-- [IMPORTANT] The status signals "free space left" (free_o) and "data available"   --
+-- (avail_o) are synchronized to the according port:                                --
 -- - free_o  -> write port                                                          --
 -- - avail_o -> read port                                                           --
 -- -------------------------------------------------------------------------------- --
@@ -85,7 +85,7 @@ begin
     match <= '1' when (r_pnt(AWIDTH-1 downto 0) = w_pnt(AWIDTH-1 downto 0)) else '0';
     full  <= '1' when (r_pnt(AWIDTH) /= w_pnt(AWIDTH)) and (match = '1') else '0';
     empty <= '1' when (r_pnt(AWIDTH)  = w_pnt(AWIDTH)) and (match = '1') else '0';
-    -- [important] 'avail' is synchronized to the read port --
+    -- [IMPORTANT] 'avail' is synchronized to the read port --
     status_reg: process(clk_i)
     begin
       if rising_edge(clk_i) then
