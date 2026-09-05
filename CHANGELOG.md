@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 05.09.2026 | 1.13.5.6 | :bug: rework AXI bridge; add data buffering support (to handle back pressure) | [#1645](https://github.com/stnolting/neorv32/pull/1645) |
 | 02.09.2026 | 1.13.5.5 | CLINT area optimizations | [#1642](https://github.com/stnolting/neorv32/pull/1642) |
 | 30.08.2026 | 1.13.5.4 | ocd, gptmr, pwm: area optimizations; remove reset from registers where it is not strictly necessary | [#1641](https://github.com/stnolting/neorv32/pull/1641) |
 | 29.08.2026 | 1.13.5.3 | :test_tube: use asynchronous bus read access for further IO devices | [#1640](https://github.com/stnolting/neorv32/pull/1640) |
