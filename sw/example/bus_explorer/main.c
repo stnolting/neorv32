@@ -9,7 +9,6 @@
 
 /**********************************************************************//**
  * @file bus_explorer/main.c
- * @author Stephan Nolting
  * @brief Interactive memory inspector.
  **************************************************************************/
 
@@ -194,7 +193,7 @@ int main() {
 
     else if (!strcmp(command, "exit")) {
       if (NEORV32_SYSINFO->SOC & (1<<SYSINFO_SOC_BOOTLOADER)) {
-        neorv32_uart0_printf("Returning t0 bootloader...\n");
+        neorv32_uart0_printf("Returning to bootloader...\n");
         while(neorv32_uart0_tx_busy());
         const uint32_t boot_addr = (uint32_t)NEORV32_BOOTROM_BASE;
         asm volatile (
@@ -371,8 +370,10 @@ void set_memory(uint32_t address, int value, uint32_t num) {
 
   exception = 0;
 
+  uint32_t address_original;
   uint32_t i = 0;
   for (i=0; i<num; i++) {
+    address_original = address;
     if (access_size == 'b') {
       neorv32_cpu_store_unsigned_byte(address, (uint8_t)value);
       address += 1;
@@ -388,7 +389,7 @@ void set_memory(uint32_t address, int value, uint32_t num) {
     if (exception) {
       return;
     }
-    neorv32_uart0_printf("[0x%x] <= 0x%x\n", address, value);
+    neorv32_uart0_printf("[0x%x] <= 0x%x\n", address_original, value);
   }
 }
 
