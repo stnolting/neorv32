@@ -104,7 +104,6 @@ entity neorv32_vivado_ip is
     -- External Bus Interface (XBUS) --
     XBUS_EN               : boolean                        := false;
     XBUS_TIMEOUT          : natural                        := 2048;
-    XBUS_REGSTAGE_EN      : boolean                        := false;
     -- General-Purpose Input/Output Controller (GPIO) --
     IO_GPIO_EN            : boolean                        := false;
     IO_GPIO_IN_NUM        : natural range 1 to 32          := 1; -- variable-sized ports must be at least 0 downto 0; #974
@@ -326,6 +325,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
     xbus_we_i     : in  std_ulogic;
     xbus_sel_i    : in  std_ulogic_vector(3 downto 0);
     xbus_stb_i    : in  std_ulogic;
+    xbus_cyc_i    : in  std_ulogic;
     xbus_ack_o    : out std_ulogic;
     xbus_err_o    : out std_ulogic;
     xbus_dat_o    : out std_ulogic_vector(31 downto 0);
@@ -476,7 +476,7 @@ begin
     -- External Bus Interface (XBUS) --
     XBUS_EN             => XBUS_EN,
     XBUS_TIMEOUT        => XBUS_TIMEOUT,
-    XBUS_REGSTAGE_EN    => XBUS_REGSTAGE_EN,
+    XBUS_REGSTAGE_EN    => true, -- to shorten critical path through AXI-bridge
     -- General-Purpose Input/Output Controller --
     IO_GPIO_NUM         => num_gpio_c,
     IO_GPIO_DIR_EN      => IO_GPIO_DIR_EN,
@@ -719,6 +719,7 @@ begin
       xbus_we_i     => xbus_req.we,
       xbus_sel_i    => xbus_req.sel,
       xbus_stb_i    => xbus_req.stb,
+      xbus_cyc_i    => xbus_req.cyc,
       xbus_ack_o    => xbus_rsp.ack,
       xbus_err_o    => xbus_rsp.err,
       xbus_dat_o    => xbus_rsp.data,
