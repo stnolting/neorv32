@@ -325,6 +325,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
     xbus_we_i     : in  std_ulogic;
     xbus_sel_i    : in  std_ulogic_vector(3 downto 0);
     xbus_stb_i    : in  std_ulogic;
+    xbus_cyc_i    : in  std_ulogic;
     xbus_ack_o    : out std_ulogic;
     xbus_err_o    : out std_ulogic;
     xbus_dat_o    : out std_ulogic_vector(31 downto 0);
@@ -718,6 +719,7 @@ begin
       xbus_we_i     => xbus_req.we,
       xbus_sel_i    => xbus_req.sel,
       xbus_stb_i    => xbus_req.stb,
+      xbus_cyc_i    => xbus_req.cyc,
       xbus_ack_o    => xbus_rsp.ack,
       xbus_err_o    => xbus_rsp.err,
       xbus_dat_o    => xbus_rsp.data,

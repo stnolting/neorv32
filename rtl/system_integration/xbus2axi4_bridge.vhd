@@ -31,9 +31,10 @@ entity xbus2axi4_bridge is
     xbus_we_i     : in  std_ulogic;
     xbus_sel_i    : in  std_ulogic_vector(3 downto 0);
     xbus_stb_i    : in  std_ulogic;
-    xbus_dat_o    : out std_ulogic_vector(31 downto 0);
+    xbus_cyc_i    : in  std_ulogic;
     xbus_ack_o    : out std_ulogic;
     xbus_err_o    : out std_ulogic;
+    xbus_dat_o    : out std_ulogic_vector(31 downto 0);
     -- AXI4 host write address channel --
     m_axi_awaddr  : out std_logic_vector(31 downto 0);
     m_axi_awlen   : out std_logic_vector(7 downto 0);
