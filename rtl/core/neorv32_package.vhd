@@ -750,14 +750,29 @@ package neorv32_package is
     cpu_debug    => '0'
   );
 
+  -- Zcmp compressed instruction operation --------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  type zcmp_op_t is (
+    ZCMP_OP_NONE,
+    ZCMP_OP_PUSH,
+    ZCMP_OP_POP,
+    ZCMP_OP_POPRET,
+    ZCMP_OP_POPRETZ,
+    ZCMP_OP_MVSA01,
+    ZCMP_OP_MVA01S
+  );
+
   -- Instruction Fetch Interface ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   type if_bus_t is record
-    valid : std_ulogic;                     -- bus signals are valid
+    valid           : std_ulogic;                     -- bus signals are valid
     i32   : std_ulogic_vector(31 downto 0); -- (decompressed) 32-bit instruction word
-    i16   : std_ulogic_vector(15 downto 0); -- (original) 16-bit instruction word
-    compr : std_ulogic;                     -- instruction is decompressed
-    fault : std_ulogic;                     -- instruction-fetch error
+    i16             : std_ulogic_vector(15 downto 0); -- (original) 16-bit instruction word
+    compr           : std_ulogic;                     -- instruction is decompressed
+    fault           : std_ulogic;                     -- instruction-fetch error
+    zcmp_in_uop_seq  : std_ulogic;                     -- zcmp micro-op sequence running
+    zcmp_start       : std_ulogic;                     -- zcmp micro-op sequence is starting next cycle
+    zcmp_atomic_tail : std_ulogic;                     -- zcmp micro-op sequence is in atomic tail section (no traps allowed)
   end record;
 
   -- ALU Function Codes ---------------------------------------------------------------------
@@ -919,6 +934,7 @@ package neorv32_package is
     RISCV_ISA_Zbs       : boolean                        := false;
     RISCV_ISA_Zcb       : boolean                        := false;
     RISCV_ISA_Zcmop     : boolean                        := false;
+    RISCV_ISA_Zcmp      : boolean                        := false;
     RISCV_ISA_Zfinx     : boolean                        := false;
     RISCV_ISA_Zibi      : boolean                        := false;
     RISCV_ISA_Zicntr    : boolean                        := false;

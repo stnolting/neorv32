@@ -24,7 +24,8 @@ entity neorv32_cpu_frontend is
     HART_ID     : natural; -- hardware thread ID
     RISCV_C     : boolean; -- implement C ISA extension
     RISCV_ZCB   : boolean; -- implement Zcb ISA sub-extension
-    RISCV_ZCMOP : boolean  -- implement Zcb ISA sub-extension
+    RISCV_ZCMOP : boolean; -- implement Zcmop ISA sub-extension
+    RISCV_ZCMP  : boolean  -- implement Zcmp ISA sub-extension
   );
   port (
     -- global control --
@@ -87,6 +88,17 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   signal issue_valid : std_ulogic_vector(1 downto 0);
   signal cmd16 : std_ulogic_vector(15 downto 0);
   signal cmd32 : std_ulogic_vector(31 downto 0);
+
+  -- Zcmp micro-op issue engine --
+  type issue_state_t is (S_ISSUE, S_ZCMP);
+  signal issue_state_reg, issue_state_nxt : issue_state_t;
+  signal frontend_bus_zcmp, frontend_bus_issue : if_bus_t; -- front-end bus sources
+  signal zcmp_instr_reg, zcmp_instr_nxt : std_ulogic_vector(15 downto 0); -- latched Zcmp instruction word
+  signal zcmp_detect : std_ulogic; -- zcmp instruction detected, micro-op sequence starts next cycle
+  signal zcmp_in_uop_seq : std_ulogic; -- micro-op sequence running
+  signal issue_valid_zcmp : std_ulogic_vector(1 downto 0); -- IPB acknowledge at end of micro-op sequence
+  signal instr_is_zcmp : std_ulogic; -- decompressor: instruction is a Zcmp instruction
+  signal zcmp_op : zcmp_op_t; -- decompressor: Zcmp operation type
 
 begin
 
@@ -199,22 +211,30 @@ begin
     neorv32_cpu_decompressor_inst: entity neorv32.neorv32_cpu_decompressor
     generic map (
       ZCB_EN   => RISCV_ZCB,
-      ZCMOP_EN => RISCV_ZCMOP
+      ZCMOP_EN => RISCV_ZCMOP,
+      ZCMP_EN  => RISCV_ZCMP
     )
     port map (
-      instr_i => cmd16,
-      instr_o => cmd32
+      instr_i       => cmd16,
+      instr_o       => cmd32,
+      instr_is_zcmp => instr_is_zcmp,
+      zcmp_op       => zcmp_op
     );
 
     -- half-word select --
     cmd16 <= ipb_rdata(0)(15 downto 0) when (align_q = '0') else ipb_rdata(1)(15 downto 0);
-    frontend_o.i16 <= cmd16; -- original 16-bit instruction
+    frontend_bus_issue.i16 <= cmd16; -- original 16-bit instruction
 
     -- Issue Engine FSM -----------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    issue_fsm_sync: process(clk_i)
+    issue_fsm_sync: process(rstn_i, clk_i)
     begin
-      if rising_edge(clk_i) then
+      if (rstn_i = '0') then
+        issue_state_reg <= S_ISSUE;
+        zcmp_instr_reg  <= (others => '0');
+      elsif rising_edge(clk_i) then
+        issue_state_reg <= issue_state_nxt;
+        zcmp_instr_reg  <= zcmp_instr_nxt;
         if (fetch.reset = '1') then
           align_q <= ctrl_i.pc_nxt(1); -- restart at unaligned address?
         elsif (ipb_re /= "00") then
@@ -223,47 +243,123 @@ begin
       end if;
     end process;
 
-    issue_fsm_comb: process(align_q, ipb_avail, ipb_rdata, cmd32)
+    issue_fsm_comb: process(align_q, fetch, ipb_avail, ipb_rdata, cmd32, zcmp_instr_reg, instr_is_zcmp, issue_state_reg, zcmp_in_uop_seq)
     begin
       -- defaults --
       align_set <= '0';
       align_clr <= '0';
-      -- start at LOW half-word --
-      if (align_q = '0') then
-        if (ipb_rdata(0)(1 downto 0) /= "11") then -- compressed, consume IPB(0) entry
-          align_set        <= ipb_avail(0); -- start of next instruction word is NOT 32-bit-aligned
-          issue_valid      <= '0' & ipb_avail(0);
-          frontend_o.fault <= ipb_rdata(0)(16);
-          frontend_o.i32   <= cmd32;
-          frontend_o.compr <= '1';
-        else -- aligned uncompressed, consume both IPB entries
-          issue_valid      <= (others => (ipb_avail(1) and ipb_avail(0)));
-          frontend_o.fault <= ipb_rdata(1)(16) or ipb_rdata(0)(16);
-          frontend_o.i32   <= ipb_rdata(1)(15 downto 0) & ipb_rdata(0)(15 downto 0);
-          frontend_o.compr <= '0';
-        end if;
-      -- start at HIGH half-word --
-      else
-        if (ipb_rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
-          align_clr        <= ipb_avail(1); -- start of next instruction word IS 32-bit-aligned again
-          issue_valid      <= ipb_avail(1) & '0';
-          frontend_o.fault <= ipb_rdata(1)(16);
-          frontend_o.i32   <= cmd32;
-          frontend_o.compr <= '1';
-        else -- unaligned uncompressed, consume both IPB entries
-          issue_valid      <= (others => (ipb_avail(0) and ipb_avail(1)));
-          frontend_o.fault <= ipb_rdata(0)(16) or ipb_rdata(1)(16);
-          frontend_o.i32   <= ipb_rdata(0)(15 downto 0) & ipb_rdata(1)(15 downto 0);
-          frontend_o.compr <= '0';
-        end if;
-      end if;
+      issue_state_nxt <= issue_state_reg;
+      issue_valid <= "00";
+      issue_valid_zcmp <= "00";
+      zcmp_instr_nxt <= zcmp_instr_reg;
+      zcmp_detect <= '0';
+      frontend_bus_issue.i32   <= (others => '0');
+      frontend_bus_issue.compr <= '0';
+      frontend_bus_issue.fault <= '0';
+      frontend_bus_issue.zcmp_in_uop_seq  <= '0';
+      frontend_bus_issue.zcmp_atomic_tail <= '0';
+
+      case issue_state_reg is
+
+        when S_ISSUE => -- regular instruction issue
+        -- ------------------------------------------------------------
+          -- start at LOW half-word --
+          if (align_q = '0') then
+            if (ipb_rdata(0)(1 downto 0) /= "11") and (ipb_avail(0) = '1') then -- compressed, consume IPB(0) entry
+              if (instr_is_zcmp = '1') and (ipb_rdata(0)(16) = '0') then -- Zcmp instruction without fetch fault (faulted words use the regular path to raise an access fault)
+                zcmp_instr_nxt  <= ipb_rdata(0)(15 downto 0); -- save Zcmp instruction
+                issue_state_nxt <= S_ZCMP;
+                zcmp_detect     <= '1'; -- Zcmp micro-op sequence is about to start
+              else
+                align_set <= ipb_avail(0); -- start of next instruction word is NOT 32-bit-aligned
+                issue_valid <= '0' & ipb_avail(0);
+                frontend_bus_issue.fault <= ipb_rdata(0)(16);
+                frontend_bus_issue.i32   <= cmd32;
+                frontend_bus_issue.compr <= '1';
+              end if;
+            elsif (ipb_avail = "11") then -- aligned uncompressed, consume both IPB entries
+              issue_valid <= (others => (ipb_avail(1) and ipb_avail(0)));
+              frontend_bus_issue.fault <= ipb_rdata(1)(16) or ipb_rdata(0)(16);
+              frontend_bus_issue.i32   <= ipb_rdata(1)(15 downto 0) & ipb_rdata(0)(15 downto 0);
+              frontend_bus_issue.compr <= '0';
+            end if;
+          -- start at HIGH half-word --
+          elsif (ipb_avail(1) = '1') then
+            if (ipb_rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
+              if (instr_is_zcmp = '1') and (ipb_rdata(1)(16) = '0') then -- Zcmp instruction without fetch fault (faulted words use the regular path to raise an access fault)
+                zcmp_instr_nxt  <= ipb_rdata(1)(15 downto 0); -- save Zcmp instruction
+                issue_state_nxt <= S_ZCMP;
+                zcmp_detect     <= '1'; -- Zcmp micro-op sequence is about to start
+              else
+                align_clr <= ipb_avail(1); -- start of next instruction word IS 32-bit-aligned again
+                issue_valid <= ipb_avail(1) & '0';
+                frontend_bus_issue.fault <= ipb_rdata(1)(16);
+                frontend_bus_issue.i32   <= cmd32;
+                frontend_bus_issue.compr <= '1';
+              end if;
+            elsif (ipb_avail = "11") then -- unaligned uncompressed, consume both IPB entries
+              issue_valid <= (others => (ipb_avail(0) and ipb_avail(1)));
+              frontend_bus_issue.fault <= ipb_rdata(0)(16) or ipb_rdata(1)(16);
+              frontend_bus_issue.i32   <= ipb_rdata(0)(15 downto 0) & ipb_rdata(1)(15 downto 0);
+              frontend_bus_issue.compr <= '0';
+            end if;
+          end if;
+
+        when S_ZCMP => -- Zcmp micro-op sequence in progress; the sequencer drives the front-end bus
+        -- ------------------------------------------------------------
+          if (zcmp_in_uop_seq = '0') then -- sequence has completed
+            issue_state_nxt <= S_ISSUE;
+            zcmp_instr_nxt  <= (others => '0');
+            if (align_q = '0') then
+              align_set <= ipb_avail(0); -- start of next instruction word is NOT 32-bit-aligned
+              issue_valid_zcmp <= "01"; -- consume the Zcmp instruction's IPB entry
+            else
+              align_clr <= ipb_avail(1); -- start of next instruction word IS 32-bit-aligned again
+              issue_valid_zcmp <= "10"; -- consume the Zcmp instruction's IPB entry
+            end if;
+          end if;
+          if (fetch.reset = '1') then -- on branch the IPBs must not be acknowledged as they contain outdated instructions
+            issue_valid_zcmp <= "00";
+            issue_state_nxt  <= S_ISSUE;
+          end if;
+
+      end case;
     end process;
 
     -- issue valid instruction word to execution stage --
-    frontend_o.valid <= issue_valid(1) or issue_valid(0);
+    frontend_bus_issue.valid <= issue_valid(1) or issue_valid(0);
+    frontend_bus_issue.zcmp_start <= zcmp_detect; -- Zcmp micro-op sequence is about to start
+
+    -- bus switch: while a Zcmp micro-op sequence is being issued the sequencer drives the front-end bus --
+    frontend_o <= frontend_bus_zcmp when (zcmp_in_uop_seq = '1') else frontend_bus_issue;
 
     -- IPB read access --
-    ipb_re <= issue_valid when (ctrl_i.if_ready = '1') else "00";
+    ipb_re(0) <= (issue_valid(0) and ctrl_i.if_ready) or issue_valid_zcmp(0);
+    ipb_re(1) <= (issue_valid(1) and ctrl_i.if_ready) or issue_valid_zcmp(1);
+
+    -- Zcmp Micro-Op Sequencer ----------------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    zcmp_enabled:
+    if RISCV_ZCMP generate
+      neorv32_cpu_zcmp_inst: entity neorv32.neorv32_cpu_zcmp
+      port map (
+        clk_i             => clk_i,
+        rstn_i            => rstn_i,
+        ctrl_i            => ctrl_i,
+        zcmp_detect       => zcmp_detect,
+        fetch_restart     => fetch.reset,
+        ipb_avail         => ipb_avail,
+        zcmp_instr_reg    => zcmp_instr_reg,
+        zcmp_op           => zcmp_op,
+        frontend_bus_zcmp => frontend_bus_zcmp,
+        zcmp_in_uop_seq   => zcmp_in_uop_seq
+      );
+    end generate;
+
+    zcmp_disabled:
+    if not RISCV_ZCMP generate
+      zcmp_in_uop_seq <= '0';
+    end generate;
 
   end generate; -- /issue_enabled
 
@@ -282,6 +378,9 @@ begin
     frontend_o.i16   <= (others => '0');
     frontend_o.compr <= '0';
     frontend_o.fault <= ipb_rdata(0)(16);
+    frontend_o.zcmp_in_uop_seq  <= '0';
+    frontend_o.zcmp_start       <= '0';
+    frontend_o.zcmp_atomic_tail <= '0';
   end generate;
 
 end architecture;

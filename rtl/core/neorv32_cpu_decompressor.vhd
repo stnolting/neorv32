@@ -22,11 +22,14 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_decompressor is
   generic (
     ZCB_EN   : boolean; -- enable Zcb ISA extension
-    ZCMOP_EN : boolean  -- enable Zcmop ISA extension (requires Zimop ISA extension)
+    ZCMOP_EN : boolean; -- enable Zcmop ISA extension (requires Zimop ISA extension)
+    ZCMP_EN  : boolean  -- enable Zcmp ISA extension
   );
   port (
     instr_i : in  std_ulogic_vector(15 downto 0); -- compressed instruction
-    instr_o : out std_ulogic_vector(31 downto 0)  -- decompressed instruction
+    instr_o : out std_ulogic_vector(31 downto 0);  -- decompressed instruction
+    instr_is_zcmp : out std_ulogic; -- instruction is part of Zcmp extension
+    zcmp_op : out zcmp_op_t -- Zcmp operation type
   );
 end entity;
 
@@ -63,6 +66,8 @@ begin
     -- defaults --
     illegal <= '0';
     decoded <= x"00000003"; -- empty rv32 instruction
+    instr_is_zcmp <= '0';
+    zcmp_op <= ZCMP_OP_NONE;
 
     -- decoder --
     case instr_i(ci_opcode_msb_c downto ci_opcode_lsb_c) is
@@ -345,6 +350,57 @@ begin
               end if;
             end if;
 
+          when "101" =>
+
+          if ZCMP_EN then
+            case instr_i(12 downto 8) is
+              when "11000" => -- cm.push
+               if (instr_i(7 downto 6) /= "00") then -- rlist >= 4; rlist < 4 is reserved
+                 instr_is_zcmp <= '1';
+                 zcmp_op <= ZCMP_OP_PUSH;
+               else
+                 illegal <= '1';
+               end if;
+              when "11010" => -- cm.pop
+               if (instr_i(7 downto 6) /= "00") then -- rlist >= 4; rlist < 4 is reserved
+                 instr_is_zcmp <= '1';
+                 zcmp_op <= ZCMP_OP_POP;
+               else
+                 illegal <= '1';
+               end if;
+              when "11110" => -- cm.popret
+               if (instr_i(7 downto 6) /= "00") then -- rlist >= 4; rlist < 4 is reserved
+                 instr_is_zcmp <= '1';
+                 zcmp_op <= ZCMP_OP_POPRET;
+               else
+                 illegal <= '1';
+               end if;
+              when "11100" => -- cm.popretz
+               if (instr_i(7 downto 6) /= "00") then -- rlist >= 4; rlist < 4 is reserved
+                 instr_is_zcmp <= '1';
+                 zcmp_op <= ZCMP_OP_POPRETZ;
+               else
+                 illegal <= '1';
+               end if;
+              when others =>
+               illegal <= '1';
+            end case;
+            if (instr_i(12 downto 10) = "011")  then -- double moves
+                if (instr_i(6 downto 5) = "01") then -- mvsa01
+                  if (instr_i(9 downto 7) /= instr_i(4 downto 2)) then -- r1s' == r2s' is reserved
+                    illegal <= '0';
+                    instr_is_zcmp <= '1';
+                    zcmp_op <= ZCMP_OP_MVSA01;
+                  end if;
+                elsif (instr_i(6 downto 5) = "11") then -- mvsa01s
+                  illegal <= '0';
+                  instr_is_zcmp <= '1';
+                  zcmp_op <= ZCMP_OP_MVA01S;
+                end if;
+            end if;
+          else
+            illegal <= '1'; -- C.FSDSP would require the (unsupported) D extension
+          end if;
           when others => -- "001"/"101": C.FLDSP / C.LQSP, C.FSDSP / C.SQSP -> illegal
           -- --------------------------------------------------------------------------------------
             illegal <= '1';

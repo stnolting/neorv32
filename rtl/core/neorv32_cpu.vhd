@@ -42,6 +42,7 @@ entity neorv32_cpu is
     RISCV_ISA_Zbs       : boolean                        := false;       -- single-bit bit-manipulation extension
     RISCV_ISA_Zcb       : boolean                        := false;       -- additional code size reduction instructions
     RISCV_ISA_Zcmop     : boolean                        := false;       -- compressed may-be-operations
+    RISCV_ISA_Zcmp      : boolean                        := false;       -- additional code size reduction instructions
     RISCV_ISA_Zfinx     : boolean                        := false;       -- 32-bit floating-point extension
     RISCV_ISA_Zibi      : boolean                        := false;       -- branch with immediate
     RISCV_ISA_Zicntr    : boolean                        := false;       -- base counters
@@ -111,6 +112,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   constant riscv_b_c     : boolean := RISCV_ISA_Zba and RISCV_ISA_Zbb and RISCV_ISA_Zbs; -- B: bit manipulation
   constant riscv_zcb_c   : boolean := RISCV_ISA_C and RISCV_ISA_Zcb; -- Zcb: additional compressed instructions
   constant riscv_zcmop_c : boolean := RISCV_ISA_C and RISCV_ISA_Zimop and RISCV_ISA_Zcmop; -- Zcmop: compressed may-be-operations
+  constant riscv_zcmp_c  : boolean := RISCV_ISA_C and RISCV_ISA_Zcmp; -- Zcmp: additional compressed instructions
   constant riscv_zkt_c   : boolean := CPU_FAST_SHIFT_EN; -- Zkt: data-independent execution time for cryptography operations
   constant riscv_zkn_c   : boolean := RISCV_ISA_Zbkb and RISCV_ISA_Zbkc and RISCV_ISA_Zbkx and
                                       RISCV_ISA_Zkne and RISCV_ISA_Zknd and RISCV_ISA_Zknh; -- Zkn: NIST suite
@@ -173,6 +175,7 @@ begin
       sel_string_f(RISCV_ISA_C,         "_zca",       "" ) &
       sel_string_f(riscv_zcb_c,         "_zcb",       "" ) &
       sel_string_f(riscv_zcmop_c,       "_zcmop",     "" ) &
+      sel_string_f(riscv_zcmp_c,        "_zcmp",      "" ) &
       sel_string_f(RISCV_ISA_Zfinx,     "_zfinx",     "" ) &
       sel_string_f(RISCV_ISA_Zibi,      "_zibi",      "" ) &
       sel_string_f(RISCV_ISA_Zicntr,    "_zicntr",    "" ) &
@@ -226,7 +229,8 @@ begin
     HART_ID     => HART_ID,       -- hardware thread ID
     RISCV_C     => RISCV_ISA_C,   -- implement C ISA extension
     RISCV_ZCB   => RISCV_ISA_Zcb, -- implement Zcb ISA sub-extension
-    RISCV_ZCMOP => riscv_zcmop_c  -- implement Zcb ISA sub-extension
+    RISCV_ZCMOP => riscv_zcmop_c, -- implement Zcmop ISA sub-extension
+    RISCV_ZCMP  => riscv_zcmp_c   -- implement Zcmp ISA sub-extension
   )
   port map (
     -- global control --
@@ -273,6 +277,7 @@ begin
     RISCV_ISA_Zbs       => RISCV_ISA_Zbs,       -- single-bit bit-manipulation extension
     RISCV_ISA_Zcb       => riscv_zcb_c,         -- additional code size reduction instructions
     RISCV_ISA_Zcmop     => riscv_zcmop_c,       -- compressed may-be-operations
+    RISCV_ISA_Zcmp      => riscv_zcmp_c,        -- additional code size reduction instructions
     RISCV_ISA_Zfinx     => RISCV_ISA_Zfinx,     -- 32-bit floating-point extension
     RISCV_ISA_Zibi      => RISCV_ISA_Zibi,      -- branch with immediate
     RISCV_ISA_Zicntr    => RISCV_ISA_Zicntr,    -- base counters
