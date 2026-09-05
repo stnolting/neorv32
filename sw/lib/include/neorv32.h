@@ -266,11 +266,11 @@ typedef union {
 // 16-bit access
 #define __MMREG16_BSET(r, m) __MMREG_BSET(r, (uint16_t)(m))
 #define __MMREG16_BCLR(r, m) __MMREG_BCLR(r, (uint16_t)(m))
-#define __MMREG16_BINV(r, m) __MMREG_BTOG(r, (uint16_t)(m))
+#define __MMREG16_BINV(r, m) __MMREG_BINV(r, (uint16_t)(m))
 // 8-bit access
 #define __MMREG8_BSET(r, m) __MMREG_BSET(r, (uint8_t)(m))
 #define __MMREG8_BCLR(r, m) __MMREG_BCLR(r, (uint8_t)(m))
-#define __MMREG8_BINV(r, m) __MMREG_BTOG(r, (uint8_t)(m))
+#define __MMREG8_BINV(r, m) __MMREG_BINV(r, (uint8_t)(m))
 /**@}*/
 
 
