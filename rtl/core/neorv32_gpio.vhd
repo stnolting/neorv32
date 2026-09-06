@@ -37,37 +37,48 @@ architecture neorv32_gpio_rtl of neorv32_gpio is
   constant addr_in_c  : std_ulogic_vector(2 downto 0) := "000"; -- r/-: input port
   constant addr_out_c : std_ulogic_vector(2 downto 0) := "001"; -- r/w: output port
   constant addr_dir_c : std_ulogic_vector(2 downto 0) := "010"; -- r/w: direction control
+--constant addr_???_c : std_ulogic_vector(2 downto 0) := "011"; -- r/-: reserved
   constant addr_tt_c  : std_ulogic_vector(2 downto 0) := "100"; -- r/w: trigger type (level/edge)
   constant addr_tp_c  : std_ulogic_vector(2 downto 0) := "101"; -- r/w: trigger polarity (high/low or rising/falling)
   constant addr_ie_c  : std_ulogic_vector(2 downto 0) := "110"; -- r/w: interrupt enable
   constant addr_ip_c  : std_ulogic_vector(2 downto 0) := "111"; -- r/c: interrupt pending
 
+  -- bus interface --
+  signal bus_ack, bus_rden : std_ulogic;
+  signal bus_rdata : std_ulogic_vector(31 downto 0);
+
   -- interface registers --
   signal port_in, port_out, port_dir, irq_typ, irq_pol, irq_en, irq_clrn : std_ulogic_vector(GPIO_NUM-1 downto 0);
 
-  -- interrupt generator --
+  -- synchronizer and interrupt logic --
   signal port_in2, irq_trig, irq_pend : std_ulogic_vector(GPIO_NUM-1 downto 0);
 
 begin
 
   -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_access: process(rstn_i, clk_i)
+  bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o <= rsp_terminate_c;
-      port_out  <= (others => '0');
-      irq_typ   <= (others => '0');
-      irq_pol   <= (others => '0');
-      irq_en    <= (others => '0');
-      irq_clrn  <= (others => '0');
+      bus_ack  <= '0';
+      bus_rden <= '0';
     elsif rising_edge(clk_i) then
-      -- defaults --
-      bus_rsp_o.ack  <= bus_req_i.stb;
-      bus_rsp_o.err  <= '0';
-      bus_rsp_o.data <= (others => '0');
-      irq_clrn       <= (others => '1');
-      -- write access --
+      bus_ack  <= bus_req_i.stb;
+      bus_rden <= bus_req_i.stb and (not bus_req_i.rw);
+    end if;
+  end process;
+
+  -- write access --
+  bus_write: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      port_out <= (others => '0');
+      irq_typ  <= (others => '0');
+      irq_pol  <= (others => '0');
+      irq_en   <= (others => '0');
+      irq_clrn <= (others => '0');
+    elsif rising_edge(clk_i) then
+      irq_clrn <= (others => '1'); -- default
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         case bus_req_i.addr(4 downto 2) is
           when addr_out_c => port_out <= bus_req_i.data(GPIO_NUM-1 downto 0); -- output port
@@ -78,21 +89,31 @@ begin
           when others     => null;
         end case;
       end if;
-      -- read access --
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
-        case bus_req_i.addr(4 downto 2) is
-          when addr_in_c  => bus_rsp_o.data(GPIO_NUM-1 downto 0) <= port_in;  -- input port
-          when addr_out_c => bus_rsp_o.data(GPIO_NUM-1 downto 0) <= port_out; -- output port
-          when addr_dir_c => bus_rsp_o.data(GPIO_NUM-1 downto 0) <= port_dir; -- direction control
-          when addr_tt_c  => bus_rsp_o.data(GPIO_NUM-1 downto 0) <= irq_typ;  -- trigger type
-          when addr_tp_c  => bus_rsp_o.data(GPIO_NUM-1 downto 0) <= irq_pol;  -- trigger polarity
-          when addr_ie_c  => bus_rsp_o.data(GPIO_NUM-1 downto 0) <= irq_en;   -- interrupt enable
-          when addr_ip_c  => bus_rsp_o.data(GPIO_NUM-1 downto 0) <= irq_pend; -- interrupt pending
-          when others     => bus_rsp_o.data(GPIO_NUM-1 downto 0) <= (others => '0');
-        end case;
-      end if;
     end if;
   end process;
+
+  -- read access (asynchronous) --
+  bus_read: process(bus_rden, bus_req_i.addr, port_in2, port_out, port_dir, irq_typ, irq_pol, irq_en, irq_pend)
+  begin
+    bus_rdata <= (others => '0');
+    if (bus_rden = '1') then -- output gating
+      case bus_req_i.addr(4 downto 2) is
+        when addr_in_c  => bus_rdata(GPIO_NUM-1 downto 0) <= port_in2; -- input port
+        when addr_out_c => bus_rdata(GPIO_NUM-1 downto 0) <= port_out; -- output port
+        when addr_dir_c => bus_rdata(GPIO_NUM-1 downto 0) <= port_dir; -- direction control
+        when addr_tt_c  => bus_rdata(GPIO_NUM-1 downto 0) <= irq_typ;  -- trigger type
+        when addr_tp_c  => bus_rdata(GPIO_NUM-1 downto 0) <= irq_pol;  -- trigger polarity
+        when addr_ie_c  => bus_rdata(GPIO_NUM-1 downto 0) <= irq_en;   -- interrupt enable
+        when addr_ip_c  => bus_rdata(GPIO_NUM-1 downto 0) <= irq_pend; -- interrupt pending
+        when others     => bus_rdata(GPIO_NUM-1 downto 0) <= (others => '0');
+      end case;
+    end if;
+  end process;
+
+  -- bus response --
+  bus_rsp_o.ack  <= bus_ack;
+  bus_rsp_o.err  <= '0'; -- no access errors supported
+  bus_rsp_o.data <= bus_rdata;
 
 
   -- Port IO --------------------------------------------------------------------------------
@@ -139,13 +160,13 @@ begin
   -- -------------------------------------------------------------------------------------------
   irq_trigger_gen:
   for i in 0 to GPIO_NUM-1 generate
-    irq_trigger: process(port_in, port_in2, irq_typ, irq_pol)
+    irq_trigger: process(irq_typ, irq_pol, port_in, port_in2)
       variable sel_v : std_ulogic_vector(1 downto 0);
     begin
       sel_v := irq_typ(i) & irq_pol(i);
       case sel_v is
-        when "00"   => irq_trig(i) <= not port_in(i); -- low-level
-        when "01"   => irq_trig(i) <= port_in(i); -- high-level
+        when "00"   => irq_trig(i) <= not port_in2(i); -- low-level
+        when "01"   => irq_trig(i) <= port_in2(i); -- high-level
         when "10"   => irq_trig(i) <= (not port_in(i)) and port_in2(i); -- falling-edge
         when "11"   => irq_trig(i) <= port_in(i) and (not port_in2(i)); -- rising-edge
         when others => irq_trig(i) <= '0';

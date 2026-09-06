@@ -52,6 +52,10 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
   -- helpers --
   constant log2_fifo_size_c : natural := index_size_f(FIFO_DEPTH);
 
+  -- bus interface --
+  signal bus_ack, bus_rden : std_ulogic;
+  signal bus_rdata : std_ulogic_vector(31 downto 0);
+
   -- control register --
   type ctrl_t is record
     enable   : std_ulogic;
@@ -89,45 +93,60 @@ begin
 
   -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_access: process(rstn_i, clk_i)
+  bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o     <= rsp_terminate_c;
+      bus_ack  <= '0';
+      bus_rden <= '0';
+    elsif rising_edge(clk_i) then
+      bus_ack  <= bus_req_i.stb;
+      bus_rden <= bus_req_i.stb and (not bus_req_i.rw);
+    end if;
+  end process;
+
+  -- write access --
+  bus_write: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
       ctrl.enable   <= '0';
       ctrl.clk_prsc <= (others => '0');
       ctrl.t_total  <= (others => '0');
       ctrl.t0_high  <= (others => '0');
       ctrl.t1_high  <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- bus handshake --
-      bus_rsp_o.ack  <= bus_req_i.stb;
-      bus_rsp_o.err  <= '0';
-      bus_rsp_o.data <= (others => '0');
-      -- bus access --
-      if (bus_req_i.stb = '1') then
-        if (bus_req_i.rw = '1') then -- write access
-          if (bus_req_i.addr(2) = '0') then
-            ctrl.enable   <= bus_req_i.data(ctrl_en_c);
-            ctrl.clk_prsc <= bus_req_i.data(ctrl_clksel2_c downto ctrl_clksel0_c);
-            ctrl.t_total  <= bus_req_i.data(ctrl_t_tot4_c downto ctrl_t_tot0_c);
-            ctrl.t0_high  <= bus_req_i.data(ctrl_t_0h4_c downto ctrl_t_0h0_c);
-            ctrl.t1_high  <= bus_req_i.data(ctrl_t_1h4_c downto ctrl_t_1h0_c);
-          end if;
-        else -- read access
-          bus_rsp_o.data(ctrl_en_c)                            <= ctrl.enable;
-          bus_rsp_o.data(ctrl_clksel2_c downto ctrl_clksel0_c) <= ctrl.clk_prsc;
-          bus_rsp_o.data(ctrl_t_tot4_c downto ctrl_t_tot0_c)   <= ctrl.t_total;
-          bus_rsp_o.data(ctrl_t_0h4_c downto ctrl_t_0h0_c)     <= ctrl.t0_high;
-          bus_rsp_o.data(ctrl_t_1h4_c downto ctrl_t_1h0_c)     <= ctrl.t1_high;
-          --
-          bus_rsp_o.data(ctrl_fifo3_c downto ctrl_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
-          bus_rsp_o.data(ctrl_tx_empty_c)                  <= not tx_fifo.avail;
-          bus_rsp_o.data(ctrl_tx_full_c)                   <= not tx_fifo.free;
-          bus_rsp_o.data(ctrl_tx_busy_c)                   <= busy or tx_fifo.avail;
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
+        if (bus_req_i.addr(2) = '0') then
+          ctrl.enable   <= bus_req_i.data(ctrl_en_c);
+          ctrl.clk_prsc <= bus_req_i.data(ctrl_clksel2_c downto ctrl_clksel0_c);
+          ctrl.t_total  <= bus_req_i.data(ctrl_t_tot4_c downto ctrl_t_tot0_c);
+          ctrl.t0_high  <= bus_req_i.data(ctrl_t_0h4_c downto ctrl_t_0h0_c);
+          ctrl.t1_high  <= bus_req_i.data(ctrl_t_1h4_c downto ctrl_t_1h0_c);
         end if;
       end if;
     end if;
   end process;
+
+  -- read access (asynchronous) --
+  bus_read: process(bus_rden, ctrl, tx_fifo, busy)
+  begin
+    bus_rdata <= (others => '0');
+    if (bus_rden = '1') then -- output gating
+      bus_rdata(ctrl_en_c)                            <= ctrl.enable;
+      bus_rdata(ctrl_clksel2_c downto ctrl_clksel0_c) <= ctrl.clk_prsc;
+      bus_rdata(ctrl_t_tot4_c downto ctrl_t_tot0_c)   <= ctrl.t_total;
+      bus_rdata(ctrl_t_0h4_c downto ctrl_t_0h0_c)     <= ctrl.t0_high;
+      bus_rdata(ctrl_t_1h4_c downto ctrl_t_1h0_c)     <= ctrl.t1_high;
+      bus_rdata(ctrl_fifo3_c downto ctrl_fifo0_c)     <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
+      bus_rdata(ctrl_tx_empty_c)                      <= not tx_fifo.avail;
+      bus_rdata(ctrl_tx_full_c)                       <= not tx_fifo.free;
+      bus_rdata(ctrl_tx_busy_c)                       <= busy or tx_fifo.avail;
+    end if;
+  end process;
+
+  -- bus response --
+  bus_rsp_o.ack  <= bus_ack;
+  bus_rsp_o.err  <= '0'; -- no access errors supported
+  bus_rsp_o.data <= bus_rdata;
 
 
   -- TX Buffer (FIFO) -----------------------------------------------------------------------

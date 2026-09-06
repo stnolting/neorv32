@@ -34,11 +34,9 @@ uint32_t neorv32_cpu_hpm_get_size(void);
 int      neorv32_cpu_hwtrig_get_number(void);
 /**@}*/
 
-
 // ================================================================================================
 // Inline Load/Store
 // ================================================================================================
-
 
 /**********************************************************************//**
  * Store unsigned word to address space.
@@ -52,9 +50,8 @@ static inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_wo
 
   uint32_t reg_addr = addr;
   uint32_t reg_data = wdata;
-  asm volatile ("sw %[da], 0(%[ad])" : : [da] "r" (reg_data), [ad] "r" (reg_addr));
+  asm volatile ("sw %[da], 0(%[ad])" : : [da] "r" (reg_data), [ad] "r" (reg_addr) : "memory");
 }
-
 
 /**********************************************************************//**
  * Store unsigned half-word to address space.
@@ -68,9 +65,8 @@ static inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_ha
 
   uint32_t reg_addr = addr;
   uint32_t reg_data = (uint32_t)wdata;
-  asm volatile ("sh %[da], 0(%[ad])" : : [da] "r" (reg_data), [ad] "r" (reg_addr));
+  asm volatile ("sh %[da], 0(%[ad])" : : [da] "r" (reg_data), [ad] "r" (reg_addr) : "memory");
 }
-
 
 /**********************************************************************//**
  * Store unsigned byte to address space.
@@ -82,9 +78,8 @@ static inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_by
 
   uint32_t reg_addr = addr;
   uint32_t reg_data = (uint32_t)wdata;
-  asm volatile ("sb %[da], 0(%[ad])" : : [da] "r" (reg_data), [ad] "r" (reg_addr));
+  asm volatile ("sb %[da], 0(%[ad])" : : [da] "r" (reg_data), [ad] "r" (reg_addr) : "memory");
 }
-
 
 /**********************************************************************//**
  * Load unsigned word from address space.
@@ -98,10 +93,9 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned
 
   uint32_t reg_addr = addr;
   uint32_t reg_data;
-  asm volatile ("lw %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
+  asm volatile ("lw %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr) : "memory");
   return reg_data;
 }
-
 
 /**********************************************************************//**
  * Load unsigned half-word from address space.
@@ -115,10 +109,9 @@ static inline uint16_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned
 
   uint32_t reg_addr = addr;
   uint16_t reg_data;
-  asm volatile ("lhu %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
+  asm volatile ("lhu %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr) : "memory");
   return reg_data;
 }
-
 
 /**********************************************************************//**
  * Load signed half-word from address space.
@@ -132,10 +125,9 @@ static inline int16_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_ha
 
   uint32_t reg_addr = addr;
   int16_t reg_data;
-  asm volatile ("lh %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
+  asm volatile ("lh %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr) : "memory");
   return reg_data;
 }
-
 
 /**********************************************************************//**
  * Load unsigned byte from address space.
@@ -147,10 +139,9 @@ static inline uint8_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_
 
   uint32_t reg_addr = addr;
   uint8_t reg_data;
-  asm volatile ("lbu %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
+  asm volatile ("lbu %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr) : "memory");
   return reg_data;
 }
-
 
 /**********************************************************************//**
  * Load signed byte from address space.
@@ -162,15 +153,13 @@ static inline int8_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_byt
 
   uint32_t reg_addr = addr;
   int8_t reg_data;
-  asm volatile ("lb %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
+  asm volatile ("lb %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr) : "memory");
   return reg_data;
 }
-
 
 // ================================================================================================
 // Inline CSR Access
 // ================================================================================================
-
 
 /**********************************************************************//**
  * Read data from CPU control and status register (CSR).
@@ -185,7 +174,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_read(cons
   return csr_data;
 }
 
-
 /**********************************************************************//**
  * Write data to CPU control and status register (CSR).
  *
@@ -197,7 +185,6 @@ static inline void __attribute__ ((always_inline)) neorv32_cpu_csr_write(const i
   uint32_t csr_data = data;
   asm volatile ("csrw %[id], %[src]" :  : [id] "i" (csr_id), [src] "r" (csr_data));
 }
-
 
 /**********************************************************************//**
  * Set bit(s) in CPU control and status register (CSR).
@@ -211,7 +198,6 @@ static inline void __attribute__ ((always_inline)) neorv32_cpu_csr_set(const int
   asm volatile ("csrs %[id], %[src]" :  : [id] "i" (csr_id), [src] "r" (csr_data));
 }
 
-
 /**********************************************************************//**
  * Clear bit(s) in CPU control and status register (CSR).
  *
@@ -224,11 +210,9 @@ static inline void __attribute__ ((always_inline)) neorv32_cpu_csr_clr(const int
   asm volatile ("csrc %[id], %[src]" :  : [id] "i" (csr_id), [src] "r" (csr_data));
 }
 
-
 // ================================================================================================
 // Inline Atomic Memory Access
 // ================================================================================================
-
 
 /**********************************************************************//**
  * Atomic write-after-read CSR operation.
@@ -240,10 +224,9 @@ static inline void __attribute__ ((always_inline)) neorv32_cpu_csr_clr(const int
 static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_swap(const int csr_id, uint32_t wdata) {
 
   uint32_t tmp;
-  asm volatile ("csrrw %[dst], %[id], %[src]" : [dst] "=r" (tmp) : [id] "i" (csr_id), [src] "r" (wdata));
+  asm volatile ("csrrw %[dst], %[id], %[src]" : [dst] "=r" (tmp) : [id] "i" (csr_id), [src] "r" (wdata) : "memory");
   return tmp;
 }
-
 
 /**********************************************************************//**
  * Atomic memory access: load-reservate word.
@@ -260,7 +243,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amolr(uint32_
   uint32_t amo_addr = addr;
   uint32_t amo_rdata;
 
-  asm volatile ("lr.w %[dst], 0(%[addr])" : [dst] "=r" (amo_rdata) : [addr] "r" (amo_addr));
+  asm volatile ("lr.w %[dst], 0(%[addr])" : [dst] "=r" (amo_rdata) : [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
 #else
@@ -269,7 +252,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amolr(uint32_
   return 0;
 #endif
 }
-
 
 /**********************************************************************//**
  * Atomic memory access: store-conditional word.
@@ -288,7 +270,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amosc(uint32_
   uint32_t amo_wdata = wdata;
   uint32_t amo_status;
 
-  asm volatile ("sc.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_status) : [src] "r" (amo_wdata), [addr] "r" (amo_addr));
+  asm volatile ("sc.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_status) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_status;
 #else
@@ -298,7 +280,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amosc(uint32_
   return 1; // always fail
 #endif
 }
-
 
 /**********************************************************************//**
  * Atomic memory access: atomic SWAP.
@@ -317,7 +298,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoswap(uint3
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
 
-  asm volatile ("amoswap.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr));
+  asm volatile ("amoswap.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
 #else
@@ -327,7 +308,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoswap(uint3
   return 0;
 #endif
 }
-
 
 /**********************************************************************//**
  * Atomic memory access: atomic ADD.
@@ -346,7 +326,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoadd(uint32
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
 
-  asm volatile ("amoadd.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr));
+  asm volatile ("amoadd.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
 #else
@@ -356,7 +336,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoadd(uint32
   return 0;
 #endif
 }
-
 
 /**********************************************************************//**
  * Atomic memory access: atomic XOR.
@@ -375,7 +354,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoxor(uint32
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
 
-  asm volatile ("amoxor.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr));
+  asm volatile ("amoxor.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
 #else
@@ -385,7 +364,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoxor(uint32
   return 0;
 #endif
 }
-
 
 /**********************************************************************//**
  * Atomic memory access: atomic AND.
@@ -404,7 +382,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoand(uint32
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
 
-  asm volatile ("amoand.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr));
+  asm volatile ("amoand.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
 #else
@@ -414,7 +392,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoand(uint32
   return 0;
 #endif
 }
-
 
 /**********************************************************************//**
  * Atomic memory access: atomic OR.
@@ -433,7 +410,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoor(uint32_
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
 
-  asm volatile ("amoor.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr));
+  asm volatile ("amoor.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
 #else
@@ -443,7 +420,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoor(uint32_
   return 0;
 #endif
 }
-
 
 /**********************************************************************//**
  * Atomic memory access: atomic MIN.
@@ -462,7 +438,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomin(uint32
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
 
-  asm volatile ("amomin.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr));
+  asm volatile ("amomin.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
 #else
@@ -472,7 +448,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomin(uint32
   return 0;
 #endif
 }
-
 
 /**********************************************************************//**
  * Atomic memory access: atomic MAX.
@@ -491,7 +466,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomax(uint32
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
 
-  asm volatile ("amomax.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr));
+  asm volatile ("amomax.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
 #else
@@ -501,7 +476,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomax(uint32
   return 0;
 #endif
 }
-
 
 /**********************************************************************//**
  * Atomic memory access: atomic MINU.
@@ -520,7 +494,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amominu(uint3
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
 
-  asm volatile ("amominu.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr));
+  asm volatile ("amominu.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
 #else
@@ -530,7 +504,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amominu(uint3
   return 0;
 #endif
 }
-
 
 /**********************************************************************//**
  * Atomic memory access: atomic MAXU.
@@ -549,7 +522,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomaxu(uint3
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
 
-  asm volatile ("amomaxu.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr));
+  asm volatile ("amomaxu.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
 #else
@@ -560,11 +533,9 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomaxu(uint3
 #endif
 }
 
-
 // ================================================================================================
 // Inline Misc
 // ================================================================================================
-
 
 /**********************************************************************//**
  * Put CPU into sleep / power-down mode.
@@ -576,6 +547,5 @@ static inline void __attribute__ ((always_inline)) neorv32_cpu_sleep(void) {
 
   asm volatile ("wfi");
 }
-
 
 #endif // NEORV32_CPU_H

@@ -24,7 +24,7 @@ entity neorv32_cpu_alu_cfu is
     clk_i    : in  std_ulogic; -- global clock, rising edge
     rstn_i   : in  std_ulogic; -- global reset, low-active, async
     -- request --
-    start_i  : in  std_ulogic; -- start trigger, single-shot
+    start_i  : in  std_ulogic;                     -- start trigger, single-shot
     inst_i   : in  std_ulogic_vector(31 downto 0); -- full instruction word
     rs1_i    : in  std_ulogic_vector(31 downto 0); -- register source operand 1
     rs2_i    : in  std_ulogic_vector(31 downto 0); -- register source operand 2

@@ -40,7 +40,7 @@ enum NEORV32_SLINK_CTRL_enum {
   SLINK_CTRL_RX_FULL       =  9, /**< SLINK control register(9)  (r/-): RX FIFO full */
   SLINK_CTRL_TX_EMPTY      = 10, /**< SLINK control register(10) (r/-): TX FIFO empty */
   SLINK_CTRL_TX_FULL       = 11, /**< SLINK control register(11) (r/-): TX FIFO full */
-  SLINK_CTRL_RX_LAST       = 12, /**< SLINK control register(1)  (r/-): RX end-of-stream delimiter */
+  SLINK_CTRL_RX_LAST       = 12, /**< SLINK control register(12) (r/-): RX end-of-stream delimiter */
 
   SLINK_CTRL_IRQ_RX_NEMPTY = 16, /**< SLINK control register(16) (r/w): interrupt if RX FIFO not empty */
   SLINK_CTRL_IRQ_RX_FULL   = 17, /**< SLINK control register(17) (r/w): interrupt if RX FIFO full */

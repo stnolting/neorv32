@@ -64,8 +64,8 @@ enum NEORV32_UART_DATA_enum {
   UART_DATA_RX_FIFO_SIZE_LSB =  8, /**< UART data register(8)  (r/-): log2(RX FIFO size), LSB */
   UART_DATA_RX_FIFO_SIZE_MSB = 11, /**< UART data register(11) (r/-): log2(RX FIFO size), MSB */
 
-  UART_DATA_TX_FIFO_SIZE_LSB = 12, /**< UART data register(12) (r/-): log2(RX FIFO size), LSB */
-  UART_DATA_TX_FIFO_SIZE_MSB = 15, /**< UART data register(15) (r/-): log2(RX FIFO size), MSB */
+  UART_DATA_TX_FIFO_SIZE_LSB = 12, /**< UART data register(12) (r/-): log2(TX FIFO size), LSB */
+  UART_DATA_TX_FIFO_SIZE_MSB = 15, /**< UART data register(15) (r/-): log2(TX FIFO size), MSB */
 };
 /**@}*/
 

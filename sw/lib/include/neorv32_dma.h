@@ -43,7 +43,7 @@ enum NEORV32_DMA_CTRL_enum {
   DMA_CTRL_DFULL     = 28, /**< DMA control register(28) (r/-): Descriptor FIFO is full */
   DMA_CTRL_ERROR     = 29, /**< DMA control register(29) (r/-): Bus access error during transfer */
   DMA_CTRL_DONE      = 30, /**< DMA control register(30) (r/-): A transfer has been executed when set */
-  DMA_CTRL_BUSY      = 31  /**< DMA control register(32) (r/-): DMA busy / transfer in progress */
+  DMA_CTRL_BUSY      = 31  /**< DMA control register(31) (r/-): DMA busy / transfer in progress */
 };
 
 /** DMA transfer configuration */

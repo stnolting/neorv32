@@ -99,10 +99,10 @@ begin
   xbus_stb_o <= bus_req.stb;
   xbus_cyc_o <= bus_req.stb or pending;
 
-  -- cycle type identifier (for the ENTIRE access - burst-termination type is not supported!) --
+  -- cycle type identifier (for the ENTIRE access - Wishbone-burst-termination type is not supported!) --
   xbus_cti_o <= "001" when (bus_req.lock = '1') and (bus_req.amo   = '1') else -- constant address burst
                 "010" when (bus_req.lock = '1') and (bus_req.burst = '1') else -- incrementing address burst
-                "000"; -- single access
+                "000"; -- single access / end-of-burst
 
   -- access meta data (compatible to AXI4 "xPROT") --
   xbus_tag_o(2) <= bus_req.meta(0); -- 0 = data access, 1 = instruction fetch
@@ -110,7 +110,7 @@ begin
   xbus_tag_o(0) <= bus_req.meta(1); -- 0 = unprivileged access, 1 = privileged access
 
   -- response gating --
-  bus_rsp.data <= xbus_dat_i when (pending = '1') else (others => '0');
+  bus_rsp.data <= xbus_dat_i when (pending = '1') else (others => '0'); -- output gating
   bus_rsp.ack  <= pending and (xbus_err_i or xbus_ack_i);
   bus_rsp.err  <= pending and xbus_err_i;
 

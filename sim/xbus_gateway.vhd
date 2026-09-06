@@ -48,13 +48,44 @@ architecture xbus_gateway_rtl of xbus_gateway is
   -- module configuration --
   constant num_devs_c : natural := 8; -- number of device ports
 
-  -- list of device base address and address size --
-  type dev_en_list_t   is array (num_devs_c-1 downto 0) of boolean;
+  -- list of enabled device ports --
+  type dev_en_list_t is array (num_devs_c-1 downto 0) of boolean;
+  constant dev_en_list_c : dev_en_list_t := (
+    0 => DEV_0_EN,
+    1 => DEV_1_EN,
+    2 => DEV_2_EN,
+    3 => DEV_3_EN,
+    4 => DEV_4_EN,
+    5 => DEV_5_EN,
+    6 => DEV_6_EN,
+    7 => DEV_7_EN
+  );
+
+  -- list of device base addresses --
   type dev_base_list_t is array (num_devs_c-1 downto 0) of std_ulogic_vector(31 downto 0);
+  constant dev_base_list_c : dev_base_list_t := (
+    0 => DEV_0_BASE,
+    1 => DEV_1_BASE,
+    2 => DEV_2_BASE,
+    3 => DEV_3_BASE,
+    4 => DEV_4_BASE,
+    5 => DEV_5_BASE,
+    6 => DEV_6_BASE,
+    7 => DEV_7_BASE
+  );
+
+  -- list of device address sizes --
   type dev_size_list_t is array (num_devs_c-1 downto 0) of natural;
-  constant dev_en_list_c : dev_en_list_t := (0 => DEV_0_EN, 1 => DEV_1_EN, 2 => DEV_2_EN, 3 => DEV_3_EN, 4 => DEV_4_EN, 5 => DEV_5_EN, 6 => DEV_6_EN, 7 => DEV_7_EN);
-  constant dev_base_list_c : dev_base_list_t := (0 => DEV_0_BASE, 1 => DEV_1_BASE, 2 => DEV_2_BASE, 3 => DEV_3_BASE, 4 => DEV_4_BASE, 5 => DEV_5_BASE, 6 => DEV_6_BASE, 7 => DEV_7_BASE);
-  constant dev_size_list_c : dev_size_list_t := (0 => DEV_0_SIZE, 1 => DEV_1_SIZE, 2 => DEV_2_SIZE, 3 => DEV_3_SIZE, 4 => DEV_4_SIZE, 5 => DEV_5_SIZE, 6 => DEV_6_SIZE, 7 => DEV_7_SIZE);
+  constant dev_size_list_c : dev_size_list_t := (
+    0 => DEV_0_SIZE,
+    1 => DEV_1_SIZE,
+    2 => DEV_2_SIZE,
+    3 => DEV_3_SIZE,
+    4 => DEV_4_SIZE,
+    5 => DEV_5_SIZE,
+    6 => DEV_6_SIZE,
+    7 => DEV_7_SIZE
+  );
 
   -- device ports combined as arrays --
   type dev_req_t is array (num_devs_c-1 downto 0) of xbus_req_t;

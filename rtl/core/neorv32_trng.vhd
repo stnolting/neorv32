@@ -72,6 +72,10 @@ architecture neorv32_trng_rtl of neorv32_trng is
     );
   end component;
 
+  -- bus interface --
+  signal bus_ack, bus_rden : std_ulogic;
+  signal bus_rdata : std_ulogic_vector(31 downto 0);
+
   -- control register --
   signal enable, fifo_clr : std_ulogic;
 
@@ -88,41 +92,56 @@ begin
 
   -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_access: process(rstn_i, clk_i)
+  bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o <= rsp_terminate_c;
-      enable    <= '0';
-      fifo_clr  <= '0';
+      bus_ack  <= '0';
+      bus_rden <= '0';
     elsif rising_edge(clk_i) then
-      -- bus handshake --
-      bus_rsp_o.ack  <= bus_req_i.stb;
-      bus_rsp_o.err  <= '0';
-      bus_rsp_o.data <= (others => '0');
-      -- write access --
+      bus_ack  <= bus_req_i.stb;
+      bus_rden <= bus_req_i.stb and (not bus_req_i.rw);
+    end if;
+  end process;
+
+  -- write access --
+  bus_write: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      enable   <= '0';
       fifo_clr <= '0';
+    elsif rising_edge(clk_i) then
+      fifo_clr <= '0'; -- default
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '0') then -- control register
         enable   <= bus_req_i.data(ctrl_en_c);
         fifo_clr <= bus_req_i.data(ctrl_fifo_clr_c);
       end if;
-      -- read access --
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
-        if (bus_req_i.addr(2) = '0') then -- control register
-          bus_rsp_o.data(ctrl_en_c)                         <= enable;
-          bus_rsp_o.data(ctrl_fifo_clr_c)                   <= '0';
-          bus_rsp_o.data(ctrl_sim_mode_c)                   <= bool_to_ulogic_f(is_simulation_c);
-          bus_rsp_o.data(ctrl_avail_c)                      <= fifo.avail;
-          bus_rsp_o.data(ctrl_fifo3_c  downto ctrl_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
-          bus_rsp_o.data(ctrl_nbit3_c  downto ctrl_nbit0_c) <= std_ulogic_vector(to_unsigned(log2_rbit_c, 4));
-          bus_rsp_o.data(ctrl_nro7_c   downto ctrl_nro0_c)  <= std_ulogic_vector(to_unsigned(NUM_RO, 8));
-          bus_rsp_o.data(ctrl_ninv11_c downto ctrl_ninv0_c) <= std_ulogic_vector(to_unsigned(num_inv_start_c, 12));
-        else -- data register
-          bus_rsp_o.data(7 downto 0) <= fifo.rdata;
-        end if;
+    end if;
+  end process;
+
+  -- read access (asynchronous) --
+  bus_read: process(bus_rden, bus_req_i.addr, enable, fifo)
+  begin
+    bus_rdata <= (others => '0');
+    if (bus_rden = '1') then -- output gating
+      if (bus_req_i.addr(2) = '0') then -- control register
+        bus_rdata(ctrl_en_c)                         <= enable;
+        bus_rdata(ctrl_fifo_clr_c)                   <= '0';
+        bus_rdata(ctrl_sim_mode_c)                   <= bool_to_ulogic_f(is_simulation_c);
+        bus_rdata(ctrl_avail_c)                      <= fifo.avail;
+        bus_rdata(ctrl_fifo3_c  downto ctrl_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
+        bus_rdata(ctrl_nbit3_c  downto ctrl_nbit0_c) <= std_ulogic_vector(to_unsigned(log2_rbit_c, 4));
+        bus_rdata(ctrl_nro7_c   downto ctrl_nro0_c)  <= std_ulogic_vector(to_unsigned(NUM_RO, 8));
+        bus_rdata(ctrl_ninv11_c downto ctrl_ninv0_c) <= std_ulogic_vector(to_unsigned(num_inv_start_c, 12));
+      else -- data register
+        bus_rdata(7 downto 0) <= fifo.rdata;
       end if;
     end if;
   end process;
 
+  -- bus response --
+  bus_rsp_o.ack  <= bus_ack;
+  bus_rsp_o.err  <= '0'; -- no access errors supported
+  bus_rsp_o.data <= bus_rdata;
 
   -- neoTRNG True Random Number Generator ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -140,7 +159,6 @@ begin
     valid_o  => fifo.we,
     data_o   => fifo.wdata
   );
-
 
   -- Random Number Buffer --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -165,8 +183,8 @@ begin
     avail_o => fifo.avail
   );
 
-  fifo.clear <= '1' when (enable = '0') or (fifo_clr = '1') else '0';
-  fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
+  fifo.clear <= (not enable) or fifo_clr;
+  fifo.re    <= bus_rden and bus_req_i.addr(2);
 
   -- interrupt generator --
   irq_gen: process(clk_i)

@@ -34,7 +34,7 @@ end entity;
 architecture neorv32_onewire_rtl of neorv32_onewire is
 
   -- timing configuration (known-good, no need to change) --
-  -- absolute time in multiples of the base tick time t_base; see data sheet for more information about the t* timing values
+  -- absolute time in multiples of the base tick time t_base; see data sheet for more information
   constant t_write_one_c       : unsigned(6 downto 0) := to_unsigned( 1, 7); -- t0
   constant t_read_sample_c     : unsigned(6 downto 0) := to_unsigned( 2, 7); -- t1
   constant t_slot_end_c        : unsigned(6 downto 0) := to_unsigned( 7, 7); -- t2
@@ -74,6 +74,10 @@ architecture neorv32_onewire_rtl of neorv32_onewire is
 
   -- helpers --
   constant log2_fifo_size_c : natural := index_size_f(ONEWIRE_FIFO);
+
+  -- bus interface --
+  signal bus_ack, bus_rden : std_ulogic;
+  signal bus_rdata : std_ulogic_vector(31 downto 0);
 
   -- control register --
   type ctrl_t is record
@@ -120,48 +124,63 @@ architecture neorv32_onewire_rtl of neorv32_onewire is
 
 begin
 
-  -- Bus Access ---------------------------------------------------------------------------
+  -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_access: process(rstn_i, clk_i)
+  bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o     <= rsp_terminate_c;
+      bus_ack  <= '0';
+      bus_rden <= '0';
+    elsif rising_edge(clk_i) then
+      bus_ack  <= bus_req_i.stb;
+      bus_rden <= bus_req_i.stb and (not bus_req_i.rw);
+    end if;
+  end process;
+
+  -- write access --
+  bus_write: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
       ctrl.enable   <= '0';
       ctrl.clk_prsc <= (others => '0');
       ctrl.clk_div  <= (others => '0');
       ctrl.clear    <= '0';
     elsif rising_edge(clk_i) then
-      -- bus handshake --
-      bus_rsp_o.ack  <= bus_req_i.stb;
-      bus_rsp_o.err  <= '0';
-      bus_rsp_o.data <= (others => '0');
-      -- control register write access --
-      ctrl.clear <= '0';
+      ctrl.clear <= '0'; -- default
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '0') then -- control register
         ctrl.enable   <= bus_req_i.data(ctrl_en_c);
         ctrl.clear    <= bus_req_i.data(ctrl_clear_c);
         ctrl.clk_prsc <= bus_req_i.data(ctrl_prsc1_c downto ctrl_prsc0_c);
         ctrl.clk_div  <= bus_req_i.data(ctrl_clkdiv7_c downto ctrl_clkdiv0_c);
       end if;
-      -- read access --
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
-        if (bus_req_i.addr(2) = '0') then -- control register
-          bus_rsp_o.data(ctrl_en_c)                                  <= ctrl.enable;
-          bus_rsp_o.data(ctrl_prsc1_c downto ctrl_prsc0_c)           <= ctrl.clk_prsc;
-          bus_rsp_o.data(ctrl_clkdiv7_c downto ctrl_clkdiv0_c)       <= ctrl.clk_div;
-          bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
-          bus_rsp_o.data(ctrl_tx_full_c)                             <= not fifo.tx_free;
-          bus_rsp_o.data(ctrl_rx_avail_c)                            <= fifo.rx_avail;
-          bus_rsp_o.data(ctrl_sense_c)                               <= serial.wire_in(1);
-          bus_rsp_o.data(ctrl_busy_c)                                <= fifo.tx_avail or busy;
-        else -- data register
-          bus_rsp_o.data(dcmd_msb_c downto dcmd_lsb_c) <= fifo.rx_rdata(7 downto 0);
-          bus_rsp_o.data(dcmd_pres_c)                  <= fifo.rx_rdata(8);
-        end if;
-      end if;
-
     end if;
   end process;
+
+  -- read access (asynchronous) --
+  bus_read: process(bus_rden, bus_req_i.addr, ctrl, fifo, serial, busy)
+  begin
+     bus_rdata <= (others => '0');
+     if (bus_rden = '1') then -- output gating
+       if (bus_req_i.addr(2) = '0') then -- control register
+         bus_rdata(ctrl_en_c)                                  <= ctrl.enable;
+         bus_rdata(ctrl_prsc1_c downto ctrl_prsc0_c)           <= ctrl.clk_prsc;
+         bus_rdata(ctrl_clkdiv7_c downto ctrl_clkdiv0_c)       <= ctrl.clk_div;
+         bus_rdata(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
+         bus_rdata(ctrl_tx_full_c)                             <= not fifo.tx_free;
+         bus_rdata(ctrl_rx_avail_c)                            <= fifo.rx_avail;
+         bus_rdata(ctrl_sense_c)                               <= serial.wire_in(1);
+         bus_rdata(ctrl_busy_c)                                <= fifo.tx_avail or busy;
+       else -- data register
+         bus_rdata(dcmd_msb_c downto dcmd_lsb_c) <= fifo.rx_rdata(7 downto 0);
+         bus_rdata(dcmd_pres_c)                  <= fifo.rx_rdata(8);
+       end if;
+     end if;
+  end process;
+
+  -- bus response --
+  bus_rsp_o.ack  <= bus_ack;
+  bus_rsp_o.err  <= '0'; -- no access errors supported
+  bus_rsp_o.data <= bus_rdata;
 
 
   -- Data FIFO ("Ring Buffer") --------------------------------------------------------------
@@ -189,8 +208,8 @@ begin
     avail_o => fifo.tx_avail
   );
 
-  fifo.tx_clr   <= '1' when (ctrl.enable = '0') or (ctrl.clear = '1') else '0';
-  fifo.tx_we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') else '0';
+  fifo.tx_clr   <= (not ctrl.enable) or ctrl.clear;
+  fifo.tx_we    <= bus_req_i.stb and bus_req_i.rw and bus_req_i.addr(2);
   fifo.tx_wdata <= bus_req_i.data(dcmd_cmd_hi_c downto dcmd_cmd_lo_c) & bus_req_i.data(dcmd_msb_c downto dcmd_lsb_c);
   fifo.tx_re    <= '1' when (serial.state = "101") and (clk_tick = '1') else '0';
 
@@ -217,10 +236,10 @@ begin
     avail_o => fifo.rx_avail
   );
 
-  fifo.rx_clr   <= '1' when (ctrl.enable = '0') or (ctrl.clear = '1') else '0';
+  fifo.rx_clr   <= (not ctrl.enable) or ctrl.clear;
   fifo.rx_wdata <= serial.presence & serial.sreg;
   fifo.rx_we    <= serial.done;
-  fifo.rx_re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
+  fifo.rx_re    <= bus_rden and bus_req_i.addr(2);
 
 
   -- IRQ if enabled and TX FIFO is empty and serial engine is idle --

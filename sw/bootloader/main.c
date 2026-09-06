@@ -132,11 +132,6 @@ skip_auto_boot:
       system_app_boot();
     }
 
-    /**** exit while loop: shutdown ****/
-    if (cmd == 'x') {
-      break;
-    }
-
     /**** show help menu / available commands ****/
     if (cmd == 'h') {
       uart_puts(
@@ -164,7 +159,6 @@ skip_auto_boot:
         "c: SD card - load\n"
 #endif
         "e: Start executable\n"
-        "x: Exit\n"
       );
     }
 
@@ -232,8 +226,6 @@ skip_auto_boot:
   }
 #endif
 
-  // bootloader should never return: raise exception and halt
-  asm volatile ("ebreak");
-  __builtin_unreachable();
+  // bootloader should never return
   return -1;
 }

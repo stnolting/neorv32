@@ -51,29 +51,18 @@ int main() {
     return -1;
   }
 
-
   // intro
   neorv32_uart0_puts("\n<< Watchdog Demo Program >>\n\n");
 
-
-  // show the cause of the last processor reset
+  // show cause of the last processor reset
   neorv32_uart0_puts("Cause of last processor reset: ");
-  if (neorv32_wdt_get_cause() == WDT_RCAUSE_EXT) {
-    neorv32_uart0_puts("External reset\n\n");
+  switch (neorv32_wdt_get_cause()) {
+    case WDT_RCAUSE_EXT: neorv32_uart0_puts("External reset\n\n"); break;
+    case WDT_RCAUSE_OCD: neorv32_uart0_puts("On-chip debugger reset\n\n"); break;
+    case WDT_RCAUSE_TMO: neorv32_uart0_puts("Watchdog timeout\n\n"); break;
+    case WDT_RCAUSE_ACC: neorv32_uart0_puts("Watchdog illegal access\n\n"); break;
+    default:             neorv32_uart0_puts("Unknown\n\n"); break;
   }
-  else if (neorv32_wdt_get_cause() == WDT_RCAUSE_OCD) {
-    neorv32_uart0_puts("On-chip debugger reset\n\n");
-  }
-  else if (neorv32_wdt_get_cause() == WDT_RCAUSE_TMO) {
-    neorv32_uart0_puts("Watchdog timeout\n\n");
-  }
-  else if (neorv32_wdt_get_cause() == WDT_RCAUSE_ACC) {
-    neorv32_uart0_puts("Watchdog illegal access\n\n");
-  }
-  else {
-    neorv32_uart0_puts("Unknown\n\n");
-  }
-
 
   // compute WDT timeout value; the WDT counter increments at f_wdt = f_main / 4096
   uint32_t timeout = WDT_TIMEOUT_SEC * (neorv32_sysinfo_get_clk() / 4096);
@@ -82,10 +71,15 @@ int main() {
     return -1;
   }
 
+  // check if WDT is already locked
+  if (NEORV32_WDT->CTRL & (1 << WDT_CTRL_LOCK)) {
+    neorv32_uart0_puts("ERROR! Watchdog is locked!\n");
+    return -1;
+  }
+
   // setup watchdog: no lock
   neorv32_uart0_puts("Starting WDT...\n");
   neorv32_wdt_setup(timeout, 0);
-
 
   // feed the watchdog
   neorv32_uart0_puts("Resetting WDT 5 times...\n");
@@ -95,7 +89,6 @@ int main() {
     neorv32_wdt_feed(WDT_PASSWORD); // reset internal counter using the access password
     neorv32_uart0_puts("WDT reset.\n");
   }
-
 
   // go to sleep mode and wait for watchdog to time-out
   neorv32_uart0_puts("Entering sleep mode and waiting for WDT timeout...\n");

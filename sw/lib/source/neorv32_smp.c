@@ -13,7 +13,6 @@
 
 #include <neorv32.h>
 
-
 /**********************************************************************//**
  * Trigger SMP boot of core 1.
  *
@@ -28,6 +27,7 @@ static int __neorv32_smp_boot(uint32_t addr, uint32_t stack) {
   // setup launch configuration in CLINT.MTIMECMP[hart_id]
   NEORV32_CLINT->MTIMECMP[1].uint32[0] = stack; // top of stack
   NEORV32_CLINT->MTIMECMP[1].uint32[1] = addr;  // entry point
+  asm volatile ("fence" ::: "memory");
 
   // start core by triggering its software interrupt
   neorv32_clint_msi_set(1);
@@ -41,7 +41,6 @@ static int __neorv32_smp_boot(uint32_t addr, uint32_t stack) {
   }
   return -1; // core did not respond
 }
-
 
 /**********************************************************************//**
  * Configure and start secondary CPU core (core 1).

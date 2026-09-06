@@ -38,7 +38,7 @@ enum NEORV32_TRACER_CTRL_enum {
   TRACER_CTRL_HSEL    =  1, /**< TRACER control register (1) (r/w): Hart select for tracing */
   TRACER_CTRL_START   =  2, /**< TRACER control register (2) (r/w): Start tracing, flag always reads as zero */
   TRACER_CTRL_STOP    =  3, /**< TRACER control register (3) (r/w): Manually stop tracing, flag always reads as zero */
-  TRACER_CTRL_RUN     =  4, /**< TRACER control register (3) (r/-): Tracing in progress when set */
+  TRACER_CTRL_RUN     =  4, /**< TRACER control register (4) (r/-): Tracing in progress when set */
   TRACER_CTRL_AVAIL   =  5, /**< TRACER control register (5) (r/-): Trace data available when set */
   TRACER_CTRL_IRQ_CLR =  6, /**< TRACER control register (6) (r/w): Clear pending interrupt when writing 1 */
   TRACER_CTRL_TBM_LSB =  7, /**< TRACER control register (7) (r/-): log2(trace buffer depth), LSB */

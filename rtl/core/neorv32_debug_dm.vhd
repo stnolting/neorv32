@@ -155,13 +155,13 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
   -- Debug Core Interface --
   type dci_t is record
-    ack_hlt  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU (re-)entered HALT state (single-shot)
-    req_res  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- DM wants the CPU to resume when set
-    ack_res  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU starts resuming when set (single-shot)
-    req_exe  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- DM wants CPU to execute program buffer when set
-    ack_exe  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU starts executing program buffer when set (single-shot)
-    ack_exc  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU has detected an exception (single-shot)
-    data_reg : std_ulogic_vector(31 downto 0); -- memory-mapped data exchange register
+    ack_hlt : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU (re-)entered HALT state (single-shot)
+    req_res : std_ulogic_vector(NUM_HARTS-1 downto 0); -- DM wants the CPU to resume when set
+    ack_res : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU starts resuming when set (single-shot)
+    req_exe : std_ulogic_vector(NUM_HARTS-1 downto 0); -- DM wants CPU to execute program buffer when set
+    ack_exe : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU starts executing program buffer when set (single-shot)
+    ack_exc : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU has detected an exception (single-shot)
+    data0   : std_ulogic_vector(31 downto 0); -- memory-mapped data exchange register
   end record;
   signal dci : dci_t;
 
@@ -211,15 +211,19 @@ begin
 
           -- debug module control --
           when addr_dmcontrol_c =>
-            dm_reg.halt_req  <= dmi_req_i.data(31);                                          -- haltreq
-            dm_reg.req_res   <= dmi_req_i.data(30) and (not dmi_req_i.data(31));             -- resumereq, ignore if halt request
-            dm_reg.reset_ack <= dmi_req_i.data(28);                                          -- ackhavereset
-            if (cmd_busy = '0') then dm_reg.hartsel <= dmi_req_i.data(18 downto 16); end if; -- hartsello, no update while CMD is executing
-            dm_reg.ndmreset  <= dmi_req_i.data(1);                                           -- ndmreset
+            dm_reg.halt_req  <= dmi_req_i.data(31);                              -- haltreq
+            dm_reg.req_res   <= dmi_req_i.data(30) and (not dmi_req_i.data(31)); -- resumereq, ignore if halt request
+            dm_reg.reset_ack <= dmi_req_i.data(28);                              -- ackhavereset
+            if (cmd_busy = '0') then
+              dm_reg.hartsel <= dmi_req_i.data(18 downto 16);                    -- hartsello, no update while CMD is executing
+            end if;
+            dm_reg.ndmreset  <= dmi_req_i.data(1);                               -- ndmreset
 
           -- write abstract command (only when idle and no error yet) --
           when addr_command_c =>
-            if (cmd_busy = '0') and (cmd_err = "000") then dm_reg.command <= dmi_req_i.data; end if;
+            if (cmd_busy = '0') and (cmd_err = "000") then
+              dm_reg.command <= dmi_req_i.data;
+            end if;
 
           -- write abstract command autoexec (only when idle) --
           when addr_abstractauto_c =>
@@ -230,15 +234,21 @@ begin
 
           -- acknowledge command error --
           when addr_abstractcs_c =>
-            if (dmi_req_i.data(10 downto 8) = "111") then dm_reg.clr_acc_err <= '1'; end if;
+            if (dmi_req_i.data(10 downto 8) = "111") then
+              dm_reg.clr_acc_err <= '1';
+            end if;
 
           -- write program buffer 0 (only when idle) --
           when addr_progbuf0_c =>
-            if (cmd_busy = '0') then dm_reg.progbuf(0) <= dmi_req_i.data; end if;
+            if (cmd_busy = '0') then
+              dm_reg.progbuf(0) <= dmi_req_i.data;
+            end if;
 
           -- write program buffer 1 (only when idle) --
           when addr_progbuf1_c =>
-            if (cmd_busy = '0') then dm_reg.progbuf(1) <= dmi_req_i.data; end if;
+            if (cmd_busy = '0') then
+              dm_reg.progbuf(1) <= dmi_req_i.data;
+            end if;
 
           -- undefined --
           when others =>
@@ -300,12 +310,9 @@ begin
 
   -- Debug Module Interface - Read Access ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  dmi_read_access: process(rstn_i, clk_i)
+  dmi_read_access: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      dmi_rsp_o.ack  <= '0';
-      dmi_rsp_o.data <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       dmi_rsp_o.ack  <= or_reduce_f(dmi_req_i.op); -- always ACK any request
       dmi_rsp_o.data <= (others => '0');
       case dmi_req_i.addr is
@@ -374,7 +381,7 @@ begin
         -- abstract data 0 --
         when addr_data0_c =>
           if (dmi_rden = '1') then
-            dmi_rsp_o.data <= dci.data_reg;
+            dmi_rsp_o.data <= dci.data0;
           end if;
 
         -- authentication data (can always be read) --
@@ -389,7 +396,7 @@ begin
 
         -- not implemented or read-only-zero --
         when others =>
-          null;
+          dmi_rsp_o.data <= (others => '0');
 
       end case;
     end if;
@@ -398,14 +405,9 @@ begin
 
   -- Hart Status Controller -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  hart_status: process(rstn_i, clk_i)
+  hart_status: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      hart.halted     <= (others => '0');
-      hart.resume_req <= (others => '0');
-      hart.resume_ack <= (others => '0');
-      hart.reset      <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       for i in 0 to NUM_HARTS-1 loop
         -- halted ACK --
         if (dm_reg.ndmreset = '1') or (dm_reg.dmactive = '0') or (dci.ack_res(i) = '1') then
@@ -441,12 +443,9 @@ begin
 
   -- Command Execution Arbiter --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  cmd_arbiter: process(rstn_i, clk_i)
+  cmd_arbiter: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      cmd_state <= CMD_IDLE;
-      cmd_err   <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (dm_reg.ndmreset = '1') or (dm_reg.dmactive = '0') then -- hart/DM reset
         cmd_state <= CMD_IDLE;
         cmd_err   <= (others => '0');
@@ -530,33 +529,42 @@ begin
   dci.req_exe <= hartselect when (cmd_state = CMD_START) else (others => '0');
 
 
-  -- Bus Access (from CPU) ------------------------------------------------------------------
+  -- CPU Interface --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_access: process(rstn_i, clk_i)
+  bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o    <= rsp_terminate_c;
-      dci.data_reg <= (others => '0');
-      dci.ack_hlt  <= (others => '0');
-      dci.ack_res  <= (others => '0');
-      dci.ack_exe  <= (others => '0');
-      dci.ack_exc  <= (others => '0');
-    elsif rising_edge(clk_i) then
-      -- bus handshake --
-      bus_rsp_o.ack <= accen;
+      bus_rsp_o.ack <= '0';
       bus_rsp_o.err <= '0';
-      -- data0 write access --
+    elsif rising_edge(clk_i) then
+      bus_rsp_o.ack <= bus_req_i.stb;
+      bus_rsp_o.err <= bus_req_i.stb and (not bus_req_i.meta(2)); -- access error non-debug-mode access
+    end if;
+  end process;
+
+  -- data0 register --
+  data0_write: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      dci.data0 <= (others => '0');
+    elsif rising_edge(clk_i) then
       if (dmi_wren = '1') and (dmi_req_i.addr = addr_data0_c) and (cmd_busy = '0') then -- DM write access
-        dci.data_reg <= dmi_req_i.data;
+        dci.data0 <= dmi_req_i.data;
       elsif (accen = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(7 downto 6) = dm_data_base_c(7 downto 6)) then -- CPU write access
         for i in 0 to 3 loop
           if (bus_req_i.ben(i) = '1') then
-            dci.data_reg(8*i+7 downto 8*i) <= bus_req_i.data(8*i+7 downto 8*i);
+            dci.data0(8*i+7 downto 8*i) <= bus_req_i.data(8*i+7 downto 8*i);
           end if;
         end loop;
       end if;
-      -- CPU status register write access; all flags auto-clear --
-      dci.ack_hlt <= (others => '0');
+    end if;
+  end process;
+
+  -- status register --
+  status_reg: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      dci.ack_hlt <= (others => '0'); -- all flags auto-clear
       dci.ack_res <= (others => '0');
       dci.ack_exe <= (others => '0');
       dci.ack_exc <= (others => '0');
@@ -568,16 +576,22 @@ begin
           if (bus_req_i.ben(3) = '1') then dci.ack_exc(i) <= cpu_id_dec(i); end if; -- CPU has encountered an EXCEPTION
         end loop;
       end if;
-      -- CPU read access --
+    end if;
+  end process;
+
+  -- bus read access --
+  bus_read: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
       bus_rsp_o.data <= (others => '0'); -- default
       if (accen = '1') and (bus_req_i.rw = '0') then
-        case bus_req_i.addr(7 downto 6) is -- module select
+        case bus_req_i.addr(7 downto 6) is
           when "00" => -- dm_code_base_c: code ROM
             bus_rsp_o.data <= code_rom_c(to_integer(unsigned(bus_req_i.addr(5 downto 2))));
           when "01" => -- dm_pbuf_base_c: program buffer
             bus_rsp_o.data <= cpu_progbuf(to_integer(unsigned(bus_req_i.addr(3 downto 2))));
           when "10" => -- dm_data_base_c: data buffer
-            bus_rsp_o.data <= dci.data_reg;
+            bus_rsp_o.data <= dci.data0;
           when others => -- dm_sreg_base_c: status register
             bus_rsp_o.data(1*8) <= or_reduce_f(dci.req_res and cpu_id_dec); -- DM requests CPU to resume
             bus_rsp_o.data(2*8) <= or_reduce_f(dci.req_exe and cpu_id_dec); -- DM requests CPU to execute program buffer

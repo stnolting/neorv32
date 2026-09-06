@@ -65,12 +65,12 @@ int main() {
 
   // setup date and time for the Unix time of CLINT.MTIMER
   date_t date;
-  date.year    = 2025; // current year (absolute)
-  date.month   = 10;   // 1..12
-  date.day     = 24;   // 1..31
-  date.hours   = 23;   // 0..23
-  date.minutes = 01;   // 0..59
-  date.seconds = 17;   // 0..59
+  date.year    = 2026; // current year (absolute)
+  date.month   = 8;    // 1..12
+  date.day     = 30;   // 1..31
+  date.hours   = 14;   // 0..23
+  date.minutes = 59;   // 0..59
+  date.seconds = 36;   // 0..59
 
   neorv32_clint_unixtime_set(neorv32_aux_date2unixtime(&date));
   neorv32_uart0_printf("Unix timestamp: %u\n", (uint32_t)neorv32_clint_unixtime_get());
@@ -121,7 +121,12 @@ void mti_irq_handler(void) {
   date_t date;
   neorv32_aux_unixtime2date(neorv32_clint_unixtime_get(), &date);
   neorv32_uart0_printf("%u.%u.%u (%s) ", date.day, date.month, date.year, weekdays[(date.weekday-1)%7]);
-  neorv32_uart0_printf("%u:%u:%u\n", date.hours, date.minutes, date.seconds);
+  if (date.hours < 10) { neorv32_uart0_printf("0"); }
+  neorv32_uart0_printf("%u:", date.hours);
+  if (date.minutes < 10) { neorv32_uart0_printf("0"); }
+  neorv32_uart0_printf("%u:", date.minutes);
+  if (date.seconds < 10) { neorv32_uart0_printf("0"); }
+  neorv32_uart0_printf("%u\n", date.seconds);
 }
 
 
