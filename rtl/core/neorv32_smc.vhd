@@ -754,7 +754,6 @@ architecture neorv32_smc_phy_rtl of neorv32_smc_phy is
   signal sreg  : std_ulogic_vector(31 downto 0); -- input/output shift register
   signal cdiv  : std_ulogic_vector(2 downto 0);  -- clock divider
   signal tcnt  : std_ulogic_vector(5 downto 0);  -- tick counter
-  signal sdi   : std_ulogic_vector(3 downto 0);  -- input sample register
   signal sck   : std_ulogic;                     -- serial clock
 
 begin
@@ -768,10 +767,8 @@ begin
       sreg  <= (others => '0');
       cdiv  <= (others => '0');
       tcnt  <= (others => '0');
-      sdi   <= (others => '0');
       sck   <= '0';
     elsif rising_edge(clk_i) then
-      sdi <= sdi_i; -- input synchronizer
       case state is
 
         when S_IDLE => -- wait for request and sample configuration
@@ -805,9 +802,9 @@ begin
             sck  <= '0'; -- falling edge
             cdiv <= cdiv_i; -- reload clock counter
             if (quad_i = '0') then -- SPI
-              sreg <= sreg(30 downto 0) & sdi(1); -- set & sample at falling edge
+              sreg <= sreg(30 downto 0) & sdi_i(1); -- set & sample at falling edge
             else -- QPI
-              sreg <= sreg(27 downto 0) & sdi(3 downto 0); -- set & sample at falling edge
+              sreg <= sreg(27 downto 0) & sdi_i(3 downto 0); -- set & sample at falling edge
             end if;
             if (tcnt = "000000") then
               state <= S_IDLE;
@@ -830,6 +827,6 @@ begin
 
   -- serial output --
   sck_o <= sck;
-  sdo_o <= ("000" & sreg(31)) when (quad_i = '0') else sreg(31 downto 28); -- [TODO]
+  sdo_o <= ("000" & sreg(31)) when (quad_i = '0') else sreg(31 downto 28);
 
 end architecture;
