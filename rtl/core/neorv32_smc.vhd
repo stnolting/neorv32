@@ -503,7 +503,7 @@ end entity;
 architecture neorv32_smc_mac_rtl of neorv32_smc_mac is
 
   -- access arbiter --
-  type state_t is (S_INIT_0, S_INIT_1, S_INIT_2, S_IDLE, S_CMD, S_DUMMY, S_DATA, S_WAIT, S_PAUSE);
+  type state_t is (S_INIT_0, S_INIT_1, S_INIT_2, S_IDLE, S_CMD, S_DUMMY, S_DATA, S_WAIT, S_END);
   type mac_t is record
     state : state_t;                        -- FSM state
     isel  : std_ulogic_vector(1 downto 0);  -- initialization command select
@@ -675,22 +675,18 @@ begin
       when S_WAIT => -- wait for access to complete
       -- ------------------------------------------------------------
         mac_nxt.csn <= bcsn; -- memory enabled
-        phy_ntick_o <= "000010"; -- 2 clock ticks as inter-access delay
         if (phy_busy_i = '0') then
           if (cmd_rw_i = '0') then
             mac_nxt.rdata <= phy_data_i; -- sample RX data
           end if;
-          phy_start_o   <= '1'; -- trigger pause transmission
-          mac_nxt.state <= S_PAUSE;
+          mac_nxt.state <= S_END;
         end if;
 
-      when S_PAUSE => -- inter-access delay
+      when S_END => -- end of transfer
       -- ------------------------------------------------------------
-        mac_nxt.csn <= (others => '1'); -- memory disabled
-        mac_nxt.oen <= (others => '1'); -- all inputs
-        if (phy_busy_i = '0') then
-          mac_nxt.state <= S_IDLE;
-        end if;
+        mac_nxt.csn   <= (others => '1'); -- memory disabled
+        mac_nxt.oen   <= (others => '1'); -- all inputs
+        mac_nxt.state <= S_IDLE;
 
     end case;
   end process;
@@ -750,7 +746,7 @@ architecture neorv32_smc_phy_rtl of neorv32_smc_phy is
 
   -- serial engine --
   type state_t is (S_IDLE, S_RTX_0, S_RTX_1);
-  signal state : state_t;                        -- FSM state
+  signal state : state_t;                        -- FSM
   signal sreg  : std_ulogic_vector(31 downto 0); -- input/output shift register
   signal cdiv  : std_ulogic_vector(2 downto 0);  -- clock divider
   signal tcnt  : std_ulogic_vector(5 downto 0);  -- tick counter
