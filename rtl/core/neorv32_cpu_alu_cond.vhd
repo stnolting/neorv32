@@ -17,8 +17,8 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_alu_cond is
   port (
     -- global control --
-    clk_i   : in  std_ulogic; -- global clock, rising edge
-    ctrl_i  : in  ctrl_bus_t; -- main control bus
+    clk_i   : in  std_ulogic;                     -- global clock, rising edge
+    ctrl_i  : in  ctrl_bus_t;                     -- main control bus
     -- data input --
     rs1_i   : in  std_ulogic_vector(31 downto 0); -- rf source 1
     rs2_i   : in  std_ulogic_vector(31 downto 0); -- rf source 2
@@ -34,14 +34,12 @@ architecture neorv32_cpu_alu_cond_rtl of neorv32_cpu_alu_cond is
 
 begin
 
-  -- Valid Instruction? ---------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- valid instruction? --
   valid_cmd <= '1' when (ctrl_i.alu_cp_alu = '1') and
     (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct3(2) = '1') and
     (ctrl_i.ir_funct3(0) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0000111") else '0';
 
-  -- Conditional Output ---------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- conditional output --
   cond_out: process(clk_i)
   begin
     if rising_edge(clk_i) then
@@ -54,7 +52,7 @@ begin
   end process;
 
   -- condition check: equal zero / non equal zero --
-  condition <= or_reduce_f(rs2_i) xor ctrl_i.ir_funct3(1);
+  condition <= (not or_reduce_f(rs2_i)) xor ctrl_i.ir_funct3(1);
 
   -- processing done --
   valid_o <= valid_cmd;
