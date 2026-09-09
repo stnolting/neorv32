@@ -707,8 +707,6 @@ architecture neorv32_smc_phy_rtl of neorv32_smc_phy is
   signal sreg  : std_ulogic_vector(31 downto 0); -- input/output shift register
   signal cdiv  : std_ulogic_vector(2 downto 0);  -- clock divider
   signal bcnt  : std_ulogic_vector(5 downto 0);  -- bit counter
-  signal sck   : std_ulogic;                     -- serial clock
-  signal sdi   : std_ulogic;                     -- input sample register
 
 begin
 
@@ -721,18 +719,16 @@ begin
       sreg  <= (others => '0');
       cdiv  <= (others => '0');
       bcnt  <= (others => '0');
-      sck   <= '0';
-      sdi   <= '0';
+      sck_o <= '0';
     elsif rising_edge(clk_i) then
-      sdi <= sdi_i; -- input synchronizer
       case state is
 
         when S_IDLE => -- wait for request and sample configuration
         -- ------------------------------------------------------------
-          sck  <= '0'; -- clock mode 0: low when idle
-          cdiv <= cdiv_i; -- reload clock counter
-          bcnt <= nbits_i;
-          sreg <= txd_i;
+          sck_o <= '0'; -- clock mode 0: low when idle
+          cdiv  <= cdiv_i; -- reload clock counter
+          bcnt  <= nbits_i;
+          sreg  <= txd_i;
           if (en_i = '1') and (start_i = '1') then
             state <= S_RTX_0;
           end if;
@@ -742,7 +738,7 @@ begin
           if (en_i = '0') then -- shutdown
             state <= S_IDLE;
           elsif (cdiv = "000") then -- end of phase
-            sck   <= '1'; -- rising edge
+            sck_o <= '1'; -- rising edge
             cdiv  <= cdiv_i; -- reload clock counter
             bcnt  <= std_ulogic_vector(unsigned(bcnt) - 1);
             state <= S_RTX_1;
@@ -755,9 +751,9 @@ begin
           if (en_i = '0') then -- shutdown
             state <= S_IDLE;
           elsif (cdiv = "000") then -- end of phase
-            sck  <= '0'; -- falling edge
-            cdiv <= cdiv_i; -- reload clock counter
-            sreg <= sreg(30 downto 0) & sdi; -- set & sample at falling edge
+            sck_o <= '0'; -- falling edge
+            cdiv  <= cdiv_i; -- reload clock counter
+            sreg  <= sreg(30 downto 0) & sdi_i; -- set & sample at falling edge
             if (bcnt = "000000") then
               state <= S_IDLE;
             else
@@ -777,8 +773,7 @@ begin
   -- RX data --
   rxd_o <= sreg;
 
-  -- serial output --
-  sck_o <= sck;
+  -- serial output (MSB-first) --
   sdo_o <= sreg(31);
 
 end architecture;
