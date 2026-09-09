@@ -631,7 +631,7 @@ begin
       when S_WAIT => -- wait for access to complete
       -- ------------------------------------------------------------
         mac_nxt.csn <= bcsn; -- memory enabled
-        phy_nbits_o <= "000010"; -- 2 clock ticks as inter-access delay
+        phy_nbits_o <= "000001"; -- 1 clock tick as inter-access delay
         if (phy_busy_i = '0') then
           if (cmd_rw_i = '0') then
             mac_nxt.rdata <= phy_data_i; -- sample RX data
