@@ -278,7 +278,8 @@ begin
   generic map (
     AWIDTH  => log2_fifo_size_c,
     DWIDTH  => 32,
-    OUTGATE => true -- output zero if no write data available (i.e. for read accesses)
+    OUTGATE => true, -- output zero if no write data available (i.e. for read accesses)
+    ASYNCRD => false
   )
   port map (
     -- global control --

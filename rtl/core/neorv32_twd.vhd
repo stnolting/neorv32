@@ -217,7 +217,8 @@ begin
   generic map (
     AWIDTH  => tx_size_c,
     DWIDTH  => 8,
-    OUTGATE => false
+    OUTGATE => false,
+    ASYNCRD => false
   )
   port map (
     -- global control --
@@ -244,7 +245,8 @@ begin
   generic map (
     AWIDTH  => rx_size_c,
     DWIDTH  => 8,
-    OUTGATE => false
+    OUTGATE => false,
+    ASYNCRD => false
   )
   port map (
     -- global control --

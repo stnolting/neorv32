@@ -173,7 +173,8 @@ begin
   generic map (
     AWIDTH  => log2_rx_fifo_c,
     DWIDTH  => 1+4+32, -- last + routing + data
-    OUTGATE => false   -- no output gate required
+    OUTGATE => false, -- no output gate required
+    ASYNCRD => false
   )
   port map (
     -- global control --
@@ -217,7 +218,8 @@ begin
   generic map (
     AWIDTH  => log2_tx_fifo_c,
     DWIDTH  => 1+4+32, -- last + routing + data
-    OUTGATE => false   -- no output gate required
+    OUTGATE => false, -- no output gate required
+    ASYNCRD => false
   )
   port map (
     -- global control --

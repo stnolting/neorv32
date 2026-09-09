@@ -180,7 +180,8 @@ begin
   generic map (
     AWIDTH  => log2_fifo_size_c,
     DWIDTH  => 9,
-    OUTGATE => false
+    OUTGATE => false,
+    ASYNCRD => false
   )
   port map (
     -- global control --
@@ -208,7 +209,8 @@ begin
   generic map (
     AWIDTH  => log2_fifo_size_c,
     DWIDTH  => 8,
-    OUTGATE => false
+    OUTGATE => false,
+    ASYNCRD => false
   )
   port map (
     -- global control --

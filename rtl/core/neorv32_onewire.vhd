@@ -191,7 +191,8 @@ begin
   generic map (
     AWIDTH  => log2_fifo_size_c,
     DWIDTH  => 10, -- 2-bit command + 8-bit data
-    OUTGATE => false
+    OUTGATE => false,
+    ASYNCRD => false
   )
   port map (
     -- global control --
@@ -219,7 +220,8 @@ begin
   generic map (
     AWIDTH  => log2_fifo_size_c,
     DWIDTH  => 9, -- 1-bit presence status + 8-bit data
-    OUTGATE => false
+    OUTGATE => false,
+    ASYNCRD => false
   )
   port map (
     -- global control --
