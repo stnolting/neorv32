@@ -2,13 +2,8 @@
 -- NEORV32 Primitives - Generic Single-Clock FIFO (FIFO)                            --
 -- -------------------------------------------------------------------------------- --
 -- The FIFO operates in "first-word-fall-through" (FWFT) mode: the first written    --
--- word appears directly at the output (after the synchronous-read delay) without   --
--- any explicit read access.                                                        --
---                                                                                  --
--- [IMPORTANT] The status signals "free space left" (free_o) and "data available"   --
--- (avail_o) are synchronized to the according port:                                --
--- - free_o  -> write port                                                          --
--- - avail_o -> read port                                                           --
+-- word appears directly at the output (after the optional synchronous-read delay)  --
+-- without any explicit read access.                                                --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -25,7 +20,8 @@ entity neorv32_prim_fifo is
   generic (
     AWIDTH  : natural; -- address width (= log2(number of FIFO entries))
     DWIDTH  : natural; -- size of data elements in FIFO
-    OUTGATE : boolean  -- true = output zero if no data available
+    OUTGATE : boolean; -- true = output zero if no data available
+    ASYNCRD : boolean  -- true = asynchronous read, false = synchronous read
   );
   port (
     -- global control --
@@ -85,13 +81,24 @@ begin
     match <= '1' when (r_pnt(AWIDTH-1 downto 0) = w_pnt(AWIDTH-1 downto 0)) else '0';
     full  <= '1' when (r_pnt(AWIDTH) /= w_pnt(AWIDTH)) and (match = '1') else '0';
     empty <= '1' when (r_pnt(AWIDTH)  = w_pnt(AWIDTH)) and (match = '1') else '0';
-    -- [IMPORTANT] 'avail' is synchronized to the read port --
-    status_reg: process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        avail <= not empty;
-      end if;
-    end process;
+
+    -- synchronous read: "avail" is synchronized to the read port --
+    status_large_sync_read:
+    if not ASYNCRD generate
+      avail_reg: process(clk_i)
+      begin
+        if rising_edge(clk_i) then
+          avail <= not empty;
+        end if;
+      end process;
+    end generate;
+
+    -- asynchronous read --
+    status_large_async_read:
+    if ASYNCRD generate
+      avail <= not empty;
+    end generate;
+
   end generate;
 
   -- just 1 FIFO entry --
@@ -99,7 +106,7 @@ begin
   if (AWIDTH = 0) generate
     match <= '1' when (r_pnt(0) = w_pnt(0)) else '0';
     full  <= not match;
-    empty <= match;
+    empty <= not full;
     avail <= not empty;
   end generate;
 
@@ -113,17 +120,39 @@ begin
   -- more than 1 FIFO entry --
   memory_large:
   if (AWIDTH > 0) generate
-    signal fifo : ram_t;
-  begin
-    memory_core: process(clk_i) -- simple dual-port RAM
+
+    -- memory with synchronous read --
+    memory_large_sync_read:
+    if not ASYNCRD generate
+      signal fifo : ram_t;
     begin
-      if rising_edge(clk_i) then
-        if (we = '1') then
-          fifo(to_integer(unsigned(w_pnt(AWIDTH-1 downto 0)))) <= wdata_i;
+      memory_core: process(clk_i) -- simple dual-port RAM
+      begin
+        if rising_edge(clk_i) then
+          if (we = '1') then
+            fifo(to_integer(unsigned(w_pnt(AWIDTH-1 downto 0)))) <= wdata_i;
+          end if;
+          rdata <= fifo(to_integer(unsigned(r_pnt(AWIDTH-1 downto 0))));
         end if;
-        rdata <= fifo(to_integer(unsigned(r_pnt(AWIDTH-1 downto 0))));
-      end if;
-    end process;
+      end process;
+    end generate;
+
+    -- memory with asynchronous read --
+    memory_large_async_read:
+    if ASYNCRD generate
+      signal fifo : ram_t;
+    begin
+      memory_core: process(clk_i) -- simple dual-port RAM
+      begin
+        if rising_edge(clk_i) then
+          if (we = '1') then
+            fifo(to_integer(unsigned(w_pnt(AWIDTH-1 downto 0)))) <= wdata_i;
+          end if;
+        end if;
+      end process;
+      rdata <= fifo(to_integer(unsigned(r_pnt(AWIDTH-1 downto 0))));
+    end generate;
+
   end generate;
 
   -- just 1 FIFO entry --
