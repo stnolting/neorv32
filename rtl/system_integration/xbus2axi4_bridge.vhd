@@ -94,25 +94,6 @@ architecture xbus2axi4_bridge_rtl of xbus2axi4_bridge is
   constant fifo_awidth_c : natural := fifo_awidth_f(BURST_EN, BURST_LEN/4);
   constant blen_c : std_ulogic_vector(7 downto 0) := std_ulogic_vector(to_unsigned((BURST_LEN/4)-1, 8));
 
-  -- generic low-latency FIFO --
-  component xbus2axi4_bridge_fifo
-  generic (
-    AWIDTH : natural;
-    DWIDTH : natural
-  );
-  port (
-    clk_i   : in  std_ulogic;
-    rstn_i  : in  std_ulogic;
-    clear_i : in  std_ulogic;
-    wdata_i : in  std_ulogic_vector(DWIDTH-1 downto 0);
-    we_i    : in  std_ulogic;
-    free_o  : out std_ulogic;
-    re_i    : in  std_ulogic;
-    rdata_o : out std_ulogic_vector(DWIDTH-1 downto 0);
-    avail_o : out std_ulogic
-  );
-  end component;
-
   -- FIFO interface --
   type fifo_t is record
     we,    re    : std_ulogic;
@@ -175,10 +156,12 @@ begin
 
   -- Write Data Channel ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  data_buffer_inst: xbus2axi4_bridge_fifo
+  data_buffer_inst: entity neorv32.neorv32_prim_fifo
   generic map (
-    AWIDTH => fifo_awidth_c,
-    DWIDTH => 33
+    AWIDTH  => fifo_awidth_c,
+    DWIDTH  => 33,
+    OUTGATE => false,
+    ASYNCRD => true
   )
   port map (
     -- global control --
@@ -297,140 +280,8 @@ begin
   xbus_wr_err  <= '1' when (m_axi_bvalid = '1') and (m_axi_bresp(1) = '1') else '0'; -- SLVERR(10)/DECERR(11)
 
   -- XBUS response --
-  xbus_ack_o <= '1' when BURST_EN and (w_ack = '1') else (xbus_rd_ack or xbus_wr_ack);
-  xbus_err_o <= '0' when BURST_EN and (w_ack = '1') else (xbus_rd_err or xbus_wr_err);
-
-end architecture;
-
-
--- ================================================================================ --
--- NEORV32 SoC - XBUS to AXI4-Compatible Bridge - Generic Low-Latency FIFO          --
--- -------------------------------------------------------------------------------- --
--- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
--- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
--- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
--- SPDX-License-Identifier: BSD-3-Clause                                            --
--- ================================================================================ --
-
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-
-entity xbus2axi4_bridge_fifo is
-  generic (
-    AWIDTH : natural; -- address width
-    DWIDTH : natural  -- data width
-  );
-  port (
-    -- global control --
-    clk_i   : in  std_ulogic; -- clock, rising edge
-    rstn_i  : in  std_ulogic; -- async reset, low-active
-    clear_i : in  std_ulogic; -- sync reset, high-active
-    -- write port --
-    wdata_i : in  std_ulogic_vector(DWIDTH-1 downto 0); -- write data
-    we_i    : in  std_ulogic; -- write enable
-    free_o  : out std_ulogic; -- at least one entry is free when set
-    -- read port --
-    re_i    : in  std_ulogic; -- read enable
-    rdata_o : out std_ulogic_vector(DWIDTH-1 downto 0); -- read data
-    avail_o : out std_ulogic  -- data available when set
-  );
-end entity;
-
-architecture xbus2axi4_bridge_fifo_rtl of xbus2axi4_bridge_fifo is
-
-  type ipb_t is array (0 to (2**AWIDTH)-1) of std_ulogic_vector(DWIDTH-1 downto 0);
-  signal w_pnt, r_pnt : std_ulogic_vector(AWIDTH downto 0);
-  signal match, empty, full, re, we : std_ulogic;
-
-begin
-
-  -- Pointers -------------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  pointer_reg: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      w_pnt <= (others => '0');
-      r_pnt <= (others => '0');
-    elsif rising_edge(clk_i) then
-      if (clear_i = '1') then
-        w_pnt <= (others => '0');
-      elsif (we = '1') then
-        w_pnt <= std_ulogic_vector(unsigned(w_pnt) + 1);
-      end if;
-      if (clear_i = '1') then
-        r_pnt <= (others => '0');
-      elsif (re = '1') then
-        r_pnt <= std_ulogic_vector(unsigned(r_pnt) + 1);
-      end if;
-    end if;
-  end process pointer_reg;
-
-  -- access control --
-  re <= re_i and (not empty); -- read only if data available
-  we <= we_i and (not full);  -- write only if free space available
-
-
-  -- Status ---------------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- more than 1 FIFO entry --
-  status_large:
-  if (AWIDTH > 0) generate
-    match <= '1' when (r_pnt(AWIDTH-1 downto 0) = w_pnt(AWIDTH-1 downto 0)) else '0';
-    full  <= '1' when (r_pnt(AWIDTH) /= w_pnt(AWIDTH)) and (match = '1') else '0';
-    empty <= '1' when (r_pnt(AWIDTH)  = w_pnt(AWIDTH)) and (match = '1') else '0';
-  end generate;
-
-  -- just 1 FIFO entry --
-  status_small:
-  if (AWIDTH = 0) generate
-    match <= '1' when (r_pnt(0) = w_pnt(0)) else '0';
-    full  <= not match;
-    empty <= match;
-  end generate;
-
-  -- status output --
-  free_o  <= not full;
-  avail_o <= not empty;
-
-
-  -- Memory ---------------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- more than 1 FIFO entry --
-  memory_large:
-  if (AWIDTH > 0) generate
-    signal ipb : ipb_t;
-  begin
-    -- simple dual-port RAM --
-    mem_write: process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        if (we = '1') then
-          ipb(to_integer(unsigned(w_pnt(AWIDTH-1 downto 0)))) <= wdata_i;
-        end if;
-      end if;
-    end process mem_write;
-    -- asynchronous read --
-    rdata_o <= ipb(to_integer(unsigned(r_pnt(AWIDTH-1 downto 0))));
-  end generate;
-
-  -- just 1 FIFO entry --
-  memory_small:
-  if (AWIDTH = 0) generate
-    signal ipb : ipb_t;
-  begin
-    -- single register --
-    mem_write: process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        if (we = '1') then
-          ipb(0) <= wdata_i;
-        end if;
-      end if;
-    end process mem_write;
-    -- asynchronous read --
-    rdata_o <= ipb(0);
-  end generate;
+  xbus_rsp_o.data <= std_ulogic_vector(m_axi_rdata);
+  xbus_rsp_o.ack  <= '1' when BURST_EN and (w_ack = '1') else (xbus_rd_ack or xbus_wr_ack);
+  xbus_rsp_o.err  <= '0' when BURST_EN and (w_ack = '1') else (xbus_rd_err or xbus_wr_err);
 
 end architecture;
