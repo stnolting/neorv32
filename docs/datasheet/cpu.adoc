@@ -361,7 +361,7 @@ if the `TRACE_PORT_EN` top generic is `true`.
 | Default     | `false` (disabled)
 | Description | When this option is **enabled**, all conditional branch instructions have identical execution times for taken and not
 taken branch conditions. Thus, all branches behave as if they were always taken (including a complete CPU pipeline flush). Enabling
-this feature makes execution times more predictable and makes timing side-channel attacks more difficult. Futhermore, thic option can
+this feature makes execution times more predictable and makes timing side-channel attacks more difficult. Furthermore, this option can
 help to shorten the CPU's critical path simplifying timing closure.
 |             | When **disabled**, not-taken conditional branches are executed faster without clearing the CPU pipeline. Hence, for maximum
 performance, this feature should be disabled.
