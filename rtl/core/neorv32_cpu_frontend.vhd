@@ -332,6 +332,7 @@ architecture neorv32_cpu_frontend_ipb_rtl of neorv32_cpu_frontend_ipb is
   -- memory core --
   type ipb_t is array (0 to (2**awidth_c)-1) of std_ulogic_vector(16 downto 0);
   signal ipb : ipb_t;
+  signal w_addr : unsigned(awidth_c-1 downto 0);
 
 begin
 
@@ -361,14 +362,19 @@ begin
 
   -- Memory Core ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_write: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if (we_i = '1') then
-        ipb(to_integer(unsigned(w_pnt(awidth_c-1 downto 0)))) <= wdata_i;
+  w_addr <= to_01(unsigned(w_pnt(awidth_c-1 downto 0)));
+
+  mem_gen:
+  for i in ipb'range generate
+    mem_write: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        if (we_i = '1') and (w_addr = to_unsigned(i, awidth_c)) then
+          ipb(i) <= wdata_i;
+        end if;
       end if;
-    end if;
-  end process;
+    end process;
+  end generate;
 
   -- asynchronous read --
   rdata_o <= ipb(to_integer(unsigned(r_pnt(awidth_c-1 downto 0))));
