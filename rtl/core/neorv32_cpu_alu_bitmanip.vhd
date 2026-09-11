@@ -182,6 +182,7 @@ architecture neorv32_cpu_alu_bitmanip_rtl of neorv32_cpu_alu_bitmanip is
   type res_t is array (op_width_c-1 downto 0) of std_ulogic_vector(31 downto 0);
   signal res_int, res : res_t;
   signal xperm4_res, xperm8_res, adder_res, one_hot_res, zip_res, unzip_res, res_out : std_ulogic_vector(31 downto 0);
+  signal logic_reg, shift_reg, add_reg : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -581,7 +582,9 @@ begin
   begin
     tmp_v := (others => '0');
     for i in 0 to op_width_c-1 loop
-      tmp_v := tmp_v or res(i);
+      if (i /= op_shadd_c) and (i /= op_cz_c) and (i /= op_cpop_c) and (i /= op_rot_c) then
+        tmp_v := tmp_v or res(i);
+      end if;
     end loop;
     res_out <= tmp_v;
   end process;
@@ -590,14 +593,19 @@ begin
   output_gate: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      res_o <= (others => '0');
+      logic_reg <= (others => '0');
+      shift_reg <= (others => '0');
+      add_reg   <= (others => '0');
       if (valid = '1') then
-        res_o <= res_out;
+        logic_reg <= res_out;
+        shift_reg <= res(op_cz_c) or res(op_cpop_c) or res(op_rot_c);
+        add_reg   <= res(op_shadd_c);
       end if;
     end if;
   end process;
 
   -- valid output --
+  res_o <= logic_reg or shift_reg or add_reg;
   valid_o <= valid;
 
 end architecture;

@@ -31,6 +31,8 @@ end entity;
 architecture neorv32_cpu_alu_cond_rtl of neorv32_cpu_alu_cond is
 
   signal valid_cmd, condition : std_ulogic;
+  signal data_reg : std_ulogic_vector(31 downto 0);
+  signal move_reg : std_ulogic;
 
 begin
 
@@ -45,13 +47,16 @@ begin
   cond_out: process(clk_i)
   begin
     if rising_edge(clk_i) then
+      data_reg <= rs1_i;
       if (valid_cmd = '1') and (condition = '1') then -- unit triggered and move-condition is true
-        res_o <= rs1_i;
+        move_reg <= '1';
       else
-        res_o <= (others => '0');
+        move_reg <= '0';
       end if;
     end if;
   end process;
+
+  res_o <= data_reg when move_reg = '1' else (others => '0');
 
   -- condition check: equal zero / non equal zero --
   condition <= or_reduce_f(rs2_i) xor ctrl_i.ir_funct3(1);

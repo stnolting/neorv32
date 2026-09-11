@@ -134,6 +134,8 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal alu_res     : std_ulogic_vector(31 downto 0); -- ALU result
   signal alu_add     : std_ulogic_vector(31 downto 0); -- ALU address result
   signal alu_cmp     : std_ulogic_vector(1 downto 0);  -- comparator result
+  signal branch_cmp  : std_ulogic_vector(1 downto 0);
+  signal rf_cmp      : std_ulogic_vector(3 downto 0);
   signal alu_cp_done : std_ulogic;                     -- ALU co-processor operation done
   signal lsu_rdata   : std_ulogic_vector(31 downto 0); -- LSU memory read data
   signal lsu_mar     : std_ulogic_vector(31 downto 0); -- LSU memory address register
@@ -306,7 +308,7 @@ begin
     hwtrig_i      => hwtrig,      -- hardware trigger
     -- data path interface --
     alu_cp_done_i => alu_cp_done, -- ALU iterative operation done
-    alu_cmp_i     => alu_cmp,     -- comparator status
+    alu_cmp_i     => branch_cmp,  -- comparator status
     alu_add_i     => alu_add,     -- ALU address result
     rf_rs1_i      => rs1,         -- register file source 1
     csr_rdata_o   => csr_rdata,   -- CSR read data
@@ -416,8 +418,20 @@ begin
     rs1_data_o => rs1,
     -- read port 1 (rs2) --
     rs2_addr_i => ctrl.rf_rs2,
-    rs2_data_o => rs2
+    rs2_data_o => rs2,
+    cmp_o      => rf_cmp
   );
+
+  rf_compare:
+  if (CPU_RF_ARCH_SEL = 2) generate
+    branch_cmp(0) <= rf_cmp(3) when RISCV_ISA_Zibi and (ctrl.ir_funct3(2 downto 1) = "01") else rf_cmp(0);
+    branch_cmp(1) <= '0' when is_x(ctrl.alu_unsigned) else rf_cmp(1) when (to_x01(ctrl.alu_unsigned) = '1') else rf_cmp(2);
+  end generate;
+
+  alu_compare:
+  if (CPU_RF_ARCH_SEL /= 2) generate
+    branch_cmp <= alu_cmp;
+  end generate;
 
   -- all buses are zero unless there is an according operation --
   rf_wdata <= alu_res or lsu_rdata or csr_rdata or ctrl.pc_ret;

@@ -341,6 +341,7 @@ begin
 
     signal q_ll, q_lh, q_hl, q_hh : signed(pp_width_c-1 downto 0);
     signal q_sum_lo, q_sum_hi     : signed(pr_width_c-1 downto 0);
+    signal pp_outer, pp_lh, pp_hl : signed(pr_width_c-1 downto 0);
   begin
     partial_product_reg: process(clk_i)
     begin
@@ -356,12 +357,15 @@ begin
       end if;
     end process;
 
+    pp_outer <= shift_left(resize(q_hh, pr_width_c), 2*lo_width_c) or resize(q_ll, pr_width_c);
+    pp_lh <= shift_left(resize(q_lh, pr_width_c), lo_width_c);
+    pp_hl <= shift_left(resize(q_hl, pr_width_c), lo_width_c);
+
     partial_sum_reg: process(clk_i)
     begin
       if rising_edge(clk_i) then -- no reset to improve multiplier mapping
-        q_sum_lo <= resize(q_ll, pr_width_c) + shift_left(resize(q_lh, pr_width_c), lo_width_c);
-        q_sum_hi <= shift_left(resize(q_hl, pr_width_c), lo_width_c) +
-                    shift_left(resize(q_hh, pr_width_c), 2*lo_width_c);
+        q_sum_lo <= pp_outer xor pp_lh xor pp_hl;
+        q_sum_hi <= shift_left((pp_outer and pp_lh) or ((pp_outer xor pp_lh) and pp_hl), 1);
       end if;
     end process;
 

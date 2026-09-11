@@ -43,7 +43,8 @@ entity neorv32_cpu_regfile is
     rs1_data_o : out std_ulogic_vector(31 downto 0); -- read data
     -- read port 1 (rs2) --
     rs2_addr_i : in  std_ulogic_vector(4 downto 0);  -- address
-    rs2_data_o : out std_ulogic_vector(31 downto 0)  -- read data
+    rs2_data_o : out std_ulogic_vector(31 downto 0); -- read data
+    cmp_o      : out std_ulogic_vector(3 downto 0)   -- ARCHSEL=2: immediate equality, signed/unsigned less-than, equality
   );
 end entity;
 
@@ -138,6 +139,23 @@ begin
   -- -------------------------------------------------------------------------------------------
   arch_reg:
   if (ARCHSEL = 2) generate
+    signal cmp_rs1, cmp_rs2, cmp_imm : std_ulogic_vector(31 downto 0);
+  begin
+
+    cmp_rs1 <= regfile(to_integer(unsigned(rs1_addr_i(AWIDTH-1 downto 0))));
+    cmp_rs2 <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
+    cmp_imm <= (others => '1') when (rs2_addr_i = "00000") else x"000000" & "000" & rs2_addr_i;
+
+    -- Comparison and data sample the same register contents at the read edge.
+    cmp_read: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        cmp_o(0) <= bool_to_ulogic_f(cmp_rs1 = cmp_rs2);
+        cmp_o(1) <= bool_to_ulogic_f(unsigned(cmp_rs1) < unsigned(cmp_rs2));
+        cmp_o(2) <= bool_to_ulogic_f(signed(cmp_rs1) < signed(cmp_rs2));
+        cmp_o(3) <= bool_to_ulogic_f(cmp_rs1 = cmp_imm);
+      end if;
+    end process;
 
     -- write select --
     onehot_gen:
@@ -177,6 +195,11 @@ begin
 
   end generate;
 
+
+  cmp_unused:
+  if (ARCHSEL /= 2) generate
+    cmp_o <= (others => '0');
+  end generate;
 
   -- Architecture Style 3: Latch-Based ------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

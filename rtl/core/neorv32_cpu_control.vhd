@@ -151,6 +151,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   end record;
   signal csr : csr_t; -- register set
   signal csr_wdata, csr_rdata, dcsr_rdata : std_ulogic_vector(31 downto 0); -- read/write data
+  signal csr_local_rdata, csr_external_rdata : std_ulogic_vector(31 downto 0);
 
   -- debug-mode controller --
   type debug_ctrl_t is record
@@ -1198,134 +1199,141 @@ begin
 
   -- CSR Read Access ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  csr_read_decode: process(all)
+  begin
+    csr_local_rdata <= (others => '0');
+    csr_external_rdata <= (others => '0');
+    case ctrl.csr_addr is
+
+      -- --------------------------------------------------------------------
+      -- machine trap setup
+      -- --------------------------------------------------------------------
+      when csr_mstatus_c => -- machine status register, low word
+        csr_local_rdata(3)  <= csr.mstatus_mie;
+        csr_local_rdata(7)  <= csr.mstatus_mpie;
+        csr_local_rdata(11) <= csr.mstatus_mpp;
+        csr_local_rdata(12) <= csr.mstatus_mpp;
+        csr_local_rdata(17) <= csr.mstatus_mprv;
+        csr_local_rdata(21) <= csr.mstatus_tw and bool_to_ulogic_f(RISCV_ISA_U);
+
+      when csr_misa_c => -- ISA and extensions
+        csr_local_rdata(0)  <= bool_to_ulogic_f(RISCV_ISA_A);
+        csr_local_rdata(1)  <= bool_to_ulogic_f(RISCV_ISA_B);
+        csr_local_rdata(2)  <= bool_to_ulogic_f(RISCV_ISA_C);
+        csr_local_rdata(4)  <= bool_to_ulogic_f(RISCV_ISA_E);
+        csr_local_rdata(8)  <= bool_to_ulogic_f(not RISCV_ISA_E);
+        csr_local_rdata(12) <= bool_to_ulogic_f(RISCV_ISA_M);
+        csr_local_rdata(20) <= bool_to_ulogic_f(RISCV_ISA_U);
+        csr_local_rdata(23) <= '1'; -- X CPU extension (non-standard / NEORV32-specific)
+        csr_local_rdata(31 downto 30) <= "01"; -- MXL = 32
+
+      when csr_mie_c => -- machine interrupt-enable register
+        csr_local_rdata(3)  <= csr.mie_msi;
+        csr_local_rdata(7)  <= csr.mie_mti;
+        csr_local_rdata(11) <= csr.mie_mei;
+        csr_local_rdata(31 downto 16) <= csr.mie_firq;
+
+      when csr_mtvec_c => -- machine trap-handler base address
+        csr_local_rdata <= csr.mtvec;
+
+      when csr_mcounteren_c => -- machine counter enable register
+        if RISCV_ISA_U and (RISCV_ISA_Zicntr or RISCV_ISA_Zihpm) then
+          csr_local_rdata <= csr.mcounteren;
+        end if;
+
+      -- --------------------------------------------------------------------
+      -- machine trap handling
+      -- --------------------------------------------------------------------
+      when csr_mscratch_c => -- machine scratch register
+        csr_local_rdata <= csr.mscratch;
+
+      when csr_mepc_c => -- machine exception program counter
+        csr_local_rdata <= csr.mepc(31 downto 1) & '0';
+
+      when csr_mcause_c => -- machine trap cause
+        csr_local_rdata(31) <= csr.mcause(5);
+        csr_local_rdata(4 downto 0) <= csr.mcause(4 downto 0);
+
+      when csr_mtval_c => -- machine trap value
+        csr_local_rdata <= csr.mtval;
+
+      when csr_mip_c => -- machine interrupt pending
+        csr_local_rdata(3)  <= irq_pnd(irq_msi_irq_c);
+        csr_local_rdata(7)  <= irq_pnd(irq_mti_irq_c);
+        csr_local_rdata(11) <= irq_pnd(irq_mei_irq_c);
+        csr_local_rdata(31 downto 16) <= irq_pnd(irq_firq_15_c downto irq_firq_0_c);
+
+      -- --------------------------------------------------------------------
+      -- machine information
+      -- --------------------------------------------------------------------
+      when csr_mvendorid_c => csr_local_rdata <= VENDOR_ID; -- vendor ID
+      when csr_marchid_c   => csr_local_rdata <= x"00000013"; -- architecture ID
+      when csr_mimpid_c    => csr_local_rdata <= hw_version_c; -- implementation ID
+      when csr_mhartid_c   => csr_local_rdata <= std_ulogic_vector(to_unsigned(HART_ID, 32)); -- hardware thread ID
+
+      -- --------------------------------------------------------------------
+      -- debug-mode
+      -- --------------------------------------------------------------------
+      when csr_dcsr_c      => if RISCV_ISA_Sdext then csr_local_rdata <= dcsr_rdata;    end if; -- control and status
+      when csr_dpc_c       => if RISCV_ISA_Sdext then csr_local_rdata <= csr.dpc;       end if; -- program counter
+      when csr_dscratch0_c => if RISCV_ISA_Sdext then csr_local_rdata <= csr.dscratch0; end if; -- scratch register 0
+
+      -- --------------------------------------------------------------------
+      -- NEORV32-specific
+      -- --------------------------------------------------------------------
+      when csr_mxisa_c => -- machine extended ISA extensions information, low-word
+        csr_local_rdata(0)  <= '1';                                   -- Zicsr: CSR access (always enabled)
+        csr_local_rdata(1)  <= '1';                                   -- Zifencei: instruction stream sync. (always enabled)
+        csr_local_rdata(2)  <= bool_to_ulogic_f(RISCV_ISA_Zmmul);     -- Zmmul: mul/div
+        csr_local_rdata(3)  <= bool_to_ulogic_f(RISCV_ISA_Xcfu);      -- Xcfu: custom instructions
+        csr_local_rdata(4)  <= bool_to_ulogic_f(RISCV_ISA_Zkt);       -- Zkt: data independent execution latency
+        csr_local_rdata(5)  <= bool_to_ulogic_f(RISCV_ISA_Zfinx);     -- Zfinx: FPU using x registers
+        csr_local_rdata(6)  <= bool_to_ulogic_f(RISCV_ISA_Zicond);    -- Zicond: integer conditional operations
+        csr_local_rdata(7)  <= bool_to_ulogic_f(RISCV_ISA_Zicntr);    -- Zicntr: base counters
+        csr_local_rdata(8)  <= bool_to_ulogic_f(RISCV_ISA_Smpmp);     -- Smpmp: physical memory protection
+        csr_local_rdata(9)  <= bool_to_ulogic_f(RISCV_ISA_Zihpm);     -- Zihpm: hardware performance monitors
+        csr_local_rdata(10) <= bool_to_ulogic_f(RISCV_ISA_Sdext);     -- Sdext: external debug
+        csr_local_rdata(11) <= bool_to_ulogic_f(RISCV_ISA_Sdtrig);    -- Sdtrig: trigger module
+        csr_local_rdata(12) <= bool_to_ulogic_f(RISCV_ISA_Zbkx);      -- Zbkx: cryptography crossbar permutation
+        csr_local_rdata(13) <= bool_to_ulogic_f(RISCV_ISA_Zknd);      -- Zknd: cryptography NIST AES decryption
+        csr_local_rdata(14) <= bool_to_ulogic_f(RISCV_ISA_Zkne);      -- Zkne: cryptography NIST AES encryption
+        csr_local_rdata(15) <= bool_to_ulogic_f(RISCV_ISA_Zknh);      -- Zknh: cryptography NIST hash functions
+        csr_local_rdata(16) <= bool_to_ulogic_f(RISCV_ISA_Zbkb);      -- Zbkb: bit manipulation instructions for cryptography
+        csr_local_rdata(17) <= bool_to_ulogic_f(RISCV_ISA_Zbkc);      -- Zbkc: carry-less multiplication for cryptography
+        csr_local_rdata(18) <= bool_to_ulogic_f(RISCV_ISA_Zkn);       -- Zkn: NIST algorithm suite
+        csr_local_rdata(19) <= bool_to_ulogic_f(RISCV_ISA_Zksh);      -- Zksh: ShangMi hash functions
+        csr_local_rdata(20) <= bool_to_ulogic_f(RISCV_ISA_Zksed);     -- Zksed: ShangMi block ciphers
+        csr_local_rdata(21) <= bool_to_ulogic_f(RISCV_ISA_Zks);       -- Zks: ShangMi algorithm suite
+        csr_local_rdata(22) <= bool_to_ulogic_f(RISCV_ISA_Zba);       -- Zba: shifted-add bit-manipulation
+        csr_local_rdata(23) <= bool_to_ulogic_f(RISCV_ISA_Zbb);       -- Zbb: basic bit-manipulation
+        csr_local_rdata(24) <= bool_to_ulogic_f(RISCV_ISA_Zbs);       -- Zbs: single-bit bit-manipulation
+        csr_local_rdata(25) <= bool_to_ulogic_f(RISCV_ISA_Zaamo);     -- Zaamo: atomic memory operations
+        csr_local_rdata(26) <= bool_to_ulogic_f(RISCV_ISA_Zalrsc);    -- Zalrsc: reservation-set operations
+        csr_local_rdata(27) <= bool_to_ulogic_f(RISCV_ISA_Zcb);       -- Zcb: additional code size reduction instructions
+        csr_local_rdata(28) <= bool_to_ulogic_f(RISCV_ISA_C);         -- Zca: C without floating-point
+        csr_local_rdata(29) <= bool_to_ulogic_f(RISCV_ISA_Zibi);      -- Zibi: branch with immediate-comparison
+        csr_local_rdata(30) <= bool_to_ulogic_f(RISCV_ISA_Zimop);     -- Zimop: may-be-operations
+        csr_local_rdata(31) <= bool_to_ulogic_f(RISCV_ISA_Smcntrpmf); -- Smcntrpmf: counter privilege-mode filtering
+
+      when csr_mxisah_c => -- machine extended ISA extensions information, high-word
+        csr_local_rdata(0) <= bool_to_ulogic_f(RISCV_ISA_Zbc);   -- Zbc: carry-less multiplication
+        csr_local_rdata(1) <= bool_to_ulogic_f(RISCV_ISA_Zcmop); -- Zcmop: compressed may-be-operations
+
+      -- --------------------------------------------------------------------
+      -- undefined/unavailable or implemented externally
+      -- --------------------------------------------------------------------
+      when others => -- FPU, PMP, HPM, base counters, etc.
+        csr_external_rdata <= xcsr_rdata_i;
+
+    end case;
+  end process;
+
   csr_read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
       csr_rdata <= (others => '0'); -- output all-zero if there is no CSR read operation
       if (ctrl.csr_re = '1') then
-        case ctrl.csr_addr is
-
-          -- --------------------------------------------------------------------
-          -- machine trap setup
-          -- --------------------------------------------------------------------
-          when csr_mstatus_c => -- machine status register, low word
-            csr_rdata(3)  <= csr.mstatus_mie;
-            csr_rdata(7)  <= csr.mstatus_mpie;
-            csr_rdata(11) <= csr.mstatus_mpp;
-            csr_rdata(12) <= csr.mstatus_mpp;
-            csr_rdata(17) <= csr.mstatus_mprv;
-            csr_rdata(21) <= csr.mstatus_tw and bool_to_ulogic_f(RISCV_ISA_U);
-
-          when csr_misa_c => -- ISA and extensions
-            csr_rdata(0)  <= bool_to_ulogic_f(RISCV_ISA_A);
-            csr_rdata(1)  <= bool_to_ulogic_f(RISCV_ISA_B);
-            csr_rdata(2)  <= bool_to_ulogic_f(RISCV_ISA_C);
-            csr_rdata(4)  <= bool_to_ulogic_f(RISCV_ISA_E);
-            csr_rdata(8)  <= bool_to_ulogic_f(not RISCV_ISA_E);
-            csr_rdata(12) <= bool_to_ulogic_f(RISCV_ISA_M);
-            csr_rdata(20) <= bool_to_ulogic_f(RISCV_ISA_U);
-            csr_rdata(23) <= '1'; -- X CPU extension (non-standard / NEORV32-specific)
-            csr_rdata(31 downto 30) <= "01"; -- MXL = 32
-
-          when csr_mie_c => -- machine interrupt-enable register
-            csr_rdata(3)  <= csr.mie_msi;
-            csr_rdata(7)  <= csr.mie_mti;
-            csr_rdata(11) <= csr.mie_mei;
-            csr_rdata(31 downto 16) <= csr.mie_firq;
-
-          when csr_mtvec_c => -- machine trap-handler base address
-            csr_rdata <= csr.mtvec;
-
-          when csr_mcounteren_c => -- machine counter enable register
-            if RISCV_ISA_U and (RISCV_ISA_Zicntr or RISCV_ISA_Zihpm) then
-              csr_rdata <= csr.mcounteren;
-            end if;
-
-          -- --------------------------------------------------------------------
-          -- machine trap handling
-          -- --------------------------------------------------------------------
-          when csr_mscratch_c => -- machine scratch register
-            csr_rdata <= csr.mscratch;
-
-          when csr_mepc_c => -- machine exception program counter
-            csr_rdata <= csr.mepc(31 downto 1) & '0';
-
-          when csr_mcause_c => -- machine trap cause
-            csr_rdata(31) <= csr.mcause(5);
-            csr_rdata(4 downto 0) <= csr.mcause(4 downto 0);
-
-          when csr_mtval_c => -- machine trap value
-            csr_rdata <= csr.mtval;
-
-          when csr_mip_c => -- machine interrupt pending
-            csr_rdata(3)  <= irq_pnd(irq_msi_irq_c);
-            csr_rdata(7)  <= irq_pnd(irq_mti_irq_c);
-            csr_rdata(11) <= irq_pnd(irq_mei_irq_c);
-            csr_rdata(31 downto 16) <= irq_pnd(irq_firq_15_c downto irq_firq_0_c);
-
-          -- --------------------------------------------------------------------
-          -- machine information
-          -- --------------------------------------------------------------------
-          when csr_mvendorid_c => csr_rdata <= VENDOR_ID; -- vendor ID
-          when csr_marchid_c   => csr_rdata <= x"00000013"; -- architecture ID
-          when csr_mimpid_c    => csr_rdata <= hw_version_c; -- implementation ID
-          when csr_mhartid_c   => csr_rdata <= std_ulogic_vector(to_unsigned(HART_ID, 32)); -- hardware thread ID
-
-          -- --------------------------------------------------------------------
-          -- debug-mode
-          -- --------------------------------------------------------------------
-          when csr_dcsr_c      => if RISCV_ISA_Sdext then csr_rdata <= dcsr_rdata;    end if; -- control and status
-          when csr_dpc_c       => if RISCV_ISA_Sdext then csr_rdata <= csr.dpc;       end if; -- program counter
-          when csr_dscratch0_c => if RISCV_ISA_Sdext then csr_rdata <= csr.dscratch0; end if; -- scratch register 0
-
-          -- --------------------------------------------------------------------
-          -- NEORV32-specific
-          -- --------------------------------------------------------------------
-          when csr_mxisa_c => -- machine extended ISA extensions information, low-word
-            csr_rdata(0)  <= '1';                                   -- Zicsr: CSR access (always enabled)
-            csr_rdata(1)  <= '1';                                   -- Zifencei: instruction stream sync. (always enabled)
-            csr_rdata(2)  <= bool_to_ulogic_f(RISCV_ISA_Zmmul);     -- Zmmul: mul/div
-            csr_rdata(3)  <= bool_to_ulogic_f(RISCV_ISA_Xcfu);      -- Xcfu: custom instructions
-            csr_rdata(4)  <= bool_to_ulogic_f(RISCV_ISA_Zkt);       -- Zkt: data independent execution latency
-            csr_rdata(5)  <= bool_to_ulogic_f(RISCV_ISA_Zfinx);     -- Zfinx: FPU using x registers
-            csr_rdata(6)  <= bool_to_ulogic_f(RISCV_ISA_Zicond);    -- Zicond: integer conditional operations
-            csr_rdata(7)  <= bool_to_ulogic_f(RISCV_ISA_Zicntr);    -- Zicntr: base counters
-            csr_rdata(8)  <= bool_to_ulogic_f(RISCV_ISA_Smpmp);     -- Smpmp: physical memory protection
-            csr_rdata(9)  <= bool_to_ulogic_f(RISCV_ISA_Zihpm);     -- Zihpm: hardware performance monitors
-            csr_rdata(10) <= bool_to_ulogic_f(RISCV_ISA_Sdext);     -- Sdext: external debug
-            csr_rdata(11) <= bool_to_ulogic_f(RISCV_ISA_Sdtrig);    -- Sdtrig: trigger module
-            csr_rdata(12) <= bool_to_ulogic_f(RISCV_ISA_Zbkx);      -- Zbkx: cryptography crossbar permutation
-            csr_rdata(13) <= bool_to_ulogic_f(RISCV_ISA_Zknd);      -- Zknd: cryptography NIST AES decryption
-            csr_rdata(14) <= bool_to_ulogic_f(RISCV_ISA_Zkne);      -- Zkne: cryptography NIST AES encryption
-            csr_rdata(15) <= bool_to_ulogic_f(RISCV_ISA_Zknh);      -- Zknh: cryptography NIST hash functions
-            csr_rdata(16) <= bool_to_ulogic_f(RISCV_ISA_Zbkb);      -- Zbkb: bit manipulation instructions for cryptography
-            csr_rdata(17) <= bool_to_ulogic_f(RISCV_ISA_Zbkc);      -- Zbkc: carry-less multiplication for cryptography
-            csr_rdata(18) <= bool_to_ulogic_f(RISCV_ISA_Zkn);       -- Zkn: NIST algorithm suite
-            csr_rdata(19) <= bool_to_ulogic_f(RISCV_ISA_Zksh);      -- Zksh: ShangMi hash functions
-            csr_rdata(20) <= bool_to_ulogic_f(RISCV_ISA_Zksed);     -- Zksed: ShangMi block ciphers
-            csr_rdata(21) <= bool_to_ulogic_f(RISCV_ISA_Zks);       -- Zks: ShangMi algorithm suite
-            csr_rdata(22) <= bool_to_ulogic_f(RISCV_ISA_Zba);       -- Zba: shifted-add bit-manipulation
-            csr_rdata(23) <= bool_to_ulogic_f(RISCV_ISA_Zbb);       -- Zbb: basic bit-manipulation
-            csr_rdata(24) <= bool_to_ulogic_f(RISCV_ISA_Zbs);       -- Zbs: single-bit bit-manipulation
-            csr_rdata(25) <= bool_to_ulogic_f(RISCV_ISA_Zaamo);     -- Zaamo: atomic memory operations
-            csr_rdata(26) <= bool_to_ulogic_f(RISCV_ISA_Zalrsc);    -- Zalrsc: reservation-set operations
-            csr_rdata(27) <= bool_to_ulogic_f(RISCV_ISA_Zcb);       -- Zcb: additional code size reduction instructions
-            csr_rdata(28) <= bool_to_ulogic_f(RISCV_ISA_C);         -- Zca: C without floating-point
-            csr_rdata(29) <= bool_to_ulogic_f(RISCV_ISA_Zibi);      -- Zibi: branch with immediate-comparison
-            csr_rdata(30) <= bool_to_ulogic_f(RISCV_ISA_Zimop);     -- Zimop: may-be-operations
-            csr_rdata(31) <= bool_to_ulogic_f(RISCV_ISA_Smcntrpmf); -- Smcntrpmf: counter privilege-mode filtering
-
-          when csr_mxisah_c => -- machine extended ISA extensions information, high-word
-            csr_rdata(0) <= bool_to_ulogic_f(RISCV_ISA_Zbc);   -- Zbc: carry-less multiplication
-            csr_rdata(1) <= bool_to_ulogic_f(RISCV_ISA_Zcmop); -- Zcmop: compressed may-be-operations
-
-          -- --------------------------------------------------------------------
-          -- undefined/unavailable or implemented externally
-          -- --------------------------------------------------------------------
-          when others => -- FPU, PMP, HPM, base counters, etc.
-            csr_rdata <= xcsr_rdata_i;
-
-        end case;
+        csr_rdata <= csr_local_rdata or csr_external_rdata;
       end if;
     end if;
   end process;
