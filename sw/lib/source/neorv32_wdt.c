@@ -71,7 +71,7 @@ void neorv32_wdt_force_hwreset(void) {
 
   // make sure the WDT is enabled and locked
   // if it is locked this will trigger a hardware reset
-  NEORV32_WDT->CTRL |= (uint32_t)(1 << WDT_CTRL_EN) + (uint32_t)(WDT_CTRL_LOCK);
+  NEORV32_WDT->CTRL |= (uint32_t)(1 << WDT_CTRL_EN) + (uint32_t)(1 << WDT_CTRL_LOCK);
 
   // reset the WDT using an incorrect password while in locked mode;
   // this will trigger a hardware reset

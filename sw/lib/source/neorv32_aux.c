@@ -568,12 +568,12 @@ void neorv32_aux_print_hw_config(void) {
 void neorv32_aux_print_hw_version(uint32_t impid) {
 
   uint32_t i = 0;
-  char tmp = 0, cnt = 0;
+  uint8_t  tmp = 0, cnt = 0;
 
   if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
     for (i=0; i<4; i++) {
 
-      tmp = (char)(impid >> (24 - 8*i));
+      tmp = (uint8_t )(impid >> (24 - 8*i));
 
       // serial division
       cnt = 0;
@@ -583,9 +583,9 @@ void neorv32_aux_print_hw_version(uint32_t impid) {
       }
 
       if (cnt) {
-        neorv32_uart0_putc('0' + cnt);
+        neorv32_uart0_putc('0' + (char)cnt);
       }
-      neorv32_uart0_putc('0' + tmp);
+      neorv32_uart0_putc('0' + (char)tmp);
       if (i < 3) {
         neorv32_uart0_putc('.');
       }

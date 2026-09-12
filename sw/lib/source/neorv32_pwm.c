@@ -37,7 +37,7 @@ int neorv32_pwm_get_num_channels(void) {
   uint32_t tmp = NEORV32_PWM->POLARITY;
 
   uint32_t i = 0, cnt = 0;
-  for (i=0; i<16; i++) {
+  for (i=0; i<32; i++) {
     cnt += tmp & 1;
     tmp >>= 1;
   }

@@ -48,14 +48,15 @@ set_property INCREMENTAL false [get_filesets sim_1]
 # read and process NEORV32 SoC file list
 set file_list_file [read [open "$neorv32_home/rtl/file_list_core.f" r]]
 set file_list [string map [list {$NEORV32_HOME} $neorv32_home] $file_list_file]
+
+# IP top module and AXI4 bridge
+lappend file_list "$neorv32_home/rtl/system_integration/xbus2axi4_bridge.vhd"
+lappend file_list "$neorv32_home/rtl/system_integration/$ip_top.vhd"
+
 puts "NEORV32 source files:"
 puts $file_list
 add_files $file_list
 set_property library neorv32 [get_files $file_list]
-
-# IP top module and AXI4 bridge
-add_file $neorv32_home/rtl/system_integration/xbus2axi4_bridge.vhd
-add_file $neorv32_home/rtl/system_integration/$ip_top.vhd
 set_property top $ip_top [current_fileset]
 
 update_compile_order -fileset sources_1
@@ -211,10 +212,9 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {External Bus Interface (XBUS / AXI4-MM Host)}]
   add_params $group {
-    { XBUS_EN          {Enable XBUS} }
-    { XBUS_REGSTAGE_EN {Add register stages}   {In/out register stages; relaxes timing, but will increase latency} {$XBUS_EN} }
-    { CACHE_BURSTS_EN  {Enable AXI bursts}     {For I-/D-cache accesses only}                                      {$XBUS_EN} }
-    { XBUS_TIMEOUT     {Access timeout window} {Should be a power of two; timeout disabled when zero}              {$XBUS_EN} }
+    { XBUS_EN          {Enable AXI/XBUS} }
+    { CACHE_BURSTS_EN  {Enable AXI bursts}     {For I-/D-cache accesses only}                         {$XBUS_EN} }
+    { XBUS_TIMEOUT     {Access timeout window} {Should be a power of two; timeout disabled when zero} {$XBUS_EN} }
   }
 
   set group [add_group $page {Stream Link Interface (SLINK / AXI4-Stream Source & Sink)}]

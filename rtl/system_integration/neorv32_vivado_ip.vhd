@@ -104,7 +104,6 @@ entity neorv32_vivado_ip is
     -- External Bus Interface (XBUS) --
     XBUS_EN               : boolean                        := false;
     XBUS_TIMEOUT          : natural                        := 2048;
-    XBUS_REGSTAGE_EN      : boolean                        := false;
     -- General-Purpose Input/Output Controller (GPIO) --
     IO_GPIO_EN            : boolean                        := false;
     IO_GPIO_IN_NUM        : natural range 1 to 32          := 1; -- variable-sized ports must be at least 0 downto 0; #974
@@ -308,64 +307,6 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   constant max_gpio_c  : natural := sel_natural_f(boolean(IO_GPIO_IN_NUM > IO_GPIO_OUT_NUM), IO_GPIO_IN_NUM, IO_GPIO_OUT_NUM);
   constant num_gpio_c  : natural := sel_natural_f(IO_GPIO_EN, max_gpio_c, 0);
 
-  -- AXI4 bridge --
-  component xbus2axi4_bridge
-  generic (
-    BURST_EN  : boolean; -- enable burst transfers
-    BURST_LEN : natural range 4 to 1024 -- bytes per burst, has to be a multiple of 4
-  );
-  port (
-    -- Global control
-    clk           : in  std_logic;
-    resetn        : in  std_logic;
-    -- XBUS device interface --
-    xbus_adr_i    : in  std_ulogic_vector(31 downto 0);
-    xbus_dat_i    : in  std_ulogic_vector(31 downto 0);
-    xbus_cti_i    : in  std_ulogic_vector(2 downto 0);
-    xbus_tag_i    : in  std_ulogic_vector(2 downto 0);
-    xbus_we_i     : in  std_ulogic;
-    xbus_sel_i    : in  std_ulogic_vector(3 downto 0);
-    xbus_stb_i    : in  std_ulogic;
-    xbus_ack_o    : out std_ulogic;
-    xbus_err_o    : out std_ulogic;
-    xbus_dat_o    : out std_ulogic_vector(31 downto 0);
-    -- AXI4 host write address channel --
-    m_axi_awaddr  : out std_logic_vector(31 downto 0);
-    m_axi_awlen   : out std_logic_vector(7 downto 0);
-    m_axi_awsize  : out std_logic_vector(2 downto 0);
-    m_axi_awburst : out std_logic_vector(1 downto 0);
-    m_axi_awcache : out std_logic_vector(3 downto 0);
-    m_axi_awprot  : out std_logic_vector(2 downto 0);
-    m_axi_awvalid : out std_logic;
-    m_axi_awready : in  std_logic;
-    -- AXI4 host write data channel --
-    m_axi_wdata   : out std_logic_vector(31 downto 0);
-    m_axi_wstrb   : out std_logic_vector(3 downto 0);
-    m_axi_wlast   : out std_logic;
-    m_axi_wvalid  : out std_logic;
-    m_axi_wready  : in  std_logic;
-    -- AXI4 host read address channel --
-    m_axi_araddr  : out std_logic_vector(31 downto 0);
-    m_axi_arlen   : out std_logic_vector(7 downto 0);
-    m_axi_arsize  : out std_logic_vector(2 downto 0);
-    m_axi_arburst : out std_logic_vector(1 downto 0);
-    m_axi_arcache : out std_logic_vector(3 downto 0);
-    m_axi_arprot  : out std_logic_vector(2 downto 0);
-    m_axi_arvalid : out std_logic;
-    m_axi_arready : in  std_logic;
-    -- AXI4 host read data channel --
-    m_axi_rdata   : in  std_logic_vector(31 downto 0);
-    m_axi_rresp   : in  std_logic_vector(1 downto 0);
-    m_axi_rlast   : in  std_logic;
-    m_axi_rvalid  : in  std_logic;
-    m_axi_rready  : out std_logic;
-    -- AXI4 host write response channel --
-    m_axi_bresp   : in  std_logic_vector(1 downto 0);
-    m_axi_bvalid  : in  std_logic;
-    m_axi_bready  : out std_logic
-  );
-  end component;
-
   -- type conversion --
   signal rstn_ocd, rstn_wdt : std_ulogic;
   signal jtag_tdo_aux : std_ulogic;
@@ -388,7 +329,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   -- constrained-size ports --
   signal gpio_dir_o_aux, gpio_o_aux, gpio_i_aux, pwm_o_aux : std_ulogic_vector(31 downto 0);
 
-  -- internal xbus --
+  -- internal XBUS --
   signal xbus_req : xbus_req_t;
   signal xbus_rsp : xbus_rsp_t;
 
@@ -396,7 +337,7 @@ begin
 
   -- The Core Of The Problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_top_inst: neorv32_top
+  neorv32_top_inst: entity neorv32.neorv32_top
   generic map (
     -- General --
     CLOCK_FREQUENCY     => CLOCK_FREQUENCY,
@@ -476,7 +417,7 @@ begin
     -- External Bus Interface (XBUS) --
     XBUS_EN             => XBUS_EN,
     XBUS_TIMEOUT        => XBUS_TIMEOUT,
-    XBUS_REGSTAGE_EN    => XBUS_REGSTAGE_EN,
+    XBUS_REGSTAGE_EN    => true, -- to shorten critical path through AXI-bridge
     -- General-Purpose Input/Output Controller --
     IO_GPIO_NUM         => num_gpio_c,
     IO_GPIO_DIR_EN      => IO_GPIO_DIR_EN,
@@ -622,50 +563,35 @@ begin
     irq_mei_i      => std_ulogic(irq_mei_i)
   );
 
-
-  -- Type Conversion (Outputs) --------------------------------------------------------------
+  -- Output Type Conversion -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ocd_resetn <= std_logic(rstn_ocd);
-  wdt_resetn <= std_logic(rstn_wdt);
-
-  jtag_tdo_o <= std_logic(jtag_tdo_aux);
-
+  ocd_resetn     <= std_logic(rstn_ocd);
+  wdt_resetn     <= std_logic(rstn_wdt);
+  jtag_tdo_o     <= std_logic(jtag_tdo_aux);
   s1_axis_tready <= std_logic(s1_axis_tready_aux);
   s0_axis_tdata  <= std_logic_vector(s0_axis_tdata_aux);
   s0_axis_tdest  <= std_logic_vector(s0_axis_tdest_aux);
   s0_axis_tvalid <= std_logic(s0_axis_tvalid_aux);
   s0_axis_tlast  <= std_logic(s0_axis_tlast_aux);
-
-  uart0_txd_o  <= std_logic(uart0_txd_aux);
-  uart0_rtsn_o <= std_logic(uart0_rtsn_aux);
-
-  uart1_txd_o  <= std_logic(uart1_txd_aux);
-  uart1_rtsn_o <= std_logic(uart1_rtsn_aux);
-
-  spi_clk_o <= std_logic(spi_clk_aux);
-  spi_dat_o <= std_logic(spi_do_aux);
-  spi_csn_o <= std_logic_vector(spi_csn_aux);
-
-  sdi_dat_o <= std_logic(sdi_do_aux);
-
-  twi_sda_o <= std_logic(twi_sda_o_aux);
-  twi_scl_o <= std_logic(twi_scl_o_aux);
-
-  twd_sda_o <= std_logic(twd_sda_o_aux);
-
-  onewire_o <= std_logic(onewire_o_aux);
-
-  cfs_out_o <= std_logic_vector(cfs_out_aux);
-
-  neoled_o <= std_logic(neoled_aux);
-
-  mtime_time_o <= std_logic_vector(mtime_time_aux);
-
-  smc_ioen_o <= std_logic(smc_ioen_aux);
-  smc_sck_o  <= std_logic(smc_sck_aux);
-  smc_csn_o  <= std_logic_vector(smc_csn_aux);
-  smc_sdo_o  <= std_logic(smc_sdo_aux);
-
+  uart0_txd_o    <= std_logic(uart0_txd_aux);
+  uart0_rtsn_o   <= std_logic(uart0_rtsn_aux);
+  uart1_txd_o    <= std_logic(uart1_txd_aux);
+  uart1_rtsn_o   <= std_logic(uart1_rtsn_aux);
+  spi_clk_o      <= std_logic(spi_clk_aux);
+  spi_dat_o      <= std_logic(spi_do_aux);
+  spi_csn_o      <= std_logic_vector(spi_csn_aux);
+  sdi_dat_o      <= std_logic(sdi_do_aux);
+  twi_sda_o      <= std_logic(twi_sda_o_aux);
+  twi_scl_o      <= std_logic(twi_scl_o_aux);
+  twd_sda_o      <= std_logic(twd_sda_o_aux);
+  onewire_o      <= std_logic(onewire_o_aux);
+  cfs_out_o      <= std_logic_vector(cfs_out_aux);
+  neoled_o       <= std_logic(neoled_aux);
+  mtime_time_o   <= std_logic_vector(mtime_time_aux);
+  smc_ioen_o     <= std_logic(smc_ioen_aux);
+  smc_sck_o      <= std_logic(smc_sck_aux);
+  smc_csn_o      <= std_logic_vector(smc_csn_aux);
+  smc_sdo_o      <= std_logic(smc_sdo_aux);
 
   -- Mapping for Constrained-Size Ports -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -697,12 +623,11 @@ begin
     pwm_o(i) <= std_logic(pwm_o_aux(i));
   end generate;
 
-
   -- XBUS-to-AXI4 Bridge --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   axi4_bridge:
   if XBUS_EN generate
-    axi4_bridge_inst: xbus2axi4_bridge
+    axi4_bridge_inst: entity neorv32.xbus2axi4_bridge
     generic map (
       BURST_EN  => burst_en_c,
       BURST_LEN => CACHE_BLOCK_SIZE
@@ -712,16 +637,8 @@ begin
       clk           => clk,
       resetn        => resetn,
       -- XBUS device interface --
-      xbus_adr_i    => xbus_req.addr,
-      xbus_dat_i    => xbus_req.data,
-      xbus_cti_i    => xbus_req.cti,
-      xbus_tag_i    => xbus_req.tag,
-      xbus_we_i     => xbus_req.we,
-      xbus_sel_i    => xbus_req.sel,
-      xbus_stb_i    => xbus_req.stb,
-      xbus_ack_o    => xbus_rsp.ack,
-      xbus_err_o    => xbus_rsp.err,
-      xbus_dat_o    => xbus_rsp.data,
+      xbus_req_i    => xbus_req,
+      xbus_rsp_o    => xbus_rsp,
       -- AXI4 host write address channel --
       m_axi_awaddr  => m_axi_awaddr,
       m_axi_awlen   => m_axi_awlen ,
