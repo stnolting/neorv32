@@ -1182,6 +1182,76 @@ package neorv32_package is
   );
   end component;
 
+  -- cache memory (CACHERAM) --
+  component neorv32_cache_ram
+  generic (
+    TAG_WIDTH : natural;
+    IDX_WIDTH : natural;
+    OFS_WIDTH : natural
+  );
+  port (
+    clk_i     : in  std_ulogic;
+    addr_i    : in  std_ulogic_vector(31 downto 0);
+    tag_we_i  : in  std_ulogic;
+    tag_o     : out std_ulogic_vector(31 downto 0);
+    data_we_i : in  std_ulogic_vector(3 downto 0);
+    data_i    : in  std_ulogic_vector(31 downto 0);
+    data_o    : out std_ulogic_vector(31 downto 0)
+  );
+  end component;
+
+  -- custom functions subsystem (CFS) --
+  component neorv32_cfs
+  port (
+    clk_i      : in  std_ulogic;
+    rstn_i     : in  std_ulogic;
+    req_addr_i : in  std_ulogic_vector(15 downto 0);
+    req_data_i : in  std_ulogic_vector(31 downto 0);
+    req_ben_i  : in  std_ulogic_vector(3 downto 0);
+    req_stb_i  : in  std_ulogic;
+    req_rw_i   : in  std_ulogic;
+    rsp_data_o : out std_ulogic_vector(31 downto 0);
+    rsp_ack_o  : out std_ulogic;
+    irq_o      : out std_ulogic;
+    cfs_in_i   : in  std_ulogic_vector(255 downto 0);
+    cfs_out_o  : out std_ulogic_vector(255 downto 0)
+  );
+  end component;
+
+  -- CPU register file (REGFILE) --
+  component neorv32_cpu_regfile
+  generic (
+    AWIDTH  : natural range 4 to 5;
+    ARCHSEL : natural range 0 to 3
+  );
+  port (
+    clk_i      : in  std_ulogic;
+    rstn_i     : in  std_ulogic;
+    zero_i     : in  std_ulogic;
+    rd_we_i    : in  std_ulogic;
+    rd_addr_i  : in  std_ulogic_vector(4 downto 0);
+    rd_data_i  : in  std_ulogic_vector(31 downto 0);
+    rs1_addr_i : in  std_ulogic_vector(4 downto 0);
+    rs1_data_o : out std_ulogic_vector(31 downto 0);
+    rs2_addr_i : in  std_ulogic_vector(4 downto 0);
+    rs2_data_o : out std_ulogic_vector(31 downto 0)
+  );
+  end component;
+
+  -- CPU custom functions unit (CFU) --
+  component neorv32_cpu_alu_cfu
+  port (
+    clk_i    : in  std_ulogic;
+    rstn_i   : in  std_ulogic;
+    start_i  : in  std_ulogic;
+    inst_i   : in  std_ulogic_vector(31 downto 0);
+    rs1_i    : in  std_ulogic_vector(31 downto 0);
+    rs2_i    : in  std_ulogic_vector(31 downto 0);
+    result_o : out std_ulogic_vector(31 downto 0);
+    valid_o  : out std_ulogic
+  );
+  end component;
+
 end package;
 
 package body neorv32_package is
