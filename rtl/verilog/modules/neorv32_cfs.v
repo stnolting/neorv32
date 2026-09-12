@@ -10,22 +10,22 @@
 
 module neorv32_cfs (
   // global control
-  input  wire        clk_i,      // global clock
-  input  wire        rstn_i,     // global reset, low-active, async
+  input          clk_i,      // global clock
+  input          rstn_i,     // global reset, low-active, async
   // CPU request
-  input  wire [15:0] req_addr_i, // byte address (64kB address space)
-  input  wire [31:0] req_data_i, // write data
-  input  wire [3:0]  req_ben_i,  // byte enable
-  input  wire        req_stb_i,  // access request strobe
-  input  wire        req_rw_i,   // 0=read, 1=write
+  input   [15:0] req_addr_i, // byte address (64kB address space)
+  input   [31:0] req_data_i, // write data
+  input   [3:0]  req_ben_i,  // byte enable
+  input          req_stb_i,  // access request strobe
+  input          req_rw_i,   // 0=read, 1=write
   // CPU response
-  output wire [31:0] rsp_data_o, // read data
-  output wire        rsp_ack_o,  // access acknowledge
+  output  [31:0] rsp_data_o, // read data
+  output         rsp_ack_o,  // access acknowledge
   // CPU interrupt
-  output wire        irq_o,      // interrupt request, high-active
+  output         irq_o,      // interrupt request, high-active
   // external IO
-  input  wire [255:0] cfs_in_i,  // custom inputs conduit
-  output wire [255:0] cfs_out_o  // custom outputs conduit
+  input  [255:0] cfs_in_i,   // custom inputs conduit
+  output [255:0] cfs_out_o   // custom outputs conduit
 );
 
   // exemplary CFS interface registers

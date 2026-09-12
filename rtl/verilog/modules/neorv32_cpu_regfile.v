@@ -37,7 +37,8 @@ module neorv32_cpu_regfile #(
   output [31:0] rs2_data_o  // read data
 );
 
-  reg [31:0] regfile [0:2**AWIDTH-1];
+  localparam NUM_REGS = 2**AWIDTH;
+  reg [31:0] regfile [0:NUM_REGS-1];
 
   wire [AWIDTH-1:0] rd_addr  = rd_addr_i[AWIDTH-1:0];
   wire [AWIDTH-1:0] rs1_addr = rs1_addr_i[AWIDTH-1:0];
@@ -117,7 +118,7 @@ module neorv32_cpu_regfile #(
       // x0 is not stored and is always read as zero.
       always @(posedge clk_i or negedge rstn_i) begin
         if (!rstn_i) begin
-          for (i = 1; i < REG_COUNT; i = i + 1) begin
+          for (i=1; i<NUM_REGS; i=i+1) begin
             regfile[i] <= 32'h00000000;
           end
         end else begin
@@ -164,7 +165,7 @@ module neorv32_cpu_regfile #(
 
       // x1..x31 are transparent latches while clk_i is low.
       genvar g;
-      for (g=1; g<REG_COUNT; g=g+1) begin
+      for (g=1; g<NUM_REGS; g=g+1) begin
 
         localparam [AWIDTH-1:0] REG_INDEX = g;
 
