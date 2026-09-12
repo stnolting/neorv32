@@ -322,6 +322,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant trace_en_c      : boolean := TRACE_PORT_EN or IO_TRACER_EN;
   constant vendorid_c      : std_ulogic_vector(31 downto 0) := x"00000" & '0' & OCD_JEDEC_ID;
   constant bursts_en_c     : boolean := CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN) and boolean(CACHE_BLOCK_SIZE >= 8);
+  constant cc_reg_en_c     : boolean := DUAL_CORE_EN and ICACHE_EN and DCACHE_EN;
 
   -- make sure physical memory sizes are a power of two --
   constant log2_imem_size_c : natural := index_size_f(IMEM_SIZE);
@@ -599,7 +600,7 @@ begin
       CACHE_BLOCK_SIZE    => CACHE_BLOCK_SIZE,
       CACHE_BURSTS_EN     => bursts_en_c,
       CACHE_UC_BASE       => CACHE_UC_BASE(31 downto 28),
-      REGSTAGE_EN         => false -- [TODO]
+      REGSTAGE_EN         => cc_reg_en_c
     )
     port map (
       clk_i     => clk_i,
