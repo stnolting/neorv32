@@ -1058,9 +1058,10 @@ begin
 
     -- Custom Functions Subsystem (CFS) -------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_cfs_enabled:
+    -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
+    cfs_enabled:
     if IO_CFS_EN generate
-      neorv32_cfs_inst: entity neorv32.neorv32_cfs
+      cfs_inst: neorv32_cfs -- component declaration in package file
       port map (
         clk_i      => clk_i,
         rstn_i     => rstn_sys,
