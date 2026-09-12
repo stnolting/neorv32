@@ -107,6 +107,7 @@ begin
     IO_TWD_EN           => true,        -- implement two-wire device (TWD)
     IO_PWM_NUM          => 4,           -- number of PWM channels to implement
     IO_WDT_EN           => true,        -- implement watch dog timer (WDT)
+    IO_CFS_EN           => true,        -- implement custom functions subsystem (CFS)
     IO_NEOLED_EN        => true,        -- implement NeoPixel-compatible smart LED interface (NEOLED)
     IO_GPTMR_NUM        => 4,           -- number of GPTMR slices to implement
     IO_ONEWIRE_EN       => true,        -- implement 1-wire interface (ONEWIRE)
