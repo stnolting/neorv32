@@ -1,10 +1,10 @@
 $NEORV32_HOME/rtl/core/neorv32_package.vhd
 $NEORV32_HOME/rtl/core/neorv32_sys.vhd
+$NEORV32_HOME/rtl/core/neorv32_prim.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_decompressor.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_frontend.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_control.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_hwtrig.vhd
-$NEORV32_HOME/rtl/core/neorv32_prim.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_counters.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_regfile.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_alu_shifter.vhd
@@ -21,6 +21,7 @@ $NEORV32_HOME/rtl/core/neorv32_cpu_trace.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu.vhd
 $NEORV32_HOME/rtl/core/neorv32_cache.vhd
 $NEORV32_HOME/rtl/core/neorv32_bus.vhd
+$NEORV32_HOME/rtl/core/neorv32_core_complex.vhd
 $NEORV32_HOME/rtl/core/neorv32_dma.vhd
 $NEORV32_HOME/rtl/core/neorv32_smc.vhd
 $NEORV32_HOME/rtl/core/neorv32_xbus.vhd

@@ -347,14 +347,11 @@ architecture neorv32_top_rtl of neorv32_top is
   type cpu_trace_t is array (num_cores_c-1 downto 0) of trace_port_t;
   signal cpu_trace : cpu_trace_t;
 
-  -- CPU memory ordering (cache synchronization) --
-  signal cpu_i_fence, cpu_d_fence, icache_sync, dcache_sync : std_ulogic_vector(num_cores_c-1 downto 0);
-
   -- bus: core complex --
   type core_complex_req_t is array (num_cores_c-1 downto 0) of bus_req_t;
   type core_complex_rsp_t is array (num_cores_c-1 downto 0) of bus_rsp_t;
-  signal cpu_i_req, cpu_d_req, icache_req, dcache_req, core_req : core_complex_req_t;
-  signal cpu_i_rsp, cpu_d_rsp, icache_rsp, dcache_rsp, core_rsp : core_complex_rsp_t;
+  signal core_req : core_complex_req_t;
+  signal core_rsp : core_complex_rsp_t;
 
   -- bus: system --
   signal sys1_req, sys2_req, dma_req, amo_req, sys3_req, imem_req, dmem_req, smc_req, io_req, xbus_req : bus_req_t;
@@ -518,10 +515,10 @@ begin
   end generate;
 
   -- **************************************************************************************************************************
-  -- Core Complex
+  -- CPU Core Complex
   -- **************************************************************************************************************************
 
-  -- fast interrupt requests (FIRQs) --
+  -- fast interrupt requests (FIRQs, descending priority) --
   cpu_firq(0)  <= '0'; -- reserved
   cpu_firq(1)  <= firq(FIRQ_CFS);
   cpu_firq(2)  <= firq(FIRQ_UART0);
@@ -539,21 +536,17 @@ begin
   cpu_firq(14) <= firq(FIRQ_SLINK);
   cpu_firq(15) <= firq(FIRQ_TRNG);
 
-  -- CPU core(s) + optional caches + bus switch --
+  -- CPU Core Complex -----------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
   core_complex_gen:
   for i in 0 to num_cores_c-1 generate
-
-    -- CPU Core -------------------------------------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
-    neorv32_cpu_inst: entity neorv32.neorv32_cpu
+    core_complex_inst: entity neorv32.neorv32_core_complex
     generic map (
-      -- General --
       HART_ID             => i,
       VENDOR_ID           => vendorid_c,
       BOOT_ADDR           => cpu_boot_addr_c,
       DEBUG_PARK_ADDR     => dm_park_entry_c,
       DEBUG_EXC_ADDR      => dm_exc_entry_c,
-      -- RISC-V ISA Extensions --
       RISCV_ISA_C         => RISCV_ISA_C,
       RISCV_ISA_E         => RISCV_ISA_E,
       RISCV_ISA_M         => RISCV_ISA_M,
@@ -586,132 +579,42 @@ begin
       RISCV_ISA_Smcntrpmf => RISCV_ISA_Smcntrpmf,
       RISCV_ISA_Smpmp     => cpu_smpmp_en_c,
       RISCV_ISA_Xcfu      => RISCV_ISA_Xcfu,
-      -- Tuning Options --
       CPU_TRACE_EN        => trace_en_c,
       CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
       CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
       CPU_FAST_MUL_REGS   => CPU_FAST_MUL_REGS,
       CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
       CPU_RF_ARCH_SEL     => CPU_RF_ARCH_SEL,
-      -- Physical Memory Protection (PMP) --
       PMP_NUM_REGIONS     => PMP_NUM_REGIONS,
       PMP_MIN_GRANULARITY => PMP_MIN_GRANULARITY,
       PMP_TOR_MODE_EN     => PMP_TOR_MODE_EN,
       PMP_NAP_MODE_EN     => PMP_NAP_MODE_EN,
-      -- Hardware Performance Monitors (HPM) --
       HPM_NUM_CNTS        => HPM_NUM_CNTS,
       HPM_CNT_WIDTH       => HPM_CNT_WIDTH,
-      -- Trigger Module (TM) --
-      NUM_HW_TRIGGERS     => OCD_NUM_HW_TRIGGERS
+      NUM_HW_TRIGGERS     => OCD_NUM_HW_TRIGGERS,
+      ICACHE_EN           => ICACHE_EN,
+      ICACHE_NUM_BLOCKS   => ICACHE_NUM_BLOCKS,
+      DCACHE_EN           => DCACHE_EN,
+      DCACHE_NUM_BLOCKS   => DCACHE_NUM_BLOCKS,
+      CACHE_BLOCK_SIZE    => CACHE_BLOCK_SIZE,
+      CACHE_BURSTS_EN     => bursts_en_c,
+      CACHE_UC_BASE       => CACHE_UC_BASE(31 downto 28),
+      REGSTAGE_EN         => false -- [TODO]
     )
     port map (
-      -- global control --
-      clk_i      => clk_i,
-      rstn_i     => rstn_sys,
-      -- status --
-      mtime_i    => mtime,
-      trace_o    => cpu_trace(i),
-      sleep_o    => open,
-      -- interrupts --
-      msi_i      => msi(i),
-      mei_i      => irq_mei_i,
-      mti_i      => mti(i),
-      firq_i     => cpu_firq,
-      dbi_i      => dci_haltreq(i),
-      -- instruction bus interface --
-      ifence_o   => cpu_i_fence(i),
-      ibus_req_o => cpu_i_req(i),
-      ibus_rsp_i => cpu_i_rsp(i),
-      -- data bus interface --
-      dfence_o   => cpu_d_fence(i),
-      dbus_req_o => cpu_d_req(i),
-      dbus_rsp_i => cpu_d_rsp(i)
+      clk_i     => clk_i,
+      rstn_i    => rstn_sys,
+      mtime_i   => mtime,
+      trace_o   => cpu_trace(i),
+      sleep_o   => open,
+      msi_i     => msi(i),
+      mei_i     => irq_mei_i,
+      mti_i     => mti(i),
+      firq_i    => cpu_firq,
+      dbi_i     => dci_haltreq(i),
+      bus_req_o => core_req(i),
+      bus_rsp_i => core_rsp(i)
     );
-
-    -- CPU Instruction Cache ------------------------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
-    neorv32_icache_enabled:
-    if ICACHE_EN generate
-      neorv32_icache_inst: entity neorv32.neorv32_cache
-      generic map (
-        NUM_BLOCKS => ICACHE_NUM_BLOCKS,
-        BLOCK_SIZE => CACHE_BLOCK_SIZE,
-        UC_BEGIN   => CACHE_UC_BASE(31 downto 28),
-        READ_ONLY  => true,
-        BURSTS_EN  => bursts_en_c
-      )
-      port map (
-        clk_i      => clk_i,
-        rstn_i     => rstn_sys,
-        sync_i     => icache_sync(i),
-        host_req_i => cpu_i_req(i),
-        host_rsp_o => cpu_i_rsp(i),
-        bus_req_o  => icache_req(i),
-        bus_rsp_i  => icache_rsp(i)
-      );
-      -- fence.i => clear I$
-      icache_sync(i) <= cpu_i_fence(i);
-    end generate;
-
-    neorv32_icache_disabled:
-    if not ICACHE_EN generate
-      icache_sync(i) <= '0';
-      icache_req(i)  <= cpu_i_req(i);
-      cpu_i_rsp(i)   <= icache_rsp(i);
-    end generate;
-
-    -- CPU Data Cache -------------------------------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
-    neorv32_dcache_enabled:
-    if DCACHE_EN generate
-      neorv32_dcache_inst: entity neorv32.neorv32_cache
-      generic map (
-        NUM_BLOCKS => DCACHE_NUM_BLOCKS,
-        BLOCK_SIZE => CACHE_BLOCK_SIZE,
-        UC_BEGIN   => CACHE_UC_BASE(31 downto 28),
-        READ_ONLY  => false,
-        BURSTS_EN  => bursts_en_c
-      )
-      port map (
-        clk_i      => clk_i,
-        rstn_i     => rstn_sys,
-        sync_i     => dcache_sync(i),
-        host_req_i => cpu_d_req(i),
-        host_rsp_o => cpu_d_rsp(i),
-        bus_req_o  => dcache_req(i),
-        bus_rsp_i  => dcache_rsp(i)
-      );
-      -- fence   => flush D$
-      -- fence.i => clear I$ and flush D$ (so I$ gets updated data #1540)
-      dcache_sync(i) <= cpu_d_fence(i) or cpu_i_fence(i);
-    end generate;
-
-    neorv32_dcache_disabled:
-    if not DCACHE_EN generate
-      dcache_sync(i) <= '0';
-      dcache_req(i)  <= cpu_d_req(i);
-      cpu_d_rsp(i)   <= dcache_rsp(i);
-    end generate;
-
-    -- Core Instruction/Data Bus Switch -------------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
-    neorv32_core_bus_switch_inst: entity neorv32.neorv32_bus_switch
-    generic map (
-      ROUND_ROBIN_EN => false, -- use prioritizing arbitration
-      A_READ_ONLY    => false,
-      B_READ_ONLY    => true -- instruction fetch is read-only
-    )
-    port map (
-      clk_i   => clk_i,
-      rstn_i  => rstn_sys,
-      a_req_i => dcache_req(i), -- data accesses are prioritized
-      a_rsp_o => dcache_rsp(i),
-      b_req_i => icache_req(i),
-      b_rsp_o => icache_rsp(i),
-      x_req_o => core_req(i),
-      x_rsp_i => core_rsp(i)
-    );
-
   end generate;
 
   -- execution trace ports --
