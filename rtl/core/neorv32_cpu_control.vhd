@@ -81,7 +81,7 @@ entity neorv32_cpu_control is
     xcsr_rdata_i  : in  std_ulogic_vector(31 downto 0); -- external CSR read data
     -- interrupts --
     irq_dbg_i     : in  std_ulogic;                     -- debug mode (halt) request
-    irq_machine_i : in  std_ulogic_vector(2 downto 0);  -- RISC-V interrupt
+    irq_machine_i : in  std_ulogic_vector(2 downto 0);  -- RISC-V interrupts
     irq_fast_i    : in  std_ulogic_vector(15 downto 0); -- fast interrupts
     -- load/store unit interface --
     lsu_wait_i    : in  std_ulogic;                     -- wait for data bus
@@ -177,7 +177,7 @@ begin
 
   -- Branch Condition Check -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  branch_check: process(exec, alu_cmp_i)
+  branch_check: process(exec.ir, alu_cmp_i)
   begin
     if (exec.ir(instr_opcode_lsb_c+2) = '0') then -- conditional branch
       if (exec.ir(instr_funct3_msb_c) = '0') then -- beq / bne
@@ -202,7 +202,7 @@ begin
       exec.irc   <= (others => '0');
       exec.ci    <= '0';
       exec.pc    <= BOOT_ADDR(31 downto 2) & "00"; -- 32-bit-aligned boot address
-      exec.pc2   <= BOOT_ADDR(31 downto 2) & "00"; -- 32-bit-aligned boot address
+      exec.pc2   <= BOOT_ADDR(31 downto 2) & "00";
     elsif rising_edge(clk_i) then
       ctrl <= ctrl_nxt;
       exec <= exec_nxt;
@@ -577,9 +577,9 @@ begin
   -- -------------------------------------------------------------------------------------------
   csr_check: process(ctrl, exec, csr, debug_ctrl)
   begin
-    -- ------------------------------------------------------------
+    -- --------------------------------------------------------------------
     -- Available at all
-    -- ------------------------------------------------------------
+    -- --------------------------------------------------------------------
     case ctrl.csr_addr is
 
       -- floating-point-unit CSRs --
@@ -669,9 +669,9 @@ begin
 
     end case;
 
-    -- ------------------------------------------------------------
+    -- --------------------------------------------------------------------
     -- R/W capabilities
-    -- ------------------------------------------------------------
+    -- --------------------------------------------------------------------
     if (ctrl.csr_addr(11 downto 10) = "11") and -- CSR is read-only
        ((exec.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c)  or -- will always write to CSR
         (exec.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- will always write to CSR
@@ -681,9 +681,9 @@ begin
       csr_valid(1) <= '1'; -- access granted
     end if;
 
-    -- ------------------------------------------------------------
+    -- --------------------------------------------------------------------
     -- Privilege level
-    -- ------------------------------------------------------------
+    -- --------------------------------------------------------------------
     if (ctrl.csr_addr(11 downto 4) = csr_dcsr_c(11 downto 4)) and -- debug-mode-only CSR?
        RISCV_ISA_Sdext and (debug_ctrl.run = '0') then -- debug-mode implemented and not running?
       csr_valid(0) <= '0'; -- invalid access
@@ -874,7 +874,7 @@ begin
 
   -- any system interrupt? --
   irq_fire(0) <= '1' when
-    ((exec.state = S_EXECUTE) or (exec.state = S_SLEEP)) and -- trigger system IRQ only in S_EXECUTE state or in sleep mode
+    ((exec.state = S_EXECUTE) or (exec.state = S_SLEEP)) and -- trigger system IRQ only in S_EXECUTE state or when in sleep mode
     (or_reduce_f(irq_buf(irq_firq_15_c downto irq_msi_irq_c)) = '1') and -- pending system IRQ
     ((csr.mstatus_mie = '1') or (csr.prv_level = priv_mode_u_c)) and -- IRQ only when in M-mode and MIE=1 OR when in U-mode
     (debug_ctrl.run = '0') and (csr.dcsr_step = '0') else '0'; -- no system IRQs when in debug-mode / during single-stepping
@@ -1040,9 +1040,9 @@ begin
       csr.dscratch0    <= (others => '0');
     elsif rising_edge(clk_i) then
 
-      -- ********************************************************************************
+      -- --------------------------------------------------------------------
       -- Software CSR access
-      -- ********************************************************************************
+      -- --------------------------------------------------------------------
       if (ctrl.csr_we = '1') then
         case ctrl.csr_addr is
 
@@ -1098,9 +1098,9 @@ begin
 
         end case;
 
-      -- ********************************************************************************
+      -- --------------------------------------------------------------------
       -- Hardware CSR access: trap enter
-      -- ********************************************************************************
+      -- --------------------------------------------------------------------
       elsif (env_enter = '1') then
         if (debug_ctrl.run = '0') then -- no CSR update when in debug-mode
           if RISCV_ISA_Sdext and (ecause(5) = '1') then -- trap to debug-mode
@@ -1135,9 +1135,9 @@ begin
           end if;
         end if;
 
-      -- ********************************************************************************
+      -- --------------------------------------------------------------------
       -- Hardware CSR access: trap exit
-      -- ********************************************************************************
+      -- --------------------------------------------------------------------
       elsif (env_exit = '1') then
         if RISCV_ISA_Sdext and (debug_ctrl.run = '1') then -- return from debug-mode
           csr.prv_level <= csr.dcsr_prv;
@@ -1155,9 +1155,9 @@ begin
         end if;
       end if;
 
-      -- ********************************************************************************
+      -- --------------------------------------------------------------------
       -- Override: terminate unavailable registers and bits
-      -- ********************************************************************************
+      -- --------------------------------------------------------------------
       -- no base counters --
       if not RISCV_ISA_Zicntr then
         csr.mcounteren(2 downto 0) <= (others => '0');
