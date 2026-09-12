@@ -397,7 +397,8 @@ begin
 
   -- Register File --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_regfile_inst: entity neorv32.neorv32_cpu_regfile
+  -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
+  cpu_regfile_inst: neorv32_cpu_regfile -- component declaration in package file
   generic map (
     AWIDTH  => rf_awidth_c,    -- address width
     ARCHSEL => CPU_RF_ARCH_SEL -- architecture style select
