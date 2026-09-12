@@ -57,6 +57,7 @@ $(WRAPPER).v:
 	@echo $(VHDL_SRC)
 	@echo "Excluded NEORV32 VHDL core files:"
 	@echo $(VHDL_EXCLUDE)
+	@echo "Running conversion..."
 	@$(GHDL) -i --std=08 --work=neorv32 --workdir=$(BUILD) -Pbuild $(VHDL_SRC) $(WRAPPER).vhd
 	@$(GHDL) -m --std=08 --work=neorv32 --workdir=$(BUILD) $(WRAPPER)
 	@$(GHDL) synth --std=08 --work=neorv32 --workdir=$(BUILD) -Pbuild --out=verilog $(WRAPPER) > $(WRAPPER).v
