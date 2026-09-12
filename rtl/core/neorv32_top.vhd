@@ -618,8 +618,8 @@ begin
   end generate;
 
   -- execution trace ports --
-  trace_cpu0_o <= cpu_trace(core_req'low);
-  trace_cpu1_o <= cpu_trace(core_req'high) when (num_cores_c = 2) else trace_port_terminate_c;
+  trace_cpu0_o <= cpu_trace(core_req'low)  when TRACE_PORT_EN else trace_port_terminate_c;
+  trace_cpu1_o <= cpu_trace(core_req'high) when TRACE_PORT_EN and (num_cores_c = 2) else trace_port_terminate_c;
 
   -- Core Complex Bus Arbiter ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
