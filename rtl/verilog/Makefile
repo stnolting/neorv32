@@ -32,7 +32,7 @@ VHDL_SRC = $(filter-out $(addprefix %,$(VHDL_EXCLUDE)),$(NEORV32_SRCS))
 
 # Verilog sources
 VERILOG_SRC ?=
-VERILOG_TB ?= testbench.v
+VERILOG_TB ?= neorv32_verilog_tb.v
 VERILOG_SRCS = $(VERILOG_TB) $(WRAPPER).v $(VERILOG_SRC)
 
 # Simulation
@@ -87,7 +87,7 @@ else ifeq ($(SIMULATOR), verilator)
 	@echo "Running simulation with Verilator"
 	@mkdir -p $(BUILD)
 	@verilator $(VERILATOR_ARGS) $(VERILOG_SRCS)
-	@./$(BUILD)/Vtestbench
+	@./$(BUILD)/Vneorv32_verilog_tb
 else
 	$(error Unsupported SIMULATOR: $(SIMULATOR))
 endif
