@@ -6,12 +6,10 @@ $NEORV32_HOME/rtl/core/neorv32_cpu_frontend.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_control.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_hwtrig.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_counters.vhd
-$NEORV32_HOME/rtl/core/neorv32_cpu_regfile.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_alu_shifter.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_alu_muldiv.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_alu_bitmanip.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_alu_fpu.vhd
-$NEORV32_HOME/rtl/core/neorv32_cpu_alu_cfu.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_alu_cond.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_alu_crypto.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_alu.vhd
@@ -25,7 +23,6 @@ $NEORV32_HOME/rtl/core/neorv32_core_complex.vhd
 $NEORV32_HOME/rtl/core/neorv32_dma.vhd
 $NEORV32_HOME/rtl/core/neorv32_smc.vhd
 $NEORV32_HOME/rtl/core/neorv32_xbus.vhd
-$NEORV32_HOME/rtl/core/neorv32_cfs.vhd
 $NEORV32_HOME/rtl/core/neorv32_sdi.vhd
 $NEORV32_HOME/rtl/core/neorv32_gpio.vhd
 $NEORV32_HOME/rtl/core/neorv32_wdt.vhd
@@ -46,9 +43,12 @@ $NEORV32_HOME/rtl/core/neorv32_debug_dtm.vhd
 $NEORV32_HOME/rtl/core/neorv32_debug_auth.vhd
 $NEORV32_HOME/rtl/core/neorv32_debug_dm.vhd
 $NEORV32_HOME/rtl/core/neorv32_top.vhd
+$NEORV32_HOME/rtl/core/neorv32_cpu_alu_cfu.vhd
+$NEORV32_HOME/rtl/core/neorv32_cpu_regfile.vhd
 $NEORV32_HOME/rtl/core/neorv32_cache_ram.vhd
 $NEORV32_HOME/rtl/core/neorv32_imem_image.vhd
 $NEORV32_HOME/rtl/core/neorv32_imem.vhd
 $NEORV32_HOME/rtl/core/neorv32_dmem.vhd
 $NEORV32_HOME/rtl/core/neorv32_bootrom_image.vhd
 $NEORV32_HOME/rtl/core/neorv32_bootrom.vhd
+$NEORV32_HOME/rtl/core/neorv32_cfs.vhd
