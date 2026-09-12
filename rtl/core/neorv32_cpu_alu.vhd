@@ -279,7 +279,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   cpu_alu_cfu_enabled:
   if RISCV_ISA_Xcfu generate
-    neorv32_cpu_alu_cfu_inst: entity neorv32.neorv32_cpu_alu_cfu
+    -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
+    cpu_alu_cfu_inst: neorv32_cpu_alu_cfu -- component declaration in package file
     port map (
       -- global control --
       clk_i    => clk_i,             -- global clock, rising edge
