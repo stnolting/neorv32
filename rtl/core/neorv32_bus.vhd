@@ -170,10 +170,6 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_bus_reg is
-  generic (
-    REQ_REG_EN : boolean := false; -- enable request bus register stage
-    RSP_REG_EN : boolean := false  -- enable response bus register stage
-  );
   port (
     -- global control --
     clk_i        : in  std_ulogic; -- global clock, rising edge
@@ -192,60 +188,41 @@ begin
 
   -- Request Register Stage -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  request_reg_enabled:
-  if REQ_REG_EN generate
-    request_reg: process(rstn_i, clk_i)
-    begin
-      if (rstn_i = '0') then
-        device_req_o <= req_terminate_c;
-      elsif rising_edge(clk_i) then
-        if (host_req_i.stb = '1') then -- reduce switching activity on downstream bus system
-          device_req_o <= host_req_i;
-        end if;
-        -- pass-through access control signals --
-        device_req_o.stb   <= host_req_i.stb;
-        device_req_o.burst <= host_req_i.burst;
-        device_req_o.lock  <= host_req_i.lock;
+  request_reg: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      device_req_o <= req_terminate_c;
+    elsif rising_edge(clk_i) then
+      if (host_req_i.stb = '1') then -- reduce switching activity on downstream bus system
+        device_req_o <= host_req_i;
       end if;
-    end process;
-  end generate;
-
-  request_reg_disabled:
-  if not REQ_REG_EN generate
-    device_req_o <= host_req_i;
-  end generate;
+      -- pass-through access control signals --
+      device_req_o.stb   <= host_req_i.stb;
+      device_req_o.burst <= host_req_i.burst;
+      device_req_o.lock  <= host_req_i.lock;
+    end if;
+  end process;
 
   -- Response Register Stage ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  response_reg_enabled:
-  if RSP_REG_EN generate
+  response_reg_reset: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then -- full reset for control signals
+      host_rsp_o.ack <= '0';
+      host_rsp_o.err <= '0';
+    elsif rising_edge(clk_i) then
+      host_rsp_o.ack <= device_rsp_i.ack;
+      host_rsp_o.err <= device_rsp_i.err;
+    end if;
+  end process;
 
-    -- signals that DO require a defined reset (access control signals) --
-    response_reg_reset: process(rstn_i, clk_i)
-    begin
-      if (rstn_i = '0') then
-        host_rsp_o.ack <= '0';
-        host_rsp_o.err <= '0';
-      elsif rising_edge(clk_i) then
-        host_rsp_o.ack <= device_rsp_i.ack;
-        host_rsp_o.err <= device_rsp_i.err;
-      end if;
-    end process;
-
-    -- signals that do not need a defined reset --
-    response_reg_noreset: process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        host_rsp_o.data <= device_rsp_i.data;
-      end if;
-    end process;
-
-  end generate;
-
-  response_reg_disabled:
-  if not RSP_REG_EN generate
-    host_rsp_o <= device_rsp_i;
-  end generate;
+  -- no reset required --
+  response_reg_noreset: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      host_rsp_o.data <= device_rsp_i.data;
+    end if;
+  end process;
 
 end architecture;
 
@@ -665,10 +642,6 @@ begin
   -- In/Out Register Stages -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_bus_reg_inst: entity neorv32.neorv32_bus_reg
-  generic map (
-    REQ_REG_EN => true,
-    RSP_REG_EN => true
-  )
   port map (
     -- global control --
     clk_i        => clk_i,

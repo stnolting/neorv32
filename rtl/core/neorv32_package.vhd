@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130507"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130508"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -979,29 +979,29 @@ package neorv32_package is
     IO_CLINT_EN         : boolean                        := false;
     -- Universal Asynchronous Receiver/Transmitter (UART0/UART1) --
     IO_UART0_EN         : boolean                        := false;
-    IO_UART0_RX_FIFO    : natural range 1 to 2**15       := 1;
-    IO_UART0_TX_FIFO    : natural range 1 to 2**15       := 1;
+    IO_UART0_RX_FIFO    : natural range 1 to 32768       := 1;
+    IO_UART0_TX_FIFO    : natural range 1 to 32768       := 1;
     IO_UART1_EN         : boolean                        := false;
-    IO_UART1_RX_FIFO    : natural range 1 to 2**15       := 1;
-    IO_UART1_TX_FIFO    : natural range 1 to 2**15       := 1;
+    IO_UART1_RX_FIFO    : natural range 1 to 32768       := 1;
+    IO_UART1_TX_FIFO    : natural range 1 to 32768       := 1;
     -- Serial Peripheral Interface (SPI Host, SDI Device) --
     IO_SPI_EN           : boolean                        := false;
-    IO_SPI_FIFO         : natural range 1 to 2**15       := 1;
+    IO_SPI_FIFO         : natural range 1 to 32768       := 1;
     IO_SDI_EN           : boolean                        := false;
-    IO_SDI_FIFO         : natural range 1 to 2**15       := 1;
+    IO_SDI_FIFO         : natural range 1 to 32768       := 1;
     -- Two-Wire Interface (TWI Host, TWD Device) --
     IO_TWI_EN           : boolean                        := false;
-    IO_TWI_FIFO         : natural range 1 to 2**15       := 1;
+    IO_TWI_FIFO         : natural range 1 to 32768       := 1;
     IO_TWD_EN           : boolean                        := false;
-    IO_TWD_RX_FIFO      : natural range 1 to 2**15       := 1;
-    IO_TWD_TX_FIFO      : natural range 1 to 2**15       := 1;
+    IO_TWD_RX_FIFO      : natural range 1 to 32768       := 1;
+    IO_TWD_TX_FIFO      : natural range 1 to 32768       := 1;
     -- Pulse-Width Modulation Controller (PWM) --
     IO_PWM_NUM          : natural range 0 to 32          := 0;
     -- Watchdog Timer (WDT) --
     IO_WDT_EN           : boolean                        := false;
     -- True-Random Number Generator (TRNG) --
     IO_TRNG_EN          : boolean                        := false;
-    IO_TRNG_FIFO        : natural range 1 to 2**15       := 1;
+    IO_TRNG_FIFO        : natural range 1 to 32768       := 1;
     IO_TRNG_NUM_RO      : natural range 1 to 255         := 3;
     IO_TRNG_NUM_INV     : natural range 3 to 4095        := 5;
     IO_TRNG_NUM_RBIT    : natural range 8 to 4096        := 64;
@@ -1009,22 +1009,22 @@ package neorv32_package is
     IO_CFS_EN           : boolean                        := false;
     -- Smart LED interface (NEOLED) --
     IO_NEOLED_EN        : boolean                        := false;
-    IO_NEOLED_TX_FIFO   : natural range 1 to 2**15       := 1;
+    IO_NEOLED_TX_FIFO   : natural range 1 to 32768       := 1;
     -- General-Purpose Timer (GPTMR) --
     IO_GPTMR_NUM        : natural range 0 to 16          := 0;
     -- 1-Wire Interface (ONEWIRE) --
     IO_ONEWIRE_EN       : boolean                        := false;
-    IO_ONEWIRE_FIFO     : natural range 1 to 2**15       := 1;
+    IO_ONEWIRE_FIFO     : natural range 1 to 32768       := 1;
     -- Direct Memory Access Controller (DMA) --
     IO_DMA_EN           : boolean                        := false;
     IO_DMA_DSC_FIFO     : natural range 4 to 512         := 4;
     -- Stream Link Interface (SLINK) --
     IO_SLINK_EN         : boolean                        := false;
-    IO_SLINK_RX_FIFO    : natural range 1 to 2**15       := 1;
-    IO_SLINK_TX_FIFO    : natural range 1 to 2**15       := 1;
+    IO_SLINK_RX_FIFO    : natural range 1 to 32768       := 1;
+    IO_SLINK_TX_FIFO    : natural range 1 to 32768       := 1;
     -- Instruction Tracer (TRACER) --
     IO_TRACER_EN        : boolean                        := false;
-    IO_TRACER_BUFFER    : natural range 1 to 2**15       := 1;
+    IO_TRACER_BUFFER    : natural range 1 to 32768       := 1;
     IO_TRACER_SIMLOG_EN : boolean                        := false
   );
   port (
@@ -1179,6 +1179,76 @@ package neorv32_package is
     rsp_data_o : out std_ulogic_vector(31 downto 0);
     rsp_ack_o  : out std_ulogic;
     rsp_err_o  : out std_ulogic
+  );
+  end component;
+
+  -- cache memory (CACHERAM) --
+  component neorv32_cache_ram
+  generic (
+    TAG_WIDTH : natural;
+    IDX_WIDTH : natural;
+    OFS_WIDTH : natural
+  );
+  port (
+    clk_i     : in  std_ulogic;
+    addr_i    : in  std_ulogic_vector(31 downto 0);
+    tag_we_i  : in  std_ulogic;
+    tag_o     : out std_ulogic_vector(31 downto 0);
+    data_we_i : in  std_ulogic_vector(3 downto 0);
+    data_i    : in  std_ulogic_vector(31 downto 0);
+    data_o    : out std_ulogic_vector(31 downto 0)
+  );
+  end component;
+
+  -- custom functions subsystem (CFS) --
+  component neorv32_cfs
+  port (
+    clk_i      : in  std_ulogic;
+    rstn_i     : in  std_ulogic;
+    req_addr_i : in  std_ulogic_vector(15 downto 0);
+    req_data_i : in  std_ulogic_vector(31 downto 0);
+    req_ben_i  : in  std_ulogic_vector(3 downto 0);
+    req_stb_i  : in  std_ulogic;
+    req_rw_i   : in  std_ulogic;
+    rsp_data_o : out std_ulogic_vector(31 downto 0);
+    rsp_ack_o  : out std_ulogic;
+    irq_o      : out std_ulogic;
+    cfs_in_i   : in  std_ulogic_vector(255 downto 0);
+    cfs_out_o  : out std_ulogic_vector(255 downto 0)
+  );
+  end component;
+
+  -- CPU register file (REGFILE) --
+  component neorv32_cpu_regfile
+  generic (
+    AWIDTH  : natural range 4 to 5;
+    ARCHSEL : natural range 0 to 3
+  );
+  port (
+    clk_i      : in  std_ulogic;
+    rstn_i     : in  std_ulogic;
+    zero_i     : in  std_ulogic;
+    rd_we_i    : in  std_ulogic;
+    rd_addr_i  : in  std_ulogic_vector(4 downto 0);
+    rd_data_i  : in  std_ulogic_vector(31 downto 0);
+    rs1_addr_i : in  std_ulogic_vector(4 downto 0);
+    rs1_data_o : out std_ulogic_vector(31 downto 0);
+    rs2_addr_i : in  std_ulogic_vector(4 downto 0);
+    rs2_data_o : out std_ulogic_vector(31 downto 0)
+  );
+  end component;
+
+  -- CPU custom functions unit (CFU) --
+  component neorv32_cpu_alu_cfu
+  port (
+    clk_i    : in  std_ulogic;
+    rstn_i   : in  std_ulogic;
+    start_i  : in  std_ulogic;
+    inst_i   : in  std_ulogic_vector(31 downto 0);
+    rs1_i    : in  std_ulogic_vector(31 downto 0);
+    rs2_i    : in  std_ulogic_vector(31 downto 0);
+    result_o : out std_ulogic_vector(31 downto 0);
+    valid_o  : out std_ulogic
   );
   end component;
 

@@ -19,7 +19,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_trng is
   generic (
-    TRNG_FIFO : natural range 1 to 2**15; -- FIFO depth, has to be a power of two, min 1
+    TRNG_FIFO : natural range 1 to 32768; -- FIFO depth, has to be a power of two, min 1
     NUM_RO    : natural range 1 to 255;   -- total number of ring-oscillators
     NUM_INV   : natural range 3 to 4095;  -- number of inverters in first ring-oscillator; has to be odd
     NUM_RBIT  : natural range 8 to 4096   -- number of raw bits to process for one output byte; has to be power of 2

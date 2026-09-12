@@ -34,7 +34,7 @@ module neorv32_cache_ram #(
   assign tag_o = {{32-TAG_WIDTH{1'b0}}, tag_rd};
 
   // data RAM: 4 parallel byte-wide RAMs; so we need to access them using the WORD address
-  localparam DATA_AWIDTH = (IDX_WIDTH+OFS_WIDTH)-2;
+  localparam DATA_AWIDTH = IDX_WIDTH+OFS_WIDTH;
   wire [DATA_AWIDTH-1:0] data_addr = addr_i[IDX_WIDTH+OFS_WIDTH+1:2];
 
   // the data RAM is split into 4x 8-bit RAMs as some FPGA synthesis tools have issues

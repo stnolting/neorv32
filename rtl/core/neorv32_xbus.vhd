@@ -49,21 +49,27 @@ architecture neorv32_xbus_rtl of neorv32_xbus is
 
 begin
 
-  -- Optional Register Stage(s) -------------------------------------------------------------
+  -- Optional Register Stage ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  reg_stage_inst: entity neorv32.neorv32_bus_reg
-  generic map (
-    REQ_REG_EN => REGSTAGE_EN,
-    RSP_REG_EN => REGSTAGE_EN
-  )
-  port map (
-    clk_i        => clk_i,
-    rstn_i       => rstn_i,
-    host_req_i   => bus_req_i,
-    host_rsp_o   => bus_rsp_o,
-    device_req_o => bus_req,
-    device_rsp_i => bus_rsp
-  );
+  reg_stage_enabled:
+  if REGSTAGE_EN generate
+    reg_stage_inst: entity neorv32.neorv32_bus_reg
+    port map (
+      clk_i        => clk_i,
+      rstn_i       => rstn_i,
+      host_req_i   => bus_req_i,
+      host_rsp_o   => bus_rsp_o,
+      device_req_o => bus_req,
+      device_rsp_i => bus_rsp
+    );
+  end generate;
+
+  -- pass-through --
+  reg_stage_disabled:
+  if not REGSTAGE_EN generate
+    bus_req   <= bus_req_i;
+    bus_rsp_o <= bus_rsp;
+  end generate;
 
   -- Bus Arbiter ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

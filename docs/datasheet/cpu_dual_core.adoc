@@ -12,10 +12,17 @@ instruction (`I$`) and data (`D$`) caches. Similar to the single-core <<_bus_sys
 data interfaces are switched into a single bus interface by a prioritizing bus switch. The bus interfaces
 of both core complexes are further switched into a single system bus using a round-robin arbiter.
 
+.Dual-Core Memory Access Latency
+[IMPORTANT]
+To improve timing, the bus interface of each core complex is automatically equipped with registers
+(one register for outgoing signals, another for incoming signals) **when both CPU caches are enabled**
+(I$ and D$). This increases memory access latency by two cycles. However, thanks to large caches and,
+above all, enabled burst transfers, the additional latency should not have a significant impact.
+
 image::smp_system.png[align=center]
 
-Both CPU cores are fully identical and use the same ISA, tuning and cache configurations provided by the
-according <<_processor_top_entity_generics, top generics>>. However, each core can be identified by the
+Both CPU cores are fully identical and use the same ISA, tuning options and cache configurations provided
+by the according <<_processor_top_entity_generics, top generics>>. Each core can be identified by the
 according "hart ID" that can be retrieved from the <<_mhartid>> CSR. CPU core 0 (the _primary_ core) has
 `mhartid = 0` while core 1 (the _secondary_ core) has `mhartid = 1`.
 

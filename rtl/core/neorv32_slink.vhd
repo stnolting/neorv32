@@ -17,8 +17,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_slink is
   generic (
-    SLINK_RX_FIFO : natural range 1 to 2**15; -- RX FIFO depth, has to be a power of two, min 1
-    SLINK_TX_FIFO : natural range 1 to 2**15  -- TX FIFO depth, has to be a power of two, min 1
+    SLINK_RX_FIFO : natural range 1 to 32768; -- RX FIFO depth, has to be a power of two, min 1
+    SLINK_TX_FIFO : natural range 1 to 32768  -- TX FIFO depth, has to be a power of two, min 1
   );
   port (
     -- Host access --

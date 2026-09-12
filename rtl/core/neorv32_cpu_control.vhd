@@ -496,7 +496,7 @@ begin
   ctrl_o.pc_nxt       <= exec.pc2(31 downto 1) & '0';
   ctrl_o.pc_ret       <= ctrl.pc_ret(31 downto 1) & '0';
   -- register file --
-  ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and (not or_reduce_f(exc_buf(exc_laccess_c downto exc_iaccess_c))); -- no sync. exception
+  ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and (not or_reduce_f(exc_buf(exc_laccess_c downto exc_iaccess_c))); -- write if no sync exception
   ctrl_o.rf_rs1       <= exec.ir(instr_rs1_msb_c downto instr_rs1_lsb_c);
   ctrl_o.rf_rs2       <= exec.ir(instr_rs2_msb_c downto instr_rs2_lsb_c);
   ctrl_o.rf_rd        <= exec.ir(instr_rd_msb_c downto instr_rd_lsb_c);

@@ -32,7 +32,7 @@ VHDL_SRC = $(filter-out $(addprefix %,$(VHDL_EXCLUDE)),$(NEORV32_SRCS))
 
 # Verilog sources
 VERILOG_SRC ?=
-VERILOG_TB ?= testbench.v
+VERILOG_TB ?= neorv32_verilog_tb.v
 VERILOG_SRCS = $(VERILOG_TB) $(WRAPPER).v $(VERILOG_SRC)
 
 # Simulation
@@ -57,6 +57,7 @@ $(WRAPPER).v:
 	@echo $(VHDL_SRC)
 	@echo "Excluded NEORV32 VHDL core files:"
 	@echo $(VHDL_EXCLUDE)
+	@echo "Running conversion..."
 	@$(GHDL) -i --std=08 --work=neorv32 --workdir=$(BUILD) -Pbuild $(VHDL_SRC) $(WRAPPER).vhd
 	@$(GHDL) -m --std=08 --work=neorv32 --workdir=$(BUILD) $(WRAPPER)
 	@$(GHDL) synth --std=08 --work=neorv32 --workdir=$(BUILD) -Pbuild --out=verilog $(WRAPPER) > $(WRAPPER).v
@@ -86,7 +87,7 @@ else ifeq ($(SIMULATOR), verilator)
 	@echo "Running simulation with Verilator"
 	@mkdir -p $(BUILD)
 	@verilator $(VERILATOR_ARGS) $(VERILOG_SRCS)
-	@./$(BUILD)/Vtestbench
+	@./$(BUILD)/Vneorv32_verilog_tb
 else
 	$(error Unsupported SIMULATOR: $(SIMULATOR))
 endif
