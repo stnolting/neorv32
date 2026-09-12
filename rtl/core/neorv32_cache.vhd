@@ -46,26 +46,6 @@ end entity;
 
 architecture neorv32_cache_rtl of neorv32_cache is
 
-  -- cache data & tag RAM wrapper --
-  -- [NOTE] We use component instantiation here to allow easy black-box instantiation for
-  -- late component binding (e.g. when using the VHDL-to-Verilog flow with Verilog memory IP).
-  component neorv32_cache_ram
-  generic (
-    TAG_WIDTH : natural;
-    IDX_WIDTH : natural;
-    OFS_WIDTH : natural
-  );
-  port (
-    clk_i     : in  std_ulogic;
-    addr_i    : in  std_ulogic_vector(31 downto 0);
-    tag_we_i  : in  std_ulogic;
-    tag_o     : out std_ulogic_vector(31 downto 0);
-    data_we_i : in  std_ulogic_vector(3 downto 0);
-    data_i    : in  std_ulogic_vector(31 downto 0);
-    data_o    : out std_ulogic_vector(31 downto 0)
-  );
-  end component;
-
   -- cache layout --
   constant block_num_c    : natural := 2**index_size_f(NUM_BLOCKS);  -- extend if not a power of two
   constant block_size_c   : natural := 2**index_size_f(BLOCK_SIZE);  -- extend if not a power of two
@@ -558,7 +538,8 @@ begin
 
   -- Cache Data and Tag Memory (Wrapper) ----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cache_ram_inst: neorv32_cache_ram
+  -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
+  neorv32_cache_ram_inst: neorv32_cache_ram -- component declaration in package file
   generic map (
     TAG_WIDTH => tag_width_c,
     IDX_WIDTH => index_width_c,
