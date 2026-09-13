@@ -1,0 +1,20 @@
+var searchData=
+[
+  ['onewire_5fctrl_5fbusy_0',['ONEWIRE_CTRL_BUSY',['../neorv32__onewire_8h.html#ade1a01f533843880868ec7496d116831aac8933755e80d72e1e9c293198d831b9',1,'neorv32_onewire.h']]],
+  ['onewire_5fctrl_5fclear_1',['ONEWIRE_CTRL_CLEAR',['../neorv32__onewire_8h.html#ade1a01f533843880868ec7496d116831adfe5373712e0c02da3aa5dfd8ca5e51e',1,'neorv32_onewire.h']]],
+  ['onewire_5fctrl_5fclkdiv0_2',['ONEWIRE_CTRL_CLKDIV0',['../neorv32__onewire_8h.html#ade1a01f533843880868ec7496d116831acdfca08f34d7379aaf8505ba3425c6f5',1,'neorv32_onewire.h']]],
+  ['onewire_5fctrl_5fclkdiv7_3',['ONEWIRE_CTRL_CLKDIV7',['../neorv32__onewire_8h.html#ade1a01f533843880868ec7496d116831a8b19096f72ef96a7597fda9be625ed40',1,'neorv32_onewire.h']]],
+  ['onewire_5fctrl_5fen_4',['ONEWIRE_CTRL_EN',['../neorv32__onewire_8h.html#ade1a01f533843880868ec7496d116831ab87882c202f80185278c69e482f147da',1,'neorv32_onewire.h']]],
+  ['onewire_5fctrl_5ffifo_5flsb_5',['ONEWIRE_CTRL_FIFO_LSB',['../neorv32__onewire_8h.html#ade1a01f533843880868ec7496d116831a3903370331c6ae15cd37381bc64b6016',1,'neorv32_onewire.h']]],
+  ['onewire_5fctrl_5ffifo_5fmsb_6',['ONEWIRE_CTRL_FIFO_MSB',['../neorv32__onewire_8h.html#ade1a01f533843880868ec7496d116831a101cd15b58450d9740ab92bb5c40ba63',1,'neorv32_onewire.h']]],
+  ['onewire_5fctrl_5fprsc0_7',['ONEWIRE_CTRL_PRSC0',['../neorv32__onewire_8h.html#ade1a01f533843880868ec7496d116831abfed6417c3abd7ef94cd18a3b32c4393',1,'neorv32_onewire.h']]],
+  ['onewire_5fctrl_5fprsc1_8',['ONEWIRE_CTRL_PRSC1',['../neorv32__onewire_8h.html#ade1a01f533843880868ec7496d116831aee1e24261e263c70bf2e36dcafc9dc74',1,'neorv32_onewire.h']]],
+  ['onewire_5fctrl_5frx_5favail_9',['ONEWIRE_CTRL_RX_AVAIL',['../neorv32__onewire_8h.html#ade1a01f533843880868ec7496d116831a74d1259bee8e3e1d18cc69a2d8ce4749',1,'neorv32_onewire.h']]],
+  ['onewire_5fctrl_5fsense_10',['ONEWIRE_CTRL_SENSE',['../neorv32__onewire_8h.html#ade1a01f533843880868ec7496d116831af992c94d0b9a7b7b92a5a23366b9a8c6',1,'neorv32_onewire.h']]],
+  ['onewire_5fctrl_5ftx_5ffull_11',['ONEWIRE_CTRL_TX_FULL',['../neorv32__onewire_8h.html#ade1a01f533843880868ec7496d116831a5db9e3557d447c62039ad3437caa9884',1,'neorv32_onewire.h']]],
+  ['onewire_5fdcmd_5fcmd_5fhi_12',['ONEWIRE_DCMD_CMD_HI',['../neorv32__onewire_8h.html#ac3323eb579bade663856055d7aa04e26aeb1f95a9b6f3b4a295578e874a1ad5d0',1,'neorv32_onewire.h']]],
+  ['onewire_5fdcmd_5fcmd_5flo_13',['ONEWIRE_DCMD_CMD_LO',['../neorv32__onewire_8h.html#ac3323eb579bade663856055d7aa04e26ac095ac82ef2be6e67b5c9f6b9f5c4379',1,'neorv32_onewire.h']]],
+  ['onewire_5fdcmd_5fdata_5flsb_14',['ONEWIRE_DCMD_DATA_LSB',['../neorv32__onewire_8h.html#ac3323eb579bade663856055d7aa04e26a035b3e4021a1959a7cbd8954e838c324',1,'neorv32_onewire.h']]],
+  ['onewire_5fdcmd_5fdata_5fmsb_15',['ONEWIRE_DCMD_DATA_MSB',['../neorv32__onewire_8h.html#ac3323eb579bade663856055d7aa04e26a36fe4def67f02a3d06dbe47231d6f21d',1,'neorv32_onewire.h']]],
+  ['onewire_5fdcmd_5fpresence_16',['ONEWIRE_DCMD_PRESENCE',['../neorv32__onewire_8h.html#ac3323eb579bade663856055d7aa04e26aa4cd11972bbc09f7a7eab8e129b280b4',1,'neorv32_onewire.h']]]
+];
