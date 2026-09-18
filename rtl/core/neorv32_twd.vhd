@@ -17,8 +17,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_twd is
   generic (
-    TWD_RX_FIFO : natural range 1 to 2**15; -- receive FIFO depth, has to be a power of two, min 1
-    TWD_TX_FIFO : natural range 1 to 2**15  -- transmit FIFO depth, has to be a power of two, min 1
+    TWD_RX_FIFO : natural range 1 to 32768; -- receive FIFO depth, has to be a power of two, min 1
+    TWD_TX_FIFO : natural range 1 to 32768  -- transmit FIFO depth, has to be a power of two, min 1
   );
   port (
     clk_i     : in  std_ulogic;                    -- global clock line
@@ -217,7 +217,8 @@ begin
   generic map (
     AWIDTH  => tx_size_c,
     DWIDTH  => 8,
-    OUTGATE => false
+    OUTGATE => false,
+    ASYNCRD => false
   )
   port map (
     -- global control --
@@ -244,7 +245,8 @@ begin
   generic map (
     AWIDTH  => rx_size_c,
     DWIDTH  => 8,
-    OUTGATE => false
+    OUTGATE => false,
+    ASYNCRD => false
   )
   port map (
     -- global control --

@@ -48,20 +48,6 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   -- heart ID --
   constant hid_c : std_ulogic_vector(1 downto 0) := std_ulogic_vector(to_unsigned(HART_ID, 2));
 
-  -- instruction prefetch buffer --
-  component neorv32_cpu_frontend_ipb
-  port (
-    clk_i   : in  std_ulogic;
-    clear_i : in  std_ulogic;
-    wdata_i : in  std_ulogic_vector(16 downto 0);
-    we_i    : in  std_ulogic;
-    free_o  : out std_ulogic;
-    re_i    : in  std_ulogic;
-    rdata_o : out std_ulogic_vector(16 downto 0);
-    avail_o : out std_ulogic
-  );
-  end component;
-
   -- instruction fetch engine --
   type state_t is (S_RESTART, S_REQUEST, S_PENDING);
   type fetch_t is record
@@ -171,10 +157,17 @@ begin
   -- -------------------------------------------------------------------------------------------
   prefetch_buffer:
   for i in 0 to 1 generate
-    ipb_inst: neorv32_cpu_frontend_ipb
+    ipb_inst: entity neorv32.neorv32_prim_fifo
+    generic map (
+      AWIDTH  => 1,
+      DWIDTH  => 17,
+      OUTGATE => false,
+      ASYNCRD => true
+    )
     port map (
       -- global control --
       clk_i   => clk_i,
+      rstn_i  => rstn_i,
       clear_i => restart,
       -- write port --
       wdata_i => ipb_wdata(i),
@@ -283,94 +276,5 @@ begin
     frontend_o.compr <= '0';
     frontend_o.fault <= ipb_rdata(0)(16);
   end generate;
-
-end architecture;
-
-
--- ================================================================================ --
--- NEORV32 CPU - Instruction Prefetch Buffer (FIFO)                                 --
--- -------------------------------------------------------------------------------- --
--- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
--- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
--- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
--- SPDX-License-Identifier: BSD-3-Clause                                            --
--- ================================================================================ --
-
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-
-library neorv32;
-use neorv32.neorv32_package.all;
-
-entity neorv32_cpu_frontend_ipb is
-  port (
-    -- global control --
-    clk_i   : in  std_ulogic; -- clock, rising edge
-    clear_i : in  std_ulogic; -- sync reset, high-active
-    -- write port --
-    wdata_i : in  std_ulogic_vector(16 downto 0); -- write data
-    we_i    : in  std_ulogic; -- write enable
-    free_o  : out std_ulogic; -- at least one entry is free when set
-    -- read port --
-    re_i    : in  std_ulogic; -- read enable
-    rdata_o : out std_ulogic_vector(16 downto 0); -- read data
-    avail_o : out std_ulogic  -- data available when set
-  );
-end entity;
-
-architecture neorv32_cpu_frontend_ipb_rtl of neorv32_cpu_frontend_ipb is
-
-  -- IPB depth --
-  constant awidth_c : natural := 1; -- 1 address bit = 2 entries
-
-  -- pointers and status --
-  signal w_pnt, r_pnt : std_ulogic_vector(awidth_c downto 0);
-  signal match : std_ulogic;
-
-  -- memory core --
-  type ipb_t is array (0 to (2**awidth_c)-1) of std_ulogic_vector(16 downto 0);
-  signal ipb : ipb_t;
-
-begin
-
-  -- Pointers -------------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  pointer_reg: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if (clear_i = '1') then
-        w_pnt <= (others => '0');
-        r_pnt <= (others => '0');
-      else
-        if (we_i = '1') then
-          w_pnt <= std_ulogic_vector(unsigned(w_pnt) + 1);
-        end if;
-        if (re_i = '1') then
-          r_pnt <= std_ulogic_vector(unsigned(r_pnt) + 1);
-        end if;
-      end if;
-    end if;
-  end process;
-
-  -- status --
-  match   <= '1' when (r_pnt(awidth_c-1 downto 0) = w_pnt(awidth_c-1 downto 0)) else '0';
-  free_o  <= '0' when (r_pnt(awidth_c) /= w_pnt(awidth_c)) and (match = '1') else '1';
-  avail_o <= '0' when (r_pnt(awidth_c)  = w_pnt(awidth_c)) and (match = '1') else '1';
-
-  -- Memory Core ----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  mem_write: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if (we_i = '1') then
-        ipb(to_integer(unsigned(w_pnt(awidth_c-1 downto 0)))) <= wdata_i;
-      end if;
-    end if;
-  end process;
-
-  -- asynchronous read --
-  rdata_o <= ipb(to_integer(unsigned(r_pnt(awidth_c-1 downto 0))));
 
 end architecture;

@@ -10,16 +10,16 @@
 
 module neorv32_cpu_alu_cfu (
   // global control
-  input  wire        clk_i,    // global clock, rising edge
-  input  wire        rstn_i,   // global reset, low-active, async
+  input         clk_i,    // global clock, rising edge
+  input         rstn_i,   // global reset, low-active, async
   // request
-  input  wire        start_i,  // start trigger, single-shot
-  input  wire [31:0] inst_i,   // full instruction word
-  input  wire [31:0] rs1_i,    // register source operand 1
-  input  wire [31:0] rs2_i,    // register source operand 2
+  input         start_i,  // start trigger, single-shot
+  input  [31:0] inst_i,   // full instruction word
+  input  [31:0] rs1_i,    // register source operand 1
+  input  [31:0] rs2_i,    // register source operand 2
   // response
-  output wire [31:0] result_o, // operation result
-  output wire        valid_o   // operation done; result valid
+  output [31:0] result_o, // operation result
+  output        valid_o   // operation done; result valid
 );
 
   // supported CFU opcodes

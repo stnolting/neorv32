@@ -567,7 +567,8 @@ begin
   generic map (
     AWIDTH  => 0,
     DWIDTH  => 32+4+1,
-    OUTGATE => true
+    OUTGATE => true,
+    ASYNCRD => false
   )
   port map (
     -- global control --

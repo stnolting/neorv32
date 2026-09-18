@@ -18,7 +18,7 @@ module neorv32_bootrom (
   input         req_stb_i,  // request strobe
   input         req_rw_i,   // 0 = read, 1 = write
   // bus response
-  output [13:0] rsp_data_o, // read data
+  output [31:0] rsp_data_o, // read data
   output        rsp_ack_o,  // access acknowledge
   output        rsp_err_o   // access error
 );

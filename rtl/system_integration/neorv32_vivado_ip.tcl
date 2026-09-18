@@ -48,14 +48,15 @@ set_property INCREMENTAL false [get_filesets sim_1]
 # read and process NEORV32 SoC file list
 set file_list_file [read [open "$neorv32_home/rtl/file_list_core.f" r]]
 set file_list [string map [list {$NEORV32_HOME} $neorv32_home] $file_list_file]
+
+# IP top module and AXI4 bridge
+lappend file_list "$neorv32_home/rtl/system_integration/xbus2axi4_bridge.vhd"
+lappend file_list "$neorv32_home/rtl/system_integration/$ip_top.vhd"
+
 puts "NEORV32 source files:"
 puts $file_list
 add_files $file_list
 set_property library neorv32 [get_files $file_list]
-
-# IP top module and AXI4 bridge
-add_file $neorv32_home/rtl/system_integration/xbus2axi4_bridge.vhd
-add_file $neorv32_home/rtl/system_integration/$ip_top.vhd
 set_property top $ip_top [current_fileset]
 
 update_compile_order -fileset sources_1
