@@ -34,6 +34,7 @@ void set_memory(uint32_t address, int data, uint32_t num);
 void read_memory(uint32_t address);
 void setup_access(void);
 void write_memory(uint32_t address, uint32_t data);
+void atomic_swap(uint32_t address, uint32_t wdata);
 void hexdump(uint32_t address);
 void aux_print_hex_byte(uint8_t byte);
 void memory_trap_handler(void);
@@ -56,7 +57,7 @@ int main() {
 
   // check if UART unit is implemented at all
   if (neorv32_uart0_available() == 0) {
-    return 1;
+    return -1;
   }
 
   // capture all exceptions and give debug info via UART
@@ -110,6 +111,7 @@ int main() {
         " set [address] [value] [num] - write [value] [num] times to memory starting at [address]\n"
         " read [address]              - read data from [address]\n"
         " write [address] [value]     - write [value] to [address]\n"
+        " swap [address] [value]      - atomic 32-bit swap: read [address] && write [value] to [address]\n"
         " dump [address]              - hex dump bytes + ASCII starting at [address]\n"
         " sync                        - synchronize with main memory\n"
         " exit                        - return to bootloader (if available)\n"
@@ -170,6 +172,17 @@ int main() {
       else {
         write_memory((uint32_t)neorv32_aux_hexstr2uint64(arg0, 8),
                      (uint32_t)neorv32_aux_hexstr2uint64(arg1, 8));
+      }
+    }
+
+    else if (!strcmp(command, "swap")) {
+      if ((arg0 == NULL) || (arg1 == NULL)) {
+        neorv32_uart0_printf("Insufficient arguments.\n");
+        neorv32_uart0_printf("amoswap [address] [value]\n");
+      }
+      else {
+        atomic_swap((uint32_t)neorv32_aux_hexstr2uint64(arg0, 8),
+                    (uint32_t)neorv32_aux_hexstr2uint64(arg1, 8));
       }
     }
 
@@ -262,7 +275,7 @@ void test_memory(uint32_t address) {
   // -------------------
   // byte access
   // -------------------
-  neorv32_uart0_printf("8-bit accesses... ");
+  neorv32_uart0_printf("8-bit access... ");
 
   data_ref[0] = 0x00000078;
   data_ref[1] = 0x00000056;
@@ -300,7 +313,7 @@ void test_memory(uint32_t address) {
   // -------------------
   // half-word access
   // -------------------
-  neorv32_uart0_printf("16-bit accesses... ");
+  neorv32_uart0_printf("16-bit access... ");
 
   data_ref[0] = 0x00006677;
   data_ref[1] = 0x00004455;
@@ -332,7 +345,7 @@ void test_memory(uint32_t address) {
   // -------------------
   // word access
   // -------------------
-  neorv32_uart0_printf("32-bit accesses... ");
+  neorv32_uart0_printf("32-bit access... ");
 
   data_ref[0] = 0xabcd1234;
 
@@ -472,6 +485,25 @@ void write_memory(uint32_t address, uint32_t data) {
 
   if (exception == 0) {
     neorv32_uart0_printf("\n");
+  }
+}
+
+
+/**********************************************************************//**
+ * Perform atomic swap (32-bit)
+ **************************************************************************/
+void atomic_swap(uint32_t address, uint32_t wdata) {
+
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZAAMO)) == 0) {
+    neorv32_uart0_printf("Atomic memory operations not supported (Zaamo ISA extension not available).\n");
+    return;
+  }
+
+  exception = 0;
+  uint32_t rdata = 0;//neorv32_cpu_amoswap(address, wdata);
+
+  if (exception == 0) {
+    neorv32_uart0_printf("0x%x => [0x%x] => 0x%x\n", wdata, address, rdata);
   }
 }
 

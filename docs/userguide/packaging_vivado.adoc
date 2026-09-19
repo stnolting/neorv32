@@ -13,6 +13,11 @@ and AXI4-Stream-compatible (via SLINK) interfaces.
 [NOTE]
 The provided AXI4-bridge can also be used for custom (AXI) setups outside of Vivado and/or IP block designs.
 
+.Supported AXI Transactions
+[IMPORTANT]
+The NEORV32 AXI4 bridge only supports single-accesses and incrementing address bursts.
+Atomic / exclusive accesses are not supported and will raise a bus error.
+
 .Example Vivado SoC using the NEORV32 IP Block
 image::vivado_ip_soc.png[]
 
@@ -82,7 +87,7 @@ Finally, Vivado will prompt to upgrade the NEORV32 IP.
 [IMPORTANT]
 If NEORV32 configurations do not take effect, try using the out-of-context synthesis option.
 
-.Incremental Compilation of Simulation Sources (ISIM)
+.Incremental Compilation of Simulation Sources (XSIM)
 [IMPORTANT]
 When using AMD Vivado (XSIM for simulation) make sure to **TURN OFF** "incremental compilation" (_Project Setting_
 -> _Simulation_ -> _Advanced_ -> _Enable incremental compilation). This will slow down simulation relaunch but will
