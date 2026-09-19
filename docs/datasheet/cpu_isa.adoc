@@ -142,8 +142,7 @@ The "compressed" ISA extension provides 16-bit encodings of commonly used instru
 | Class | Instructions | Execution cycles
 | ALU        | `c.addi4spn` `c.nop` `c.add[i]` `c.li` `c.addi16sp` `c.lui` `c.and[i]` `c.sub` `c.xor` `c.or` `c.mv` | 2
 | ALU shifts | `c.srli` `c.srai` `c.slli`                                                                           | 2 + `T_shift_latency`
-| Branch     | `c.beqz` `c.bnez`                                                                                    | not taken: 3 +
-taken: 5 + `T_inst_latency`
+| Branch     | `c.beqz` `c.bnez`                                                                                    | not taken: 3, taken: 5 + `T_inst_latency`
 | Jump/call  | `c.jal[r]` `c.j` `c.jr`                                                                              | 5 + `T_inst_latency`
 | Load/store | `c.lw` `c.sw` `c.lwsp` `c.swsp`                                                                      | 4 + `T_data_latency`
 | System     | `c.break`                                                                                            | 7 + `T_inst_latency`
@@ -171,8 +170,7 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 | Class | Instructions | Execution cycles
 | ALU            | `add[i]` `slt[i]` `slt[i]u` `xor[i]` `or[i]` `and[i]` `sub` `lui` `auipc` | 2
 | ALU shifts     | `sll[i]` `srl[i]` `sra[i]`                                                | 3 + `T_shift_latency`
-| Branch         | `beq` `bne` `blt` `bge` `bltu` `bgeu`                                     | not taken: 3 +
-taken: 5 + `T_inst_latency`
+| Branch         | `beq` `bne` `blt` `bge` `bltu` `bgeu`                                     | not taken: 3, taken: 5 + `T_inst_latency`
 | Jump/call      | `jal[r]`                                                                  | 5 + `T_inst_latency`
 | Load/store     | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 4 + `T_data_latency`
 | Data fence     | `fence`                                                                   | 2 + `T_cache_sync`
@@ -368,8 +366,7 @@ The RISC-V `Zibi` ISA extension has not been ratified yet!
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| Branch with immediate | `beqi` `bnei` | not taken: 3 +
-taken: 5 + `T_inst_latency`
+| Branch with immediate | `beqi` `bnei` | not taken: 3, taken: 5 + `T_inst_latency`
 |=======================
 
 
