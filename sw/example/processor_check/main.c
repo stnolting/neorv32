@@ -187,7 +187,7 @@ int main() {
 
   // clear GPIOs (they are used by the TB to trigger external events)
   neorv32_gpio_port_set(0);
-  neorv32_gpio_dir_set(-1); // set all as outputs
+  neorv32_gpio_port_dir_set(-1); // set all as outputs
 
   // prepare counters
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all counters
@@ -1586,7 +1586,7 @@ int main() {
     cnt_test++;
 
     gpio_trap_handler_ack = 0;
-    neorv32_gpio_dir_set(gpio_dir);
+    neorv32_gpio_port_dir_set(gpio_dir);
     neorv32_gpio_port_set(gpio_pattern);
 
     // test GPIO input readback via simulation loopback
@@ -1597,7 +1597,7 @@ int main() {
     }
 
     // restore all pins as outputs and set pattern for the interrupt test
-    neorv32_gpio_dir_set(-1);
+    neorv32_gpio_port_dir_set(-1);
     neorv32_gpio_port_set(gpio_pattern);
 
     // install GPIO input trap handler and enable GPIO IRQ source
@@ -2652,7 +2652,7 @@ void gpio_trap_handler(void) {
 
   gpio_trap_handler_ack = neorv32_gpio_irq_get(); // get currently pending pin interrupts
   neorv32_gpio_irq_clr(gpio_trap_handler_ack); // clear currently pending pin interrupts
-  neorv32_gpio_irq_disable(-1); // disable all input pin interrupts
+  neorv32_gpio_irq_enable(0); // disable all pin interrupts
 }
 
 
