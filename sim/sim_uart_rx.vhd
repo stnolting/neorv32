@@ -17,23 +17,23 @@ use std.textio.all;
 entity sim_uart_rx is
   generic (
     NAME : string; -- receiver name
-    FCLK : real; -- clock speed of clk_i in Hz
-    BAUD : real -- baud rate
+    FCLK : real;   -- clock speed of clk_i in Hz
+    BAUD : real    -- baud rate
   );
   port (
     clk : in std_ulogic; -- global clock
-    rxd : in std_ulogic -- serial UART RX data
+    rxd : in std_ulogic  -- serial UART RX data
   );
 end entity;
 
 architecture sim_uart_rx_rtl of sim_uart_rx is
 
+  constant baud_val_c : real := FCLK / BAUD;
   signal sync : std_ulogic_vector(4 downto 0) := (others => '1');
   signal busy : std_ulogic := '0';
   signal sreg : std_ulogic_vector(8 downto 0) := (others => '0');
   signal baudcnt : real;
   signal bitcnt : integer;
-  constant baud_val_c : real := FCLK / BAUD;
 
 begin
 
@@ -64,7 +64,7 @@ begin
           busy <= '0'; -- done
           char_v := to_integer(unsigned(sreg(8 downto 1)));
           if (char_v < 32) or (char_v > 32+95) then -- non-printable character?
-            report NAME & ": (" & integer'image(char_v) & ")";
+            report NAME & ": <" & integer'image(char_v) & ">";
           else
             report NAME & ": " & character'val(char_v);
           end if;
