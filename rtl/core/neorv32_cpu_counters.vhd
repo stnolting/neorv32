@@ -181,17 +181,21 @@ begin
   end generate;
 
 
-  -- Counter Increment (no increment during debugging or if inhibited/filtered) -------------
+  -- Counter Increment ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- RISC-V base counter events --
-  cnt_inc(0) <= ctrl_i.cnt_event(cnt_event_cy_c) and (not ctrl_i.cpu_debug) and (not inhibit(0)) and (not pmf_inh(0));
-  cnt_inc(1) <= '0'; -- undefined
-  cnt_inc(2) <= ctrl_i.cnt_event(cnt_event_ir_c) and (not ctrl_i.cpu_debug) and (not inhibit(2)) and (not pmf_inh(1));
-  -- NEORV32-specific HPM events --
-  event_gen:
-  for i in 3 to 31 generate
-    cnt_inc(i) <= or_reduce_f(ctrl_i.cnt_event and hpmevent(i)) and (not ctrl_i.cpu_debug) and (not inhibit(i));
-  end generate;
+  counter_increment: process(ctrl_i, cnt_we, inhibit, pmf_inh)
+  begin
+    if (ctrl_i.cpu_debug = '1') then -- no increment when in debug-mode
+      cnt_inc <= (others => '0');
+    else -- no increment during CSR-write, when inhibited or when mode-filtered
+      cnt_inc(0) <= ctrl_i.cnt_event(cnt_event_cy_c) and (not or_reduce_f(cnt_we(0))) and (not inhibit(0)) and (not pmf_inh(0)); -- CY
+      cnt_inc(1) <= '0'; -- undefined
+      cnt_inc(2) <= ctrl_i.cnt_event(cnt_event_ir_c) and (not or_reduce_f(cnt_we(2))) and (not inhibit(2)) and (not pmf_inh(1)); -- IR
+      for i in 3 to 31 loop
+        cnt_inc(i) <= or_reduce_f(ctrl_i.cnt_event and hpmevent(i)) and (not or_reduce_f(cnt_we(i))) and (not inhibit(i)); -- HPM
+      end loop;
+    end if;
+  end process;
 
 
   -- Base Counters (Zicntr) -----------------------------------------------------------------
