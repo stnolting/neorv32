@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 20.09.2026 | [**1.13.6**](https://github.com/stnolting/neorv32/releases/tag/v1.13.6) | :rocket: **New release** | |
 | 19.09.2026 | 1.13.5.9 | bus and AMO improvements | [#1651](https://github.com/stnolting/neorv32/pull/1651) |
 | 12.09.2026 | 1.13.5.8 | RTL cleanups and restructuring; extend Verilog flow | [#1649](https://github.com/stnolting/neorv32/pull/1649) |
 | 09.09.2026 | 1.13.5.7 | minor rtl edits and cleanups | [#1647](https://github.com/stnolting/neorv32/pull/1647) |
