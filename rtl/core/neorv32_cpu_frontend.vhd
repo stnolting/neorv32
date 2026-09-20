@@ -54,8 +54,6 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
     state : state_t;
     reset : std_ulogic; -- buffered restart request (after branch)
     addr  : std_ulogic_vector(31 downto 0); -- fetch address
-    priv  : std_ulogic; -- fetch privilege level
-    debug : std_ulogic; -- debug-mode access
   end record;
   signal fetch : fetch_t; -- FSM
 
@@ -88,8 +86,6 @@ begin
       fetch.state <= S_RESTART;
       fetch.reset <= '1'; -- reset IPB and issue engine
       fetch.addr  <= (others => '0');
-      fetch.priv  <= priv_mode_m_c;
-      fetch.debug <= '0';
     elsif rising_edge(clk_i) then
       case fetch.state is
 
@@ -97,8 +93,6 @@ begin
         -- ------------------------------------------------------------
           fetch.reset <= '0'; -- restart done
           fetch.addr  <= ctrl_i.pc_nxt; -- initialize from PC
-          fetch.priv  <= ctrl_i.cpu_priv; -- set new privilege level
-          fetch.debug <= ctrl_i.cpu_debug; -- access from debug-mode
           fetch.state <= S_REQUEST;
 
         when S_REQUEST => -- request next 32-bit-aligned instruction word
@@ -131,10 +125,10 @@ begin
 
   -- PMP interface --
   pmp_addr_o <= fetch.addr(31 downto 2) & "00"; -- word aligned
-  pmp_priv_o <= fetch.priv;
+  pmp_priv_o <= ctrl_i.cpu_priv;
 
   -- instruction bus request --
-  ibus_req_o.meta  <= hid_c & fetch.debug & fetch.priv & '1';
+  ibus_req_o.meta  <= hid_c & ctrl_i.cpu_debug & ctrl_i.cpu_priv & '1';
   ibus_req_o.addr  <= fetch.addr(31 downto 2) & "00"; -- word aligned
   ibus_req_o.stb   <= '1' when (fetch.state = S_REQUEST) and (ipb_free = "11") else '0';
   ibus_req_o.data  <= (others => '0'); -- read-only

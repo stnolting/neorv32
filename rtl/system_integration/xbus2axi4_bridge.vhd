@@ -2,7 +2,8 @@
 -- NEORV32 SoC - Size-Optimized XBUS to AXI4-Compatible Bridge                      --
 -- -------------------------------------------------------------------------------- --
 -- Supported transfers: Single Transfers and Incrementing Address Bursts.           --
--- [TODO] Exclusive accesses do not check for EXOKAY.                               --
+-- [IMPORTANT] Atomic/exclusive access requests are not supported and will return a --
+-- bus error without triggering any AXI transactions.                               --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -99,7 +100,7 @@ architecture xbus2axi4_bridge_rtl of xbus2axi4_bridge is
   -- arbitration --
   type state_t is (S_IDLE, S_SINGLE_READ, S_SINGLE_WRITE, S_BURST_READ, S_BURST_WRITE, S_BURST_END);
   signal state : state_t;
-  signal busy, burst, rw, w_ack : std_ulogic;
+  signal busy, burst, rw, w_ack, err : std_ulogic;
   signal arvalid, awvalid, xbus_rd_ack, xbus_rd_err, xbus_wr_ack, xbus_wr_err : std_ulogic;
   signal address : std_ulogic_vector(31 downto 0);
 
@@ -117,7 +118,8 @@ begin
       if (busy = '0') then -- idle
         arvalid <= '0';
         awvalid <= '0';
-        if (xbus_req_i.cyc = '1') and (xbus_req_i.stb = '1') then -- mew access request
+        if (xbus_req_i.cyc = '1') and (xbus_req_i.stb = '1') and -- mew access request
+           ((xbus_req_i.cti = "000") or (BURST_EN and (xbus_req_i.cti = "010"))) then -- valid request type
           arvalid <= not xbus_req_i.we;
           awvalid <= xbus_req_i.we;
           address <= xbus_req_i.addr;
@@ -182,8 +184,8 @@ begin
   -- AXI write data channel --
   m_axi_wdata  <= std_logic_vector(fifo.rdata(31 downto 0));
   m_axi_wstrb  <= std_logic_vector(xbus_req_i.sel);
-  m_axi_wlast  <= std_logic(fifo.rdata(32)); -- last word of transfer
-  m_axi_wvalid <= std_logic(fifo.avail);
+  m_axi_wlast  <= std_logic(fifo.rdata(32) and busy); -- last word of transfer
+  m_axi_wvalid <= std_logic(fifo.avail and busy);
 
 
   -- Transfer Arbiter -----------------------------------------------------------------------
@@ -193,14 +195,16 @@ begin
     if (resetn = '0') then
       state <= S_IDLE;
       w_ack <= '0';
+      err   <= '0';
     elsif rising_edge(clk) then
       w_ack <= '0'; -- default
+      err   <= '0'; -- default
       case state is
 
         when S_IDLE => -- idle, wait for access request
         -- ------------------------------------------------------------
           if (xbus_req_i.cyc = '1') and (xbus_req_i.stb = '1') then
-            if (xbus_req_i.cti = "000") or (xbus_req_i.cti = "001") then -- single transfer / AMO operation (RMW)
+            if (xbus_req_i.cti = "000") then -- single transfer
               if (xbus_req_i.we = '0') then
                 state <= S_SINGLE_READ;
               else
@@ -213,6 +217,9 @@ begin
                 w_ack <= '1'; -- ACK write-burst start request
                 state <= S_BURST_WRITE;
               end if;
+            else -- invalid transaction type (e.g. AMO)
+              err   <= '1';
+              state <= S_IDLE;
             end if;
           end if;
 
@@ -275,6 +282,6 @@ begin
   -- XBUS response --
   xbus_rsp_o.data <= std_ulogic_vector(m_axi_rdata);
   xbus_rsp_o.ack  <= '1' when BURST_EN and (w_ack = '1') else (xbus_rd_ack or xbus_wr_ack);
-  xbus_rsp_o.err  <= '0' when BURST_EN and (w_ack = '1') else (xbus_rd_err or xbus_wr_err);
+  xbus_rsp_o.err  <= '0' when BURST_EN and (w_ack = '1') else (xbus_rd_err or xbus_wr_err or err);
 
 end architecture;
