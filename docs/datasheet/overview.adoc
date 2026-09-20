@@ -161,7 +161,7 @@ All core VHDL files from the list below have to be assigned to a **new library**
 [NOTE]
 See section <<_file_list_file>> for more information.
 
-.Replacing Modules for Customization or Optimization (Especially Memory Modules)
+.Replacing Modules for Customization or Optimization (e.g. Memory Modules)
 [TIP]
 Any module of the core can be replaced for customization purpose.
 For ASIC implementations (and for some FPGA implementations), this is particularly recommended for
@@ -172,7 +172,6 @@ description that should infer blockRAM on most FPGA platforms.
 .RTL File List (in alphabetical order)
 ...................................
 rtl/core
-│
 ├─ neorv32_bootrom.vhd           - Bootloader ROM
 ├─ neorv32_bootrom_image.vhd     - Bootloader ROM initialization image
 ├─ neorv32_bus.vhd               - SoC bus infrastructure modules
@@ -180,6 +179,7 @@ rtl/core
 ├─ neorv32_cache_ram.vhd         - Cache tag and data RAM
 ├─ neorv32_cfs.vhd               - Custom functions subsystem
 ├─ neorv32_clint.vhd             - Core local interruptor
+├─ neorv32_core_complex.vhd      - CPU + caches wrapper
 ├─ neorv32_cpu.vhd               - NEORV32 CPU TOP ENTITY
 ├─ neorv32_cpu_alu.vhd           - Arithmetic/logic unit
 ├─ neorv32_cpu_control.vhd       - CPU control, exception system and CSRs
@@ -359,7 +359,7 @@ sources and finally calls GHDL `synth` to create the final Verilog code. After c
 neorv32/rtl/verilog$ make convert
 Converting to Verilog: neorv32_verilog_wrapper.vhd -> neorv32_verilog_wrapper.v
 
-...
+[...]
 
 -----------------------------------------------
 Verilog instantiation prototype
@@ -375,12 +375,12 @@ module neorv32_verilog_wrapper
 .Replace NEORV32 Components by Verilog Modules
 [TIP]
 The pre-defined conversion setup also allows to replace certain VHDL modules of the core by according
-Verilog modules for simulation. See the Readme in `rtl/verilog` for more information. A list of all
+Verilog modules for simulation. See the readme in `rtl/verilog` for more information. A list of all
 SoC modules that can be replaced by Verilog modules is provided in section <<_replaceable_modules>>.
 
 **Conversion Notes**
 
-* GHDL synthesis generates an un-optimized plain Verilog code without any (technology-specific) primitives.
+* GHDL synthesis generates a non-optimized plain Verilog netlist-like code without any (technology-specific) primitives.
 However, optimizations will be performed later by the technology-specific synthesis tool.
 * The output of the GHDL synthesis is a _post-elaboration_ result. Therefore, all the processor's configuration
 options (i.e. VHDL generics) are resolved **before** the actual output is generated. Hence, the entity of the
@@ -388,10 +388,10 @@ conversion wrapper must not have any generics.
 * The interface of the resulting Verilog module lists all inputs first followed by all outputs.
 * The original module hierarchy is preserved as well as all module interface names.
 * VHDL records are collapsed into linear arrays.
-* Modules that follow the component-instantiation conventions described in
-<<Replacing SoC Modules with External Components>> convert cleanly into this flow, since their black-box,
-late-binding-compatible interfaces are already restricted to simple, statically-sized `std_ulogic` /
-`std_ulogic_vector` ports.
+* Boolean generics are converted to integers (`false` = 0, `true` = 1)
+* Modules that follow the component-instantiation conventions (described in <<_replaceable_modules>>) convert
+cleanly into this flow, since their black-box, late-binding-compatible interfaces are already restricted to
+simple, statically-sized `std_ulogic` / `std_ulogic_vector` ports.
 
 
 <<<

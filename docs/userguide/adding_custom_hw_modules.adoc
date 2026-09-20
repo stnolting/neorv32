@@ -35,7 +35,7 @@ completely independent of the CPU.
 The bus interface uses a memory-mapped approach. All data transfers are handled by simple load/store operations since the
 external bus interface is mapped into the processor's https://stnolting.github.io/neorv32/#_address_space[address space].
 This allows a very simple still high-bandwidth communications. However, high bus traffic may increase access latency.
-In addition, the processor's DMA controller can also used to/from transfer data to processor-external modules.
+In addition, the processor's DMA controller can also be used to transfer data to/from processor-external modules.
 
 .Debugging/Testing Custom Hardware Modules
 [TIP]

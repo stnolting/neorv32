@@ -38,7 +38,7 @@ int main() {
 
   // configure lowest 8 GPIO pins as outputs
   // this is only relevant if the GPIO direction control feature is enabled
-  neorv32_gpio_dir_set(0x000000FF);
+  neorv32_gpio_port_dir_set(0x000000FF);
 
   int cnt = 0;
 

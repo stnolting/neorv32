@@ -187,7 +187,7 @@ int main() {
 
   // clear GPIOs (they are used by the TB to trigger external events)
   neorv32_gpio_port_set(0);
-  neorv32_gpio_dir_set(-1); // set all as outputs
+  neorv32_gpio_port_dir_set(-1); // set all as outputs
 
   // prepare counters
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all counters
@@ -1578,10 +1578,27 @@ int main() {
 
   if (neorv32_gpio_available()) {
     neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
+
+    uint32_t gpio_pattern = 0xAAAA5555;
+    uint32_t gpio_dir     = 0xFFFF0000; // upper 16 bits output, lower 16 bits input
+    int dir_test_err      = 0;
+
     cnt_test++;
 
     gpio_trap_handler_ack = 0;
-    neorv32_gpio_port_set(0b0101);
+    neorv32_gpio_port_dir_set(gpio_dir);
+    neorv32_gpio_port_set(gpio_pattern);
+
+    // test GPIO input readback via simulation loopback
+    neorv32_aux_delay_ms(neorv32_sysinfo_get_clk(), 1);
+    // output-configured pins read back pattern, input-configured pins read 0/L (simulation pull-down)
+    if (neorv32_gpio_port_get() != (gpio_pattern & gpio_dir)) {
+      dir_test_err = 1;
+    }
+
+    // restore all pins as outputs and set pattern for the interrupt test
+    neorv32_gpio_port_dir_set(-1);
+    neorv32_gpio_port_set(gpio_pattern);
 
     // install GPIO input trap handler and enable GPIO IRQ source
     neorv32_rte_handler_install(GPIO_TRAP_CODE, gpio_trap_handler);
@@ -1606,8 +1623,9 @@ int main() {
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) ==GPIO_TRAP_CODE) && // GPIO IRQ
-        (gpio_trap_handler_ack == 0x0000000f)) { // input 0..3 all fired
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == GPIO_TRAP_CODE) && // GPIO IRQ
+        (gpio_trap_handler_ack == 0x0000000f) &&                // input 0..3 all fired
+        (dir_test_err == 0)) {                                  // input/output readback test passed
       test_ok();
     }
     else {
@@ -2634,7 +2652,7 @@ void gpio_trap_handler(void) {
 
   gpio_trap_handler_ack = neorv32_gpio_irq_get(); // get currently pending pin interrupts
   neorv32_gpio_irq_clr(gpio_trap_handler_ack); // clear currently pending pin interrupts
-  neorv32_gpio_irq_disable(-1); // disable all input pin interrupts
+  neorv32_gpio_irq_enable(0); // disable all pin interrupts
 }
 
 

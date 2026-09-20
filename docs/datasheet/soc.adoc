@@ -27,7 +27,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ two independent universal asynchronous receivers and transmitters (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0,**UART0**>>,
 <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,**UART1**>>) with optional hardware flow control (RTS/CTS)
 * _optional_ serial peripheral interface host controller (<<_serial_peripheral_interface_controller_spi,**SPI**>>) with 8 dedicated CS lines
-* _optional_ 8-bit serial data device interface (<<_serial_data_interface_controller_spi,**SDI**>>)
+* _optional_ 8-bit serial data device interface (<<_serial_data_interface_controller_sdi,**SDI**>>)
 * _optional_ two-wire serial interface controller (<<_two_wire_serial_interface_controller_twi,**TWI**>>), compatible to the I²C standard
 * _optional_ two-wire serial device controller (<<_two_wire_serial_device_controller_twd,**TWD**>>), compatible to the I²C standard
 * _optional_ general purpose parallel IO port (<<_general_purpose_input_and_output_port_gpio,**GPIO**>>), 32 inputs (interrupt capable), 32 outputs
@@ -374,9 +374,15 @@ At this time, the following modules are being considered for possible replacemen
 [options="header",grid="all"]
 |=======================
 | Module | File name | Exemplary Verilog substitution module
-| Bootloader ROM (<<_bootloader_rom_bootrom,BOOTROM>>)   | `rtl/core/neorv32_bootrom.vhd` | `rtl/verilog/neorv32_bootrom.v`
-| Data memory (<<_data_memory_dmem,DMEM>>)               | `rtl/core/neorv32_dmem.vhd`    | `rtl/verilog/neorv32_dmem.v`   
-| Instruction memory (<<_instruction_memory_imem,IMEM>>) | `rtl/core/neorv32_imem.vhd`    | `rtl/verilog/neorv32_imem.v`   
+3+^| **SoC Level**
+| Bootloader ROM (<<_bootloader_rom_bootrom,BOOTROM>>)                                   | `rtl/core/neorv32_bootrom.vhd`   | `rtl/verilog/neorv32_bootrom.v`
+| Data memory (<<_data_memory_dmem,DMEM>>)                                               | `rtl/core/neorv32_dmem.vhd`      | `rtl/verilog/neorv32_dmem.v`
+| Instruction memory (<<_instruction_memory_imem,IMEM>>)                                 | `rtl/core/neorv32_imem.vhd`      | `rtl/verilog/neorv32_imem.v`
+| <<_instruction_cache_icache,I-cache>>/<<_data_cache_dcache,d-cache>> data & tag memory | `rtl/core/neorv32_cache_ram.vhd` | `rtl/verilog/neorv32_cache_ram.v`
+| Custom functions subsystem (<<_custom_functions_subsystem_cfs,CFS>>)                   | `rtl/core/neorv32_cfs.vhd`       | `rtl/verilog/neorv32_cfs.v`
+3+^| **CPU Level**
+| Register file (<<_cpu_register_file,REGFILE>>)             | `rtl/core/neorv32_cpu_regfile.vhd` | `rtl/verilog/neorv32_cpu_regfile.v`
+| Custom functions unit (<<_custom_functions_unit_cfu,CFU>>) | `rtl/core/neorv32_cpu_cfu.vhd`     | `rtl/verilog/neorv32_cpu_cfu.v`
 |=======================
 
 .Replacing additional modules

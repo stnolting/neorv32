@@ -32,7 +32,7 @@ void gpio_interrupt_handler(void) {
   neorv32_uart0_printf("triggering pins = 0x%x, ", tmp);
 
   // show current GPIO input state
-  neorv32_uart0_printf("GPIO.input = 0x%x", neorv32_gpio_port_get());
+  neorv32_uart0_printf("GPIO.input = 0x%x\n", neorv32_gpio_port_get());
 }
 
 
@@ -65,8 +65,12 @@ int main(void) {
   // clear output port
   neorv32_gpio_port_set(0x00000000);
 
-  // configure all GPIO pins as input; only relevant if the GPIO direction control feature is enabled
-  neorv32_gpio_dir_set(0);
+  // configure all GPIO pins as input
+  // only relevant if the GPIO direction control feature is enabled
+  neorv32_gpio_port_dir_set(0x00000000);
+
+  // disable all GPIO interrupts; this will also clear any pending GPIO IRQs
+  neorv32_gpio_irq_enable(0);
 
   // configure CPU's GPIO controller interrupt
   neorv32_rte_handler_install(GPIO_TRAP_CODE, gpio_interrupt_handler); // install GPIO trap handler

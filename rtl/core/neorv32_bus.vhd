@@ -170,10 +170,6 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_bus_reg is
-  generic (
-    REQ_REG_EN : boolean := false; -- enable request bus register stage
-    RSP_REG_EN : boolean := false  -- enable response bus register stage
-  );
   port (
     -- global control --
     clk_i        : in  std_ulogic; -- global clock, rising edge
@@ -192,60 +188,41 @@ begin
 
   -- Request Register Stage -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  request_reg_enabled:
-  if REQ_REG_EN generate
-    request_reg: process(rstn_i, clk_i)
-    begin
-      if (rstn_i = '0') then
-        device_req_o <= req_terminate_c;
-      elsif rising_edge(clk_i) then
-        if (host_req_i.stb = '1') then -- reduce switching activity on downstream bus system
-          device_req_o <= host_req_i;
-        end if;
-        -- pass-through access control signals --
-        device_req_o.stb   <= host_req_i.stb;
-        device_req_o.burst <= host_req_i.burst;
-        device_req_o.lock  <= host_req_i.lock;
+  request_reg: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      device_req_o <= req_terminate_c;
+    elsif rising_edge(clk_i) then
+      if (host_req_i.stb = '1') then -- reduce switching activity on downstream bus system
+        device_req_o <= host_req_i;
       end if;
-    end process;
-  end generate;
-
-  request_reg_disabled:
-  if not REQ_REG_EN generate
-    device_req_o <= host_req_i;
-  end generate;
+      -- pass-through access control signals --
+      device_req_o.stb   <= host_req_i.stb;
+      device_req_o.burst <= host_req_i.burst;
+      device_req_o.lock  <= host_req_i.lock;
+    end if;
+  end process;
 
   -- Response Register Stage ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  response_reg_enabled:
-  if RSP_REG_EN generate
+  response_reg_reset: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then -- full reset for control signals
+      host_rsp_o.ack <= '0';
+      host_rsp_o.err <= '0';
+    elsif rising_edge(clk_i) then
+      host_rsp_o.ack <= device_rsp_i.ack;
+      host_rsp_o.err <= device_rsp_i.err;
+    end if;
+  end process;
 
-    -- signals that DO require a defined reset (access control signals) --
-    response_reg_reset: process(rstn_i, clk_i)
-    begin
-      if (rstn_i = '0') then
-        host_rsp_o.ack <= '0';
-        host_rsp_o.err <= '0';
-      elsif rising_edge(clk_i) then
-        host_rsp_o.ack <= device_rsp_i.ack;
-        host_rsp_o.err <= device_rsp_i.err;
-      end if;
-    end process;
-
-    -- signals that do not need a defined reset --
-    response_reg_noreset: process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        host_rsp_o.data <= device_rsp_i.data;
-      end if;
-    end process;
-
-  end generate;
-
-  response_reg_disabled:
-  if not RSP_REG_EN generate
-    host_rsp_o <= device_rsp_i;
-  end generate;
+  -- no reset required --
+  response_reg_noreset: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      host_rsp_o.data <= device_rsp_i.data;
+    end if;
+  end process;
 
 end architecture;
 
@@ -665,10 +642,6 @@ begin
   -- In/Out Register Stages -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_bus_reg_inst: entity neorv32.neorv32_bus_reg
-  generic map (
-    REQ_REG_EN => true,
-    RSP_REG_EN => true
-  )
   port map (
     -- global control --
     clk_i        => clk_i,
@@ -795,7 +768,7 @@ end entity;
 architecture neorv32_bus_amo_rmw_rtl of neorv32_bus_amo_rmw is
 
   -- arbiter --
-  type state_t is (S_IDLE, S_READ_WAIT, S_EXECUTE, S_WRITE, S_WRITE_WAIT);
+  type state_t is (S_IDLE, S_READ_WAIT, S_READ_ERROR, S_EXECUTE, S_WRITE, S_WRITE_WAIT);
   type arbiter_t is record
     state : state_t;
     cmd   : std_ulogic_vector(3 downto 0);
@@ -843,9 +816,17 @@ begin
       when S_READ_WAIT => -- wait for read-access to complete
       -- ------------------------------------------------------------
         arbiter_nxt.rdata <= sys_rsp_i.data;
-        if (sys_rsp_i.ack = '1') then -- ignore bus error here; the same error should occur again in S_WRITE_WAIT
-          arbiter_nxt.state <= S_EXECUTE;
+        if (sys_rsp_i.ack = '1') then
+          if (sys_rsp_i.err = '1') then
+            arbiter_nxt.state <= S_READ_ERROR;
+          else
+            arbiter_nxt.state <= S_EXECUTE;
+          end if;
         end if;
+
+      when S_READ_ERROR => -- read error signaling cycle
+      -- ------------------------------------------------------------
+        arbiter_nxt.state <= S_IDLE; -- abort access
 
       when S_EXECUTE => -- execute atomic data operation
       -- ------------------------------------------------------------
@@ -877,9 +858,20 @@ begin
   sys_req_o.lock  <= core_req_i.lock;
 
   -- response switch --
+  rsp_switch: process(arbiter, sys_rsp_i)
+  begin
+    if (arbiter.state = S_IDLE) or (arbiter.state = S_WRITE_WAIT) then
+      core_rsp_o.err <= sys_rsp_i.err;
+      core_rsp_o.ack <= sys_rsp_i.ack;
+    elsif (arbiter.state = S_READ_ERROR) then
+      core_rsp_o.err <= '1';
+      core_rsp_o.ack <= '1';
+    else
+      core_rsp_o.err <= '0';
+      core_rsp_o.ack <= '0';
+    end if;
+  end process;
   core_rsp_o.data <= sys_rsp_i.data when (arbiter.state = S_IDLE) else arbiter.rdata;
-  core_rsp_o.err  <= sys_rsp_i.err  when (arbiter.state = S_IDLE) or (arbiter.state = S_WRITE_WAIT) else '0';
-  core_rsp_o.ack  <= sys_rsp_i.ack  when (arbiter.state = S_IDLE) or (arbiter.state = S_WRITE_WAIT) else '0';
 
   -- Data ALU -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
