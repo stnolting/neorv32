@@ -150,9 +150,10 @@ int neorv32_twd_com_state(void) {
  **************************************************************************/
 int neorv32_twd_com_started(void) {
 
-  uint32_t ctrl_tmp = NEORV32_TWD->CTRL;
-  __MMREG32_BCLR(NEORV32_TWD->CTRL, 1 << TWD_CTRL_COM_END); // clear BEG if it is set, keep END
-  return (int)(ctrl_tmp & (1 << TWD_CTRL_COM_BEG));
+  uint32_t ctrl_tmp = NEORV32_TWD->CTRL & (1 << TWD_CTRL_COM_BEG);
+  if (ctrl_tmp)
+    __MMREG32_BCLR(NEORV32_TWD->CTRL, 1 << TWD_CTRL_COM_END); // clear BEG if it is set, keep END
+  return (int)(ctrl_tmp);
 }
 
 
@@ -164,9 +165,10 @@ int neorv32_twd_com_started(void) {
  **************************************************************************/
 int neorv32_twd_com_ended(void) {
 
-  uint32_t ctrl_tmp = NEORV32_TWD->CTRL;
-  __MMREG32_BCLR(NEORV32_TWD->CTRL, 1 << TWD_CTRL_COM_BEG); // clear END if it is set, keep BEG
-  return (int)(ctrl_tmp & (1 << TWD_CTRL_COM_END));
+  uint32_t ctrl_tmp = NEORV32_TWD->CTRL & (1 << TWD_CTRL_COM_END);
+  if (ctrl_tmp)
+    __MMREG32_BCLR(NEORV32_TWD->CTRL, 1 << TWD_CTRL_COM_BEG); // clear END if it is set, keep BEG
+  return (int)(ctrl_tmp);
 }
 
 
