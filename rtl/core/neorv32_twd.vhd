@@ -108,13 +108,14 @@ architecture neorv32_twd_rtl of neorv32_twd is
   signal rx_fifo, tx_fifo : fifo_t;
 
   -- bus engine --
-  type state_t is (S_IDLE, S_INIT, S_ADDR, S_RESP, S_PREP, S_RTX, S_ACK);
+  type state_t is (S_IDLE, S_INIT, S_ADDR, S_RESP, S_PREP, S_RTX, S_ACK, S_WAIT);
   type engine_t is record
     state : state_t; -- FSM state
     cnt   : unsigned(3 downto 0); -- bit counter
     sreg  : std_ulogic_vector(7 downto 0); -- shift register
     cmd   : std_ulogic; -- 0 = write, 1 = read
     sda   : std_ulogic; -- SDA line drive
+    nack  : std_ulogic; -- (N)ACK: driven (write) or received (read) during the 9th clock
     rx_we : std_ulogic; -- write write-enable
     tx_re : std_ulogic; -- read read-enable
     com   : std_ulogic; -- active communication
@@ -328,6 +329,7 @@ begin
       engine.sreg  <= (others => '1');
       engine.cmd   <= '0';
       engine.sda   <= '1';
+      engine.nack  <= '0';
       engine.rx_we <= '0';
       engine.tx_re <= '0';
       engine.com   <= '0';
@@ -346,6 +348,8 @@ begin
 
         when S_INIT => -- (re-)initialize
         -- ------------------------------------------------------------
+          engine.sda   <= '1'; -- release SDA: a (repeated) START ends any previous bit slot
+          engine.nack  <= '0';
           engine.cnt   <= (others => '0');
           engine.state <= S_ADDR;
 
@@ -407,26 +411,52 @@ begin
           end if;
           -- update bus at falling edge --
           if (smp_scl_fall = '1') then -- end of bit slot
-            engine.sda <= engine.sreg(7);
+            if (engine.cnt(3) = '1') then -- end of 8th bit: enter the ACK slot
+              if (engine.cmd = '0') then -- WRITE: decide ACK/NACK once and keep it for the whole 9th clock
+                engine.nack <= not rx_fifo.free; -- NACK if RX FIFO is full
+                engine.sda  <= not rx_fifo.free;
+              else -- READ: release SDA so the host can drive its ACK/NACK
+                engine.sda  <= '1';
+              end if;
+            else
+              engine.sda <= engine.sreg(7);
+            end if;
           end if;
 
-        when S_ACK => -- receive/transmit ACK/NACK
+        when S_ACK => -- receive/transmit ACK/NACK (9th clock)
         -- ------------------------------------------------------------
           if (ctrl.enable = '0') or (smp_stop = '1') then -- disabled or stop-condition
             engine.state <= S_IDLE;
           elsif (smp_start = '1') then -- start-condition
             engine.state <= S_INIT;
           else
-            if (engine.cmd = '0') then -- WRITE operation
-              engine.sda   <= not rx_fifo.free; -- ACK if RX FIFO is not full; NACK if RX FIFO is full
-              engine.rx_we <= smp_scl_fall; -- push to RX FIFO at end of bit slot (if RX FIFO not full)
-            else -- READ operation
-              engine.sda   <= '1'; -- keep high-Z so we can sample the ACK/NACK from the host
-              engine.tx_re <= smp_scl_rise and (not smp_sda); -- pop from TX FIFO if ACK at sample point
+            if (engine.cmd = '0') then -- WRITE: (N)ACK level was latched when entering the slot
+              engine.rx_we <= smp_scl_fall and (not engine.nack); -- store byte only if it was ACKed
+              if (smp_scl_fall = '1') then -- end of bit slot
+                engine.state <= S_PREP;
+              end if;
+            else -- READ: sample the host's ACK/NACK at the rising edge, act at the falling edge
+              if (smp_scl_rise = '1') then
+                engine.nack  <= smp_sda;
+                engine.tx_re <= '1'; -- the byte has been delivered either way (I2C-bus spec 3.1.6)
+              end if;
+              if (smp_scl_fall = '1') then -- end of bit slot
+                if (engine.nack = '1') then -- host NACK = end of transfer: release the bus and wait
+                  engine.state <= S_WAIT;
+                else
+                  engine.state <= S_PREP;
+                end if;
+              end if;
             end if;
-            if (smp_scl_fall = '1') then -- end of bit slot
-              engine.state <= S_PREP;
-            end if;
+          end if;
+
+        when S_WAIT => -- host has NACKed the last byte: wait for STOP or (repeated) START
+        -- ------------------------------------------------------------
+          engine.sda <= '1'; -- bus released so the host can generate STOP
+          if (ctrl.enable = '0') or (smp_stop = '1') then -- disabled or stop-condition
+            engine.state <= S_IDLE;
+          elsif (smp_start = '1') then -- start-condition
+            engine.state <= S_INIT;
           end if;
 
         when others => -- undefined
