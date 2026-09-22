@@ -89,10 +89,11 @@ low during the 9th SCL clock pulse. If there is no address match the TWD will no
 the next START or REPEATED-START condition.
 
 For the actual data transmission the host keeps the SDA line at high state while sending the clock pulses. The TWD will
-read a byte from the internal TX FIFO and will transmit it MSB-first to the host. During the 9th clock pulse the host has
-to acknowledged the transfer (ACK) by pulling SDA low. If no ACK is received by the TWD no data is taken from the TX FIFO
-and the same byte is transmitted in the next data phase. If the TX FIFO becomes empty while the host keeps reading data,
-all-one bytes are sent back to the host. The transaction is terminated by a STOP condition.
+read a byte from the internal TX FIFO and will transmit it MSB-first to the host. During the 9th clock pulse the host
+acknowledges the transfer (ACK) by pulling SDA low, or signals the end of the transfer with a NACK (SDA high). The byte
+is taken from the TX FIFO in both cases, as it has been delivered to the host. After a NACK the TWD releases the bus and
+waits for a STOP or (repeated) START condition, as required by the I²C-bus specification. If the TX FIFO becomes empty
+while the host keeps reading data, all-one bytes are sent back to the host. The transaction is terminated by a STOP condition.
 
 
 **Write Operation: Host Writes Data to TWD Module**
@@ -124,8 +125,9 @@ low during the 9th SCL clock pulse. If there is no address match the TWD will no
 the next START or REPEATED-START condition.
 
 For the actual data transmission the host sends the write-data MSB first together with the clock pulses. During the 9th clock
-pulse the TWD will respond with an ACK by pulling SDA low. Note that the TWD will respond with a NACK if the RX FIFO is full.
-The transaction is terminated by a STOP condition.
+pulse the TWD will respond with an ACK by pulling SDA low. Note that the TWD will respond with a NACK if the RX FIFO is full;
+the ACK/NACK decision is taken once at the beginning of the 9th clock and kept for the whole clock pulse, and a NACKed byte
+is not stored. The transaction is terminated by a STOP condition.
 
 
 **Communication Status**
