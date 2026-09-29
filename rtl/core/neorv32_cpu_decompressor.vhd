@@ -32,7 +32,7 @@ end entity;
 
 architecture neorv32_cpu_decompressor_rtl of neorv32_cpu_decompressor is
 
-  -- compressed instruction layout --
+  -- RVC instruction layout --
   constant ci_opcode_lsb_c : natural :=  0;
   constant ci_opcode_msb_c : natural :=  1;
   constant ci_rd_3_lsb_c   : natural :=  2;
@@ -56,8 +56,7 @@ architecture neorv32_cpu_decompressor_rtl of neorv32_cpu_decompressor is
 
 begin
 
-  -- Compressed Instruction Decoder ---------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- compressed instruction decoder --
   decompressor: process(instr_i)
   begin
     -- defaults --

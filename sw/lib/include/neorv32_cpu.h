@@ -210,10 +210,6 @@ static inline void __attribute__ ((always_inline)) neorv32_cpu_csr_clr(const int
   asm volatile ("csrc %[id], %[src]" :  : [id] "i" (csr_id), [src] "r" (csr_data));
 }
 
-// ================================================================================================
-// Inline Atomic Memory Access
-// ================================================================================================
-
 /**********************************************************************//**
  * Atomic write-after-read CSR operation.
  *
@@ -224,48 +220,43 @@ static inline void __attribute__ ((always_inline)) neorv32_cpu_csr_clr(const int
 static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_swap(const int csr_id, uint32_t wdata) {
 
   uint32_t tmp;
-  asm volatile ("csrrw %[dst], %[id], %[src]" : [dst] "=r" (tmp) : [id] "i" (csr_id), [src] "r" (wdata) : "memory");
+  asm volatile ("csrrw %[dst], %[id], %[src]" : [dst] "=r" (tmp) : [id] "i" (csr_id), [src] "r" (wdata));
   return tmp;
 }
+
+// ================================================================================================
+// Inline Atomic Memory Access
+// ================================================================================================
 
 /**********************************************************************//**
  * Atomic memory access: load-reservate word.
  *
- * @note The address has to be word-aligned - otherwise an alignment exception will be raised.
  * @warning This function requires the A/Zalrsc ISA extension.
  *
- * @param[in] addr Address (32-bit).
+ * @param[in] addr Address (32-bit, word-aligned).
  * @return Read data word (32-bit).
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amolr(uint32_t addr) {
 
-#if defined(__riscv_a) || defined(__riscv_zalrsc)
   uint32_t amo_addr = addr;
   uint32_t amo_rdata;
 
   asm volatile ("lr.w %[dst], 0(%[addr])" : [dst] "=r" (amo_rdata) : [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
-#else
-  (void)addr;
-
-  return 0;
-#endif
 }
 
 /**********************************************************************//**
  * Atomic memory access: store-conditional word.
  *
- * @note The address has to be word-aligned - otherwise an alignment exception will be raised.
  * @warning This function requires the A/Zalrsc ISA extension.
  *
- * @param[in] addr Address (32-bit).
+ * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Data word to-be-written conditionally (32-bit).
  * @return Status: zero = ok, non-zero = failed (32-bit).
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amosc(uint32_t addr, uint32_t wdata) {
 
-#if defined(__riscv_a) || defined(__riscv_zalrsc)
   uint32_t amo_addr  = addr;
   uint32_t amo_wdata = wdata;
   uint32_t amo_status;
@@ -273,27 +264,19 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amosc(uint32_
   asm volatile ("sc.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_status) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_status;
-#else
-  (void)addr;
-  (void)wdata;
-
-  return 1; // always fail
-#endif
 }
 
 /**********************************************************************//**
- * Atomic memory access: atomic SWAP.
+ * Atomic memory access: 32-bit atomic SWAP.
  *
- * @note The address has to be word-aligned - otherwise an alignment exception will be raised.
  * @warning This function requires the A/Zaamo ISA extension.
  *
- * @param[in] addr Address (32-bit).
+ * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoswap(uint32_t addr, uint32_t wdata) {
 
-#if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
@@ -301,27 +284,19 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoswap(uint3
   asm volatile ("amoswap.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
-#else
-  (void)addr;
-  (void)wdata;
-
-  return 0;
-#endif
 }
 
 /**********************************************************************//**
- * Atomic memory access: atomic ADD.
+ * Atomic memory access: 32-bit atomic ADD.
  *
- * @note The address has to be word-aligned - otherwise an alignment exception will be raised.
  * @warning This function requires the A/Zaamo ISA extension.
  *
- * @param[in] addr Address (32-bit).
+ * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoadd(uint32_t addr, uint32_t wdata) {
 
-#if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
@@ -329,27 +304,19 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoadd(uint32
   asm volatile ("amoadd.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
-#else
-  (void)addr;
-  (void)wdata;
-
-  return 0;
-#endif
 }
 
 /**********************************************************************//**
- * Atomic memory access: atomic XOR.
+ * Atomic memory access: 32-bit atomic XOR.
  *
- * @note The address has to be word-aligned - otherwise an alignment exception will be raised.
  * @warning This function requires the A/Zaamo ISA extension.
  *
- * @param[in] addr Address (32-bit).
+ * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoxor(uint32_t addr, uint32_t wdata) {
 
-#if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
@@ -357,27 +324,19 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoxor(uint32
   asm volatile ("amoxor.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
-#else
-  (void)addr;
-  (void)wdata;
-
-  return 0;
-#endif
 }
 
 /**********************************************************************//**
- * Atomic memory access: atomic AND.
+ * Atomic memory access: 32-bit atomic AND.
  *
- * @note The address has to be word-aligned - otherwise an alignment exception will be raised.
  * @warning This function requires the A/Zaamo ISA extension.
  *
- * @param[in] addr Address (32-bit).
+ * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoand(uint32_t addr, uint32_t wdata) {
 
-#if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
@@ -385,27 +344,19 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoand(uint32
   asm volatile ("amoand.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
-#else
-  (void)addr;
-  (void)wdata;
-
-  return 0;
-#endif
 }
 
 /**********************************************************************//**
- * Atomic memory access: atomic OR.
+ * Atomic memory access: 32-bit atomic OR.
  *
- * @note The address has to be word-aligned - otherwise an alignment exception will be raised.
  * @warning This function requires the A/Zaamo ISA extension.
  *
- * @param[in] addr Address (32-bit).
+ * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoor(uint32_t addr, uint32_t wdata) {
 
-#if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
@@ -413,27 +364,19 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoor(uint32_
   asm volatile ("amoor.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
-#else
-  (void)addr;
-  (void)wdata;
-
-  return 0;
-#endif
 }
 
 /**********************************************************************//**
- * Atomic memory access: atomic MIN.
+ * Atomic memory access: 32-bit atomic MIN.
  *
- * @note The address has to be word-aligned - otherwise an alignment exception will be raised.
  * @warning This function requires the A/Zaamo ISA extension.
  *
- * @param[in] addr Address (32-bit).
+ * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomin(uint32_t addr, uint32_t wdata) {
 
-#if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
@@ -441,27 +384,19 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomin(uint32
   asm volatile ("amomin.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
-#else
-  (void)addr;
-  (void)wdata;
-
-  return 0;
-#endif
 }
 
 /**********************************************************************//**
- * Atomic memory access: atomic MAX.
+ * Atomic memory access: 32-bit atomic MAX.
  *
- * @note The address has to be word-aligned - otherwise an alignment exception will be raised.
  * @warning This function requires the A/Zaamo ISA extension.
  *
- * @param[in] addr Address (32-bit).
+ * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomax(uint32_t addr, uint32_t wdata) {
 
-#if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
@@ -469,27 +404,19 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomax(uint32
   asm volatile ("amomax.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
-#else
-  (void)addr;
-  (void)wdata;
-
-  return 0;
-#endif
 }
 
 /**********************************************************************//**
- * Atomic memory access: atomic MINU.
+ * Atomic memory access: 32-bit atomic MINU.
  *
- * @note The address has to be word-aligned - otherwise an alignment exception will be raised.
  * @warning This function requires the A/Zaamo ISA extension.
  *
- * @param[in] addr Address (32-bit).
+ * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amominu(uint32_t addr, uint32_t wdata) {
 
-#if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
@@ -497,27 +424,19 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amominu(uint3
   asm volatile ("amominu.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
-#else
-  (void)addr;
-  (void)wdata;
-
-  return 0;
-#endif
 }
 
 /**********************************************************************//**
- * Atomic memory access: atomic MAXU.
+ * Atomic memory access: 32-bit atomic MAXU.
  *
- * @note The address has to be word-aligned - otherwise an alignment exception will be raised.
  * @warning This function requires the A/Zaamo ISA extension.
  *
- * @param[in] addr Address (32-bit).
+ * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomaxu(uint32_t addr, uint32_t wdata) {
 
-#if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
   uint32_t amo_wdata = wdata;
   uint32_t amo_rdata;
@@ -525,12 +444,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomaxu(uint3
   asm volatile ("amomaxu.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_rdata) : [src] "r" (amo_wdata), [addr] "r" (amo_addr) : "memory");
 
   return amo_rdata;
-#else
-  (void)addr;
-  (void)wdata;
-
-  return 0;
-#endif
 }
 
 // ================================================================================================

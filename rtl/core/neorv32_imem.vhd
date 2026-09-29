@@ -41,7 +41,7 @@ end entity;
 
 architecture neorv32_imem_rtl of neorv32_imem is
 
-  component neorv32_imem_rom -- IMEM ROM wrapper
+  component neorv32_imem_rom -- IMEM as pre-initialized ROM
   generic (
     AWIDTH : natural;
     OUTREG : boolean
@@ -120,8 +120,15 @@ begin
 
 end architecture;
 
+
 -- ================================================================================ --
--- NEORV32 SoC - Instruction Memory (IMEM) - ROM Primitive Wrapper                  --
+-- NEORV32 SoC - Instruction Memory (IMEM) - Pre-Initialized ROM                    --
+-- -------------------------------------------------------------------------------- --
+-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
+-- Copyright (c) NEORV32 contributors.                                              --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
+-- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
+-- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
 
 library ieee;

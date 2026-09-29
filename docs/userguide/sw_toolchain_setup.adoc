@@ -38,8 +38,8 @@ for building the toolchain from scratch:
 ----
 $ git clone https://github.com/riscv/riscv-gnu-toolchain
 $ cd riscv-gnu-toolchain
-$ riscv-gnu-toolchain$ ./configure --prefix=/opt/riscv --with-arch=rv32i --with-abi=ilp32
-$ riscv-gnu-toolchain$ make
+riscv-gnu-toolchain$ ./configure --prefix=/opt/riscv --with-arch=rv32i --with-abi=ilp32
+riscv-gnu-toolchain$ make
 ----
 
 Note that this configuration will build a GCC toolchain with `riscv32-unknown-elf-` as prefix / GCC triplet.

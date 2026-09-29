@@ -13,7 +13,6 @@
 
 #include <neorv32.h>
 
-
 /**********************************************************************//**
  * Check if GPIO unit was synthesized.
  *
@@ -23,7 +22,6 @@ int neorv32_gpio_available(void) {
 
   return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPIO));
 }
-
 
 /**********************************************************************//**
  * Set single pin of GPIO's output port.
@@ -43,7 +41,6 @@ void neorv32_gpio_pin_set(int pin, int value) {
   }
 }
 
-
 /**********************************************************************//**
  * Toggle single pin of GPIO's output port.
  *
@@ -53,7 +50,6 @@ void neorv32_gpio_pin_toggle(int pin) {
 
   __MMREG32_BINV(NEORV32_GPIO->PORT_OUT, 1 << (pin & 31u));
 }
-
 
 /**********************************************************************//**
  * Get single pin of GPIO's input port.
@@ -66,7 +62,6 @@ uint32_t neorv32_gpio_pin_get(int pin) {
   return NEORV32_GPIO->PORT_IN & (uint32_t)(1 << (pin & 31u));
 }
 
-
 /**********************************************************************//**
  * Set complete GPIO output port.
  *
@@ -76,7 +71,6 @@ void neorv32_gpio_port_set(uint32_t pin_mask) {
 
   NEORV32_GPIO->PORT_OUT = pin_mask;
 }
-
 
 /**********************************************************************//**
  * Toggle bit in entire GPIO output port.
@@ -88,7 +82,6 @@ void neorv32_gpio_port_toggle(uint32_t pin_mask) {
   __MMREG32_BINV(NEORV32_GPIO->PORT_OUT, pin_mask);
 }
 
-
 /**********************************************************************//**
  * Get complete GPIO input port.
  *
@@ -99,18 +92,16 @@ uint32_t neorv32_gpio_port_get(void) {
   return NEORV32_GPIO->PORT_IN;
 }
 
-
 /**********************************************************************//**
  * Set direction of GPIO port.
  * @note Direction control must be enabled by the according top generic.
  *
  * @param[in] pin_mask Direction port configuration (32-bit), one bit per port: 0 = input, 1 = output.
  **************************************************************************/
-void neorv32_gpio_dir_set(uint32_t pin_mask) {
+void neorv32_gpio_port_dir_set(uint32_t pin_mask) {
 
   NEORV32_GPIO->PORT_DIR = pin_mask;
 }
-
 
 /**********************************************************************//**
  * Get direction of GPIO port.
@@ -118,11 +109,28 @@ void neorv32_gpio_dir_set(uint32_t pin_mask) {
  *
  * @return Current direction port state (32-bit), one bit per port: 0 = input, 1 = output.
  **************************************************************************/
-uint32_t neorv32_gpio_dir_get(void) {
+uint32_t neorv32_gpio_port_dir_get(void) {
 
   return NEORV32_GPIO->PORT_DIR;
 }
 
+/**********************************************************************//**
+ * Set direction of GPIO output pin.
+ *
+ * @param[in] pin Output pin number to be set (0..31).
+ * @param[in] dir direction: 0 = input, 1 = output.
+ **************************************************************************/
+void neorv32_gpio_pin_dir_set(int pin, int dir) {
+
+  uint32_t mask = (uint32_t)(1 << (pin & 31u));
+
+  if (dir) {
+    __MMREG32_BSET(NEORV32_GPIO->PORT_DIR, mask);
+  }
+  else {
+    __MMREG32_BCLR(NEORV32_GPIO->PORT_DIR, mask);
+  }
+}
 
 /**********************************************************************//**
  * Configure pin interrupt trigger.
@@ -151,7 +159,6 @@ void neorv32_gpio_irq_setup(int pin, int trigger) {
   }
 }
 
-
 /**********************************************************************//**
  * Enable input pin interrupt(s).
  *
@@ -159,20 +166,8 @@ void neorv32_gpio_irq_setup(int pin, int trigger) {
  **************************************************************************/
 void neorv32_gpio_irq_enable(uint32_t pin_mask) {
 
-  __MMREG32_BSET(NEORV32_GPIO->IRQ_ENABLE, pin_mask);
+  NEORV32_GPIO->IRQ_ENABLE = pin_mask;
 }
-
-
-/**********************************************************************//**
- * Disable input pin interrupt(s).
- *
- * @param[in] pin_mask Pin-IRQ enable mask (set to 1 to disable the according pin).
- **************************************************************************/
-void neorv32_gpio_irq_disable(uint32_t pin_mask) {
-
-  __MMREG32_BCLR(NEORV32_GPIO->IRQ_ENABLE, pin_mask);
-}
-
 
 /**********************************************************************//**
  * Get currently pending GPIO input interrupts.
@@ -183,7 +178,6 @@ uint32_t neorv32_gpio_irq_get(void) {
 
   return NEORV32_GPIO->IRQ_PENDING;
 }
-
 
 /**********************************************************************//**
  * Clear pending GPIO input interrupts via bit mask.

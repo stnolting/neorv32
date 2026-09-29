@@ -37,7 +37,6 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 #define NEORV32_GPIO ((neorv32_gpio_t*) (NEORV32_GPIO_BASE))
 /**@}*/
 
-
 /**********************************************************************//**
  * @name Trigger types
  **************************************************************************/
@@ -47,7 +46,6 @@ enum GPIO_TRIGGER_enum {
   GPIO_TRIG_EDGE_FALLING = 0b10, // falling-edge
   GPIO_TRIG_EDGE_RISING  = 0b11  // rising-edge
 };
-
 
 /**********************************************************************//**
  * @name Prototypes
@@ -60,14 +58,13 @@ uint32_t neorv32_gpio_pin_get(int pin);
 void     neorv32_gpio_port_set(uint32_t pin_mask);
 void     neorv32_gpio_port_toggle(uint32_t pin_mask);
 uint32_t neorv32_gpio_port_get(void);
-void     neorv32_gpio_dir_set(uint32_t pin_mask);
-uint32_t neorv32_gpio_dir_get(void);
+void     neorv32_gpio_port_dir_set(uint32_t pin_mask);
+uint32_t neorv32_gpio_port_dir_get(void);
+void     neorv32_gpio_pin_dir_set(int pin, int dir);
 void     neorv32_gpio_irq_setup(int pin, int trigger);
 void     neorv32_gpio_irq_enable(uint32_t pin_mask);
-void     neorv32_gpio_irq_disable(uint32_t pin_mask);
 uint32_t neorv32_gpio_irq_get(void);
 void     neorv32_gpio_irq_clr(uint32_t pin_mask);
 /**@}*/
-
 
 #endif // NEORV32_GPIO_H

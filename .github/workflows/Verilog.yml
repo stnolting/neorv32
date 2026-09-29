@@ -1,5 +1,22 @@
 name: 'Verilog Conversion'
 
+# Files to replace by dedicated Verilog modules
+env:
+  VHDL_EXCLUDE: >-
+    neorv32_dmem.vhd
+    neorv32_imem.vhd
+    neorv32_cfs.vhd
+    neorv32_cache_ram.vhd
+    neorv32_cpu_alu_cfu.vhd
+    neorv32_cpu_regfile.vhd
+  VERILOG_SRC: >-
+    modules/neorv32_dmem.v
+    modules/neorv32_imem.v
+    modules/neorv32_cfs.v
+    modules/neorv32_cache_ram.v
+    modules/neorv32_cpu_alu_cfu.v
+    modules/neorv32_cpu_regfile.v
+
 on:
   push:
     branches:
@@ -32,7 +49,7 @@ jobs:
 
     - name: '⚙️ Run conversion'
       run: |
-        make -C rtl/verilog VHDL_EXCLUDE="neorv32_dmem.vhd neorv32_imem.vhd" clean convert
+        make -C rtl/verilog VHDL_EXCLUDE="$VHDL_EXCLUDE" clean convert
 
     - name: '📤 Archive generated Verilog code'
       if: always()
@@ -62,7 +79,7 @@ jobs:
 
     - name: '⚙️ Run Simulation'
       run: |
-        make -C rtl/verilog SIMULATOR=iverilog VERILOG_SRC="modules/neorv32_dmem.v modules/neorv32_imem.v" sim | tee iverilog.log
+        make -C rtl/verilog SIMULATOR=iverilog VERILOG_SRC="$VERILOG_SRC" sim | tee iverilog.log
         grep 'Simulation successful!' iverilog.log
 
   sim_verilator:
@@ -86,5 +103,5 @@ jobs:
 
     - name: '⚙️ Run Simulation'
       run: |
-        make -C rtl/verilog SIMULATOR=verilator VERILOG_SRC="modules/neorv32_dmem.v modules/neorv32_imem.v" sim | tee verilator.log
+        make -C rtl/verilog SIMULATOR=verilator VERILOG_SRC="$VERILOG_SRC" sim | tee verilator.log
         grep 'Simulation successful!' verilator.log

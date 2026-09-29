@@ -17,7 +17,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_spi is
   generic (
-    IO_SPI_FIFO : natural range 1 to 2**15 -- RTX FIFO depth, has to be a power of two, min 1
+    IO_SPI_FIFO : natural range 1 to 32768 -- RTX FIFO depth, has to be a power of two, min 1
   );
   port (
     clk_i     : in  std_ulogic;                    -- global clock line
@@ -180,7 +180,8 @@ begin
   generic map (
     AWIDTH  => log2_fifo_size_c,
     DWIDTH  => 9,
-    OUTGATE => false
+    OUTGATE => false,
+    ASYNCRD => false
   )
   port map (
     -- global control --
@@ -208,7 +209,8 @@ begin
   generic map (
     AWIDTH  => log2_fifo_size_c,
     DWIDTH  => 8,
-    OUTGATE => false
+    OUTGATE => false,
+    ASYNCRD => false
   )
   port map (
     -- global control --

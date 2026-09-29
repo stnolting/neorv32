@@ -80,7 +80,7 @@ void system_setup(void) {
   // activate status GPIO LED, clear all others
 #if (STATUS_LED_EN == 1)
   if (neorv32_gpio_available()) {
-    neorv32_gpio_dir_set(1 << STATUS_LED_PIN); // set as output
+    neorv32_gpio_port_dir_set(1 << STATUS_LED_PIN); // set as output
     neorv32_gpio_port_set(1 << STATUS_LED_PIN);
   }
 #endif

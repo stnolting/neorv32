@@ -286,7 +286,8 @@ begin
   generic map (
     AWIDTH  => log2_fifo_size_c,
     DWIDTH  => 32,
-    OUTGATE => true -- output zero if no write data available (i.e. for read accesses)
+    OUTGATE => true, -- output zero if no write data available (i.e. for read accesses)
+    ASYNCRD => false
   )
   port map (
     -- global control --
@@ -675,6 +676,7 @@ begin
       when S_WAIT => -- wait for access to complete
       -- ------------------------------------------------------------
         mac_nxt.csn <= bcsn; -- memory enabled
+        phy_nbits_o <= "000001"; -- 1 clock tick as inter-access delay
         if (phy_busy_i = '0') then
           if (cmd_rw_i = '0') then
             mac_nxt.rdata <= phy_data_i; -- sample RX data
@@ -782,7 +784,7 @@ begin
           if (en_i = '0') then -- shutdown
             state <= S_IDLE;
           elsif (cdiv = "000") then -- end of phase
-            sck   <= '1'; -- rising edge
+            sck_o <= '1'; -- rising edge
             cdiv  <= cdiv_i; -- reload clock counter
             tcnt  <= std_ulogic_vector(unsigned(tcnt) - 1);
             state <= S_RTX_1;

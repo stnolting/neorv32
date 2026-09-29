@@ -59,9 +59,9 @@ int main() {
 
   // clear GPIO output port
 
-  // configure lowest 8 GPIO pins as outputs
+  // configure lowest GPIO pin as outputs
   neorv32_gpio_port_set(0);
-  neorv32_gpio_dir_set(1); // pin 0 = output
+  neorv32_gpio_pin_dir_set(0, 1); // pin 0 as output
 
   // setup date and time for the Unix time of CLINT.MTIMER
   date_t date;

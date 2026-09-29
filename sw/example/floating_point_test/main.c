@@ -1018,7 +1018,7 @@ uint32_t get_test_vector(void) {
   // generate special value "every" ~256th time this function is called
   if ((neorv32_aux_xorshift32() & 0xff) == 0xff) {
 
-    switch((neorv32_aux_xorshift32() >> 10) & 0x3) { // random decision which special value we are taking
+    switch((neorv32_aux_xorshift32() >> 10) & 0x7) { // random decision which special value we are taking
       case  0: tmp.float_value  = +INFINITY; break;
       case  1: tmp.float_value  = -INFINITY; break;
       case  2: tmp.float_value  = +0.0f; break;
@@ -1026,7 +1026,7 @@ uint32_t get_test_vector(void) {
       case  4: tmp.binary_value = 0x7fffffff; break;
       case  5: tmp.binary_value = 0xffffffff; break;
       case  6: tmp.float_value  = NAN; break;
-      case  7: tmp.float_value  = NAN; break; // FIXME signaling_NAN?
+      case  7: tmp.binary_value = FLOAT32_SNAN; break;
       default: tmp.float_value  = NAN; break;
     }
   }

@@ -34,14 +34,12 @@ architecture neorv32_cpu_alu_cond_rtl of neorv32_cpu_alu_cond is
 
 begin
 
-  -- Valid Instruction? ---------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- valid instruction? --
   valid_cmd <= '1' when (ctrl_i.alu_cp_alu = '1') and
     (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct3(2) = '1') and
     (ctrl_i.ir_funct3(0) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0000111") else '0';
 
-  -- Conditional Output ---------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- conditional output --
   cond_out: process(clk_i)
   begin
     if rising_edge(clk_i) then
