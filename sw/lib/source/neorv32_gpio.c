@@ -186,5 +186,5 @@ uint32_t neorv32_gpio_irq_get(void) {
  **************************************************************************/
 void neorv32_gpio_irq_clr(uint32_t clr_mask) {
 
-  __MMREG32_BCLR(NEORV32_GPIO->IRQ_PENDING, clr_mask);
+  NEORV32_GPIO->IRQ_PENDING = ~clr_mask;
 }
