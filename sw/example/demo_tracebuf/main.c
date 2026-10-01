@@ -7,8 +7,8 @@
 // ================================================================================ //
 
 /**********************************************************************//**
- * @file demo_tracer/main.c
- * @brief Simple execution trace demo program.
+ * @file demo_tracebuf/main.c
+ * @brief Simple execution trace buffer demo program.
  **************************************************************************/
 #include <neorv32.h>
 
@@ -17,21 +17,21 @@
 
 
 /**********************************************************************//**
- * TRACER interrupt handler.
+ * TRACEBUF interrupt handler.
  **************************************************************************/
-void tracer_irq_handler(void) {
+void tracebuf_irq_handler(void) {
 
-  // acknowledge/clear tracer interrupt
-  neorv32_tracer_irq_ack();
+  // acknowledge/clear tracebuf interrupt
+  neorv32_tracebuf_irq_ack();
 
   // print trace log
   uint32_t delta_src, delta_dst;
   int i = 0;
   neorv32_uart0_printf("Trace log:\n");
-  while (neorv32_tracer_data_avail()) {
+  while (neorv32_tracebuf_data_avail()) {
     // read trace buffer entry
-    delta_src = neorv32_tracer_data_get_src();
-    delta_dst = neorv32_tracer_data_get_dst();
+    delta_src = neorv32_tracebuf_data_get_src();
+    delta_dst = neorv32_tracebuf_data_get_dst();
     // print branch source and destination (same format as the GDB output)
     neorv32_uart0_printf("[%d] SRC: 0x%x -> DST: 0x%x", i, delta_src & 0xFFFFFFFE, delta_dst & 0xFFFFFFFE);
     i++;
@@ -49,7 +49,7 @@ void tracer_irq_handler(void) {
 
 
 /**********************************************************************//**
- * Environment Call Exception Handler.
+ * Environment call exception handler.
  * We want to trace how we got here.
  *
  * @note No inlining so we have actual branches that we can trace.
@@ -84,7 +84,7 @@ int main(void) {
   // setup NEORV32 runtime-environment (RTE) for _this_ core (core0)
   neorv32_rte_setup();
   neorv32_rte_handler_install(TRAP_CODE_MENV_CALL, ecall_exc_handler); // install "ecall" handler
-  neorv32_rte_handler_install(TRACER_TRAP_CODE, tracer_irq_handler); // install tracer interrupt
+  neorv32_rte_handler_install(TRACEBUF_TRAP_CODE, tracebuf_irq_handler); // install trace buffer interrupt
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupt
 
   // setup UART0 at default baud rate, no interrupts
@@ -92,44 +92,44 @@ int main(void) {
     return -1;
   }
   neorv32_uart0_setup(BAUD_RATE, 0);
-  neorv32_uart0_printf("\n<< NEORV32 Tracer Demo >>\n\n");
+  neorv32_uart0_printf("\n<< NEORV32 Trace Buffer Demo >>\n\n");
 
   // check hardware/software configuration
-  if (neorv32_tracer_available() == 0) { // TRACER available?
-    neorv32_uart0_printf("[ERROR] TRACER module not available!\n");
+  if (neorv32_tracebuf_available() == 0) { // TRACEBUF available?
+    neorv32_uart0_printf("[ERROR] TRACEBUF module not available!\n");
     return -1;
   }
 
-
   // show trace buffer depth
-  neorv32_uart0_printf("Trace buffer: %d entries\n", neorv32_tracer_get_buffer_depth());
+  neorv32_uart0_printf("Trace buffer depth: %d entries\n", neorv32_tracebuf_get_buffer_depth());
 
-  // configure TRACER
+  // configure tracing
   uint32_t stop_address = (uint32_t)&ecall_exc_handler; // automatically stop tracing when reaching this address
-  neorv32_tracer_enable(0, stop_address); // 0 = trace CPU core 0
+  neorv32_tracebuf_enable(0, stop_address); // 0 = trace CPU core 0
 
 
   // ----------------------------------------------------------------
   // This is the part where we want to trace program execution.
-  // A function is raising an exception an we want to use the tracer
-  // to understand we got to that exception.
+  // A function is raising an exception an we want to use the trace
+  // buffer to understand we got to that exception.
   // ----------------------------------------------------------------
 
   neorv32_uart0_printf("Starting trace...\n\n");
 
-  // enable tracer interrupt
+  // enable trace buffer interrupt
   // the complete trace log will be printed in the according interrupt handler
-  // [note] enable this if you want to use the tracer stand-alone without GDB
+  // [note] enable this if you want to use the trace buffer stand-alone without GDB
 #if 1
-  neorv32_cpu_csr_set(CSR_MIE, 1 << TRACER_FIRQ_ENABLE);
+  neorv32_cpu_csr_set(CSR_MIE, 1 << TRACEBUF_FIRQ_ENABLE);
 #endif
 
-  neorv32_tracer_start(); // start trace logging
-  test_code();            // this is code/function that we want to trace
-  neorv32_tracer_stop();  // stop trace logging
+  //
+  neorv32_tracebuf_start(); // start trace logging
+  test_code();              // this is code/function that we want to trace
+  neorv32_tracebuf_stop();  // stop trace logging
+  //
 
 
   neorv32_uart0_printf("\nProgram completed\n");
-
   return 0; // return to crt0 and halt
 }

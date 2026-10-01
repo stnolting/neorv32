@@ -1440,34 +1440,34 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 5 (TRACER)
+  // Fast interrupt channel 5 (TRACEBUF)
   // ----------------------------------------------------------
-  PRINT("[%i] FIRQ5 (TRACER) ", cnt_test);
+  PRINT("[%i] FIRQ5 (TRACEBUF) ", cnt_test);
 
-  if (neorv32_tracer_available()) {
+  if (neorv32_tracebuf_available()) {
     neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
     cnt_test++;
 
-    // setup tracer for hart 0
-    neorv32_tracer_enable(0, (uint32_t)&trace_test_2);
-    neorv32_cpu_csr_write(CSR_MIE, 1 << TRACER_FIRQ_ENABLE);
+    // setup trace buffer for hart 0
+    neorv32_tracebuf_enable(0, (uint32_t)&trace_test_2);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << TRACEBUF_FIRQ_ENABLE);
 
     // start tracing
-    neorv32_tracer_start();
+    neorv32_tracebuf_start();
     trace_test_1();
 
-    // clear tracer interrupt
-    neorv32_tracer_irq_ack();
+    // clear trace buffer interrupt
+    neorv32_tracebuf_irq_ack();
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
     // get trace log
-    tmp_a = neorv32_tracer_data_get_src(); // start of first delta
-    neorv32_tracer_data_get_dst(); // discard
-    neorv32_tracer_data_get_src(); // discard
-    tmp_b = neorv32_tracer_data_get_dst(); // destination address (auto-stopping here)
+    tmp_a = neorv32_tracebuf_data_get_src(); // start of first delta
+    neorv32_tracebuf_data_get_dst(); // discard
+    neorv32_tracebuf_data_get_src(); // discard
+    tmp_b = neorv32_tracebuf_data_get_dst(); // destination address (auto-stopping here)
 
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRACER_TRAP_CODE) && // correct trap code (tracer interrupt)
-        (neorv32_tracer_run() == 0) && // trace has auto-stopped
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRACEBUF_TRAP_CODE) && // correct trap code (trace buffer interrupt)
+        (neorv32_tracebuf_run() == 0) && // trace has auto-stopped
         (tmp_b == (uint32_t)&trace_test_2) && // tracing has stopped at the correct point
         (tmp_a & 1)) { // first packet was the first packet of tracing
       test_ok();
@@ -2710,7 +2710,7 @@ void __attribute__((naked,noinline)) goto_user_mode(void) {
 
 
 /**********************************************************************//**
- * Test code for tracer, part 1, no-inline to have actual branches when calling
+ * Test code for trace buffer, part 1, no-inline to have actual branches when calling
  **************************************************************************/
 void __attribute__((noinline)) trace_test_1(void) {
 
@@ -2721,7 +2721,7 @@ void __attribute__((noinline)) trace_test_1(void) {
 
 
 /**********************************************************************//**
- * Test code for tracer, part 2, no-inline to have actual branches when calling
+ * Test code for trace buffer, part 2, no-inline to have actual branches when calling
  **************************************************************************/
 void __attribute__((noinline)) trace_test_2(void) {
 

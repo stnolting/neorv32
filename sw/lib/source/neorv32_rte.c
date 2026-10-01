@@ -108,7 +108,7 @@ static void __neorv32_rte_panic(void) {
     case TRAP_CODE_FIRQ_2:       __neorv32_rte_puts("FIRQ-2 (UART0)"); break;
     case TRAP_CODE_FIRQ_3:       __neorv32_rte_puts("FIRQ-3 (UART1)"); break;
     case TRAP_CODE_FIRQ_4:       __neorv32_rte_puts("FIRQ-4 (TWD)"); break;
-    case TRAP_CODE_FIRQ_5:       __neorv32_rte_puts("FIRQ-5 (TRACER)"); break;
+    case TRAP_CODE_FIRQ_5:       __neorv32_rte_puts("FIRQ-5 (TRACEBUF)"); break;
     case TRAP_CODE_FIRQ_6:       __neorv32_rte_puts("FIRQ-6 (SPI)"); break;
     case TRAP_CODE_FIRQ_7:       __neorv32_rte_puts("FIRQ-7 (TWI)"); break;
     case TRAP_CODE_FIRQ_8:       __neorv32_rte_puts("FIRQ-8 (GPIO)"); break;
