@@ -234,7 +234,7 @@ package neorv32_package is
     rs1_rdata : std_ulogic_vector(31 downto 0); -- rs1 read data
     rs2_rdata : std_ulogic_vector(31 downto 0); -- rs2 read data
     rd_addr   : std_ulogic_vector(4 downto 0);  -- rd address
-    rd_rdata  : std_ulogic_vector(31 downto 0); -- rd write data
+    rd_wdata  : std_ulogic_vector(31 downto 0); -- rd write data
     -- program counter --
     pc_rdata  : std_ulogic_vector(31 downto 0); -- current instruction address
     pc_wdata  : std_ulogic_vector(31 downto 0); -- next instruction address
@@ -269,7 +269,7 @@ package neorv32_package is
     rs1_rdata => (others => '0'),
     rs2_rdata => (others => '0'),
     rd_addr   => (others => '0'),
-    rd_rdata  => (others => '0'),
+    rd_wdata  => (others => '0'),
     pc_rdata  => (others => '0'),
     pc_wdata  => (others => '0'),
     csr_addr  => (others => '0'),
