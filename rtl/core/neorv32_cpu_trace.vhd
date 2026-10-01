@@ -500,8 +500,8 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       when csr_menvcfgh_c       => return "menvcfgh";
       -- machine counter setup --
       when csr_mcountinhibit_c  => return "mcountinhibit";
-      when csr_mcyclecfg_c      => return "csr_mcyclecfg";
-      when csr_minstretcfg_c    => return "csr_minstretcfg";
+      when csr_mcyclecfg_c      => return "mcyclecfg";
+      when csr_minstretcfg_c    => return "minstretcfg";
       when csr_mhpmevent3_c     => return "mhpmevent3";
       when csr_mhpmevent4_c     => return "mhpmevent4";
       when csr_mhpmevent5_c     => return "mhpmevent5";
@@ -769,8 +769,10 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
     end case;
   end function;
 
-  -- time stamp counter --
+  -- logging stuff --
   signal cycle_cnt : std_ulogic_vector(31 downto 0);
+  signal reset : std_ulogic;
+  signal header : std_ulogic;
 
 -- RTL_SYNTHESIS ON
 -- pragma translate_on
@@ -780,8 +782,7 @@ begin
 -- pragma translate_off
 -- RTL_SYNTHESIS OFF
 
-  -- Write Trace to Log File (SIMULATION ONLY) ----------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- write trace to log file (SIMULATION ONLY) --
   sim_trace_gen:
   if is_simulation_c generate
     sim_trace: process(rstn_i, clk_i)
@@ -790,7 +791,18 @@ begin
     begin
       if (rstn_i = '0') then
         cycle_cnt <= (others => '0');
+        reset     <= '1';
+        header    <= '0';
       elsif rising_edge(clk_i) then
+        if (header = '0') then
+          header <= '1';
+          write(line_v, string'("-----------------------------------------------------------------------------------------------------------------------------------------------------------------"));
+          writeline(file_v, line_v);
+          write(line_v, string'("Index        Time         Address     Instr       P  Mnemonic    Operands                Registers                                        Memory       Events"));
+          writeline(file_v, line_v);
+          write(line_v, string'("-----------------------------------------------------------------------------------------------------------------------------------------------------------------"));
+          writeline(file_v, line_v);
+        end if;
         cycle_cnt <= std_ulogic_vector(unsigned(cycle_cnt) + 1);
         if (trace_i.valid = '1') then
           -- [1] index --
