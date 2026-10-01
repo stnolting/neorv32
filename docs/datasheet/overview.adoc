@@ -312,6 +312,11 @@ as the NEORV32 package file/library file already provides a corresponding compon
 * Certain modules are explicitly designed to be replaced by external (Verilog) IP.
 See section <<_replaceable_modules>> for more information.
 
+.General Coding Style
+[TIP]
+A global `.editorconfig` file (configuring character set, line breaks, indention, etc.)
+is available in the root directory of the repository.
+
 
 <<<
 // ####################################################################################################################
