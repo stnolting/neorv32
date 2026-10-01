@@ -99,13 +99,14 @@ begin
       if (ctrl_i.cpu_exec = '1') then
         trace_buf.mode  <= ctrl_i.cpu_priv & ctrl_i.cpu_priv;
         trace_buf.debug <= ctrl_i.cpu_debug;
-        trace_buf.compr <= ctrl_i.cnt_event(cnt_event_ci_c);
-        if (ctrl_i.cnt_event(cnt_event_ci_c) = '1') then
-          trace_buf.insn <= x"0000" & ctrl_i.ir_rvc;
-        else
-          trace_buf.insn <= ctrl_i.ir_funct12 & ctrl_i.rf_rs1 & ctrl_i.ir_funct3 & ctrl_i.rf_rd & ctrl_i.ir_opcode;
-        end if;
         trace_buf.cmd32 <= ctrl_i.ir_funct12 & ctrl_i.rf_rs1 & ctrl_i.ir_funct3 & ctrl_i.rf_rd & ctrl_i.ir_opcode;
+      end if;
+      if (ctrl_i.cnt_event(cnt_event_ci_c) = '1') then
+        trace_buf.compr <= '1';
+        trace_buf.insn  <= x"0000" & ctrl_i.ir_rvc;
+      else
+        trace_buf.compr <= '0';
+        trace_buf.insn  <= ctrl_i.ir_funct12 & ctrl_i.rf_rs1 & ctrl_i.ir_funct3 & ctrl_i.rf_rd & ctrl_i.ir_opcode;
       end if;
       if (arbiter.delta = '1') then
         trace_buf.delta <= '1';
