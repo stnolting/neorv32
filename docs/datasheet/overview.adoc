@@ -219,7 +219,7 @@ rtl/core
 ├─ neorv32_sys.vhd               - System infrastructure modules
 ├─ neorv32_sysinfo.vhd           - System configuration information memory
 ├─ neorv32_top.vhd               - NEORV32 PROCESSOR/SOC TOP ENTITY
-├─ neorv32_tracer.vhd            - Instruction trace buffer
+├─ neorv32_tracebuf.vhd          - Execution trace buffer
 ├─ neorv32_trng.vhd              - True random number generator
 ├─ neorv32_twd.vhd               - Two wire serial device controller
 ├─ neorv32_twi.vhd               - Two wire serial interface controller

@@ -42,8 +42,8 @@ image::neorv32_processor.png[align=center]
 * _optional_ autonomous direct memory access controller (<<_direct_memory_access_controller_dma,**DMA**>>)
 * _optional_ stream link interface (<<_stream_link_interface_slink,**SLINK**>>), AXI4-Stream-compatible
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>), optional authentication and hardware breakpoint
-* _optional_ execution trace buffer to debug program flow (<<_execution_trace_buffer_tracer,**TRACER**>>) via branch tracing
-* _optional_ RVFI-compatible <<_execution_trace_port>> for advanced debugging, profiling and verification
+* _optional_ execution trace buffer to debug/analyze program flow (<<_execution_trace_buffer_tracebuf,**TRACEBUF**>>) via branch/delta tracing
+* _optional_ RVFI-compatible <<_trace_port>> for advanced debugging, profiling and verification
 * _optional_ system configuration information memory to determine hardware configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
 
 
@@ -207,10 +207,9 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 | `IO_SLINK_EN`         | boolean   | false         | Implement stream link interface (AXI4-Stream-Compatible).
 | `IO_SLINK_RX_FIFO`    | natural   | 1             | SLINK RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_SLINK_TX_FIFO`    | natural   | 1             | SLINK TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
-4+^| ** <<_execution_trace_buffer_tracer>>**
-| `IO_TRACER_EN`        | boolean   | false         | Implement the trace buffer.
-| `IO_TRACER_BUFFER`    | natural   | 1             | Depth of the trace buffer. Has to be a power of two, min 1, max 32768.
-| `IO_TRACER_SIMLOG_EN` | boolean   | false         | Write full trace log to file (simulation-only).
+4+^| ** <<_execution_trace_buffer_tracebuf>>**
+| `IO_TRACEBUF_EN`      | boolean   | false         | Implement the trace buffer.
+| `IO_TRACEBUF_DEPTH`   | natural   | 1             | Depth of the trace buffer. Has to be a power of two, min 1, max 32768.
 |=======================
 
 
@@ -221,7 +220,7 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 
 The following table shows the interface signals of the processor top entity (`rtl/core/neorv32_top.vhd`).
 All signals are of type `std_ulogic` or `std_ulogic_vector`, respectively. Custom interface type are used only
-for the <<_execution_trace_port>> (`trace_*`).
+for the <<_trace_port>> (`trace_port_t`).
 
 .Default Values of Inputs
 [NOTE]
@@ -257,7 +256,7 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 | `rstn_i`         |  1 |  in | none  | global reset, asynchronous, **low-active**
 | `rstn_ocd_o`     |  1 | out |   -   | <<_on_chip_debugger_ocd>> reset output, synchronous, **low-active**
 | `rstn_wdt_o`     |  1 | out |   -   | <<_watchdog_timer_wdt>> reset output, synchronous, **low-active**
-5+^| **<<_execution_trace_port>>**
+5+^| **<<_trace_port>>**
 | `trace_cpu0_o`   |  * | out |   -   | CPU core 0 trace port (type `trace_port_t`).
 | `trace_cpu1_o`   |  * | out |   -   | CPU core 1 trace port (type `trace_port_t`).
 5+^| **JTAG Access Port for <<_on_chip_debugger_ocd>>**
@@ -516,7 +515,7 @@ table. The channel number also corresponds to the according FIRQ priority (0 = h
 | 2  | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>
 | 3  | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>>
 | 4  | <<_two_wire_serial_device_controller_twd>>
-| 5  | <<_execution_trace_buffer_tracer>>
+| 5  | <<_execution_trace_buffer_tracebuf>>
 | 6  | <<_serial_peripheral_interface_controller_spi>>
 | 7  | <<_two_wire_serial_interface_controller_twi>>
 | 8  | <<_general_purpose_input_and_output_port_gpio>>
@@ -919,6 +918,6 @@ include::soc_neoled.adoc[]
 
 include::soc_gptmr.adoc[]
 
-include::soc_tracer.adoc[]
+include::soc_tracebuf.adoc[]
 
 include::soc_sysinfo.adoc[]
