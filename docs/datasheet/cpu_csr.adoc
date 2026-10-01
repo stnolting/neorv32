@@ -428,10 +428,10 @@ The `mret` instruction will return to the address stored in `mepc` by automatica
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
-| 31:16 | `CSR_MIP_FIRQ15P` : `CSR_MIP_FIRQ0P` | r/- | **FIRQxP**: Fast interrupt channel 15..0 pending, see <<_neorv32_specific_fast_interrupt_requests>>; cleared by source-specific mechanism
-| 11    | `CSR_MIP_MEIP`                       | r/- | **MEIP**: Machine _external_ interrupt pending, triggered by `mti_i` top port (see <<_cpu_top_entity_signals>>) or by the processor-internal <<_core_local_interruptor_clint>>; cleared by source-specific mechanism
-| 7     | `CSR_MIP_MTIP`                       | r/- | **MTIP**: Machine _timer_ interrupt pending, triggered by `mei_i` top port (see <<_cpu_top_entity_signals>>) or by the processor-internal <<_core_local_interruptor_clint>>; cleared by source-specific mechanism
-| 3     | `CSR_MIP_MSIP`                       | r/- | **MSIP**: Machine _software_ interrupt pending, triggered by `msi_i` top port (see <<_cpu_top_entity_signals>>); cleared by source-specific mechanism
+| 31:16 | `CSR_MIP_FIRQ15P` : `CSR_MIP_FIRQ0P` | r/- | **FIRQxP**: Fast interrupt channel 15..0 pending; cleared by source-specific mechanism; see <<_neorv32_specific_fast_interrupt_requests>>
+| 11    | `CSR_MIP_MEIP`                       | r/- | **MEIP**: Machine _external_ interrupt pending, triggered by `irq_mti_i` top port or by the processor-internal <<_core_local_interruptor_clint>>; cleared by source-specific mechanism
+| 7     | `CSR_MIP_MTIP`                       | r/- | **MTIP**: Machine _timer_ interrupt pending, triggered by `irq_msi_i` top port or by the processor-internal <<_core_local_interruptor_clint>>; cleared by source-specific mechanism
+| 3     | `CSR_MIP_MSIP`                       | r/- | **MSIP**: Machine _software_ interrupt pending, triggered by `irq_mei_i` top port; cleared by source-specific mechanism
 |=======================
 
 .FIRQ Channel Mapping
