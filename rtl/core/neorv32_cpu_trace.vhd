@@ -805,44 +805,73 @@ begin
         end if;
         cycle_cnt <= std_ulogic_vector(unsigned(cycle_cnt) + 1);
         if (trace_i.valid = '1') then
-          -- [1] index --
-          write(line_v, integer'(to_integer(unsigned(trace_i.order(31 downto 0)))));
-          write(line_v, string'(" "));
-          -- [2] timestamp --
-          write(line_v, integer'(to_integer(unsigned(cycle_cnt))));
-          write(line_v, string'(" "));
-          -- [3] instruction address --
+          -- index --
+          write(line_v, integer'(to_integer(unsigned(trace_i.order(31 downto 0)))), left, 13);
+          -- timestamp --
+          write(line_v, integer'(to_integer(unsigned(cycle_cnt))), left, 13);
+          -- instruction address --
           write(line_v, string'("0x"));
           write(line_v, string'(to_hexstring_f(trace_i.pc_rdata)));
-          write(line_v, string'(" "));
-          -- [4] instruction word --
+          write(line_v, string'("  "));
+          -- instruction word --
           write(line_v, string'("0x"));
           if (trace_i.compr = '1') then -- compressed instruction
-            write(line_v, string'(to_hexstring_f(trace_i.insn(15 downto 0))));
-            write(line_v, string'("     "));
+            write(line_v, string'(to_hexstring_f(trace_i.insn(15 downto 0))), left, 10);
           else
-            write(line_v, string'(to_hexstring_f(trace_i.insn)));
-            write(line_v, string'(" "));
+            write(line_v, string'(to_hexstring_f(trace_i.insn)), left, 10);
           end if;
-          -- [5] privilege level --
+          -- privilege level --
           if (trace_i.debug = '1') then
-            write(line_v, string'("D "));
+            write(line_v, string'("D"), left, 3);
           elsif (trace_i.mode = "11") then
-            write(line_v, string'("M "));
+            write(line_v, string'("M"), left, 3);
           elsif (trace_i.mode = "00") then
-            write(line_v, string'("U "));
+            write(line_v, string'("U"), left, 3);
           else
-            write(line_v, string'("? "));
+            write(line_v, string'("?"), left, 3);
           end if;
-          -- [6] decoded instruction --
-          write(line_v, string'(decode_mnemonic_f(trace_i.insn)));
-          write(line_v, string'(" "));
-          write(line_v, string'(decode_operands_f(trace_i.cmd32)));
-          -- [7] annotations --
-          if (trace_i.intr = '1') then -- exception/interrupt
-            write(line_v, string'(" <TRAP_ENTRY>"));
+          -- decoded instruction (mnemonic + operands) --
+          write(line_v, string'(decode_mnemonic_f(trace_i.insn)), left, 12);
+          write(line_v, string'(decode_operands_f(trace_i.cmd32)), left, 24);
+          -- registers --
+          if (trace_i.rd_addr = "00000") then
+            write(line_v, string'(" "), left, 17);
+          else
+            write(line_v, string'("x"));
+            write(line_v, integer'(to_integer(unsigned(trace_i.rd_addr))), left, 2);
+            write(line_v, string'("<=0x"));
+            write(line_v, string'(to_hexstring_f(trace_i.rd_wdata)));
+            write(line_v, string'(", "));
           end if;
-          -- flush line --
+          write(line_v, string'("x"));
+          write(line_v, integer'(to_integer(unsigned(trace_i.rs1_addr))), left, 2);
+          write(line_v, string'("=0x"));
+          write(line_v, string'(to_hexstring_f(trace_i.rs1_rdata)));
+          write(line_v, string'(", x"));
+          write(line_v, integer'(to_integer(unsigned(trace_i.rs2_addr))), left, 2);
+          write(line_v, string'("=0x"));
+          write(line_v, string'(to_hexstring_f(trace_i.rs2_rdata)));
+          write(line_v, string'("  "));
+          -- memory access address --
+          if (trace_i.mem_rmask /= "0000") or (trace_i.mem_wmask /= "0000") then
+            write(line_v, string'("@0x"));
+            write(line_v, string'(to_hexstring_f(trace_i.mem_addr)));
+            write(line_v, string'(" "));
+          else
+            write(line_v, string'(" "), left, 12);
+          end if;
+          -- events --
+          if (reset = '1') then -- hardware reset
+            write(line_v, string'(" RESET"));
+            reset <= '0';
+          end if;
+          if (trace_i.halt = '1') then -- entering sleep mode
+            write(line_v, string'(" SLEEP"));
+          end if;
+          if (trace_i.intr = '1') then -- first instruction of trap handler
+            write(line_v, string'(" TRAP_ENTRY"));
+          end if;
+          -- flush line to file --
           writeline(file_v, line_v);
         end if;
       end if;
