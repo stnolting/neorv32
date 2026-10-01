@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130601"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130602"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -893,8 +893,9 @@ package neorv32_package is
   generic (
     -- General --
     CLOCK_FREQUENCY     : natural                        := 0;
-    TRACE_PORT_EN       : boolean                        := false;
     DUAL_CORE_EN        : boolean                        := false;
+    TRACE_PORT_EN       : boolean                        := false;
+    TRACE_SIMLOG_EN     : boolean                        := false;
     -- Boot Configuration --
     BOOT_MODE_SELECT    : natural range 0 to 2           := 0;
     BOOT_ADDR_CUSTOM    : std_ulogic_vector(31 downto 0) := x"00000000";
@@ -1022,10 +1023,9 @@ package neorv32_package is
     IO_SLINK_EN         : boolean                        := false;
     IO_SLINK_RX_FIFO    : natural range 1 to 32768       := 1;
     IO_SLINK_TX_FIFO    : natural range 1 to 32768       := 1;
-    -- Instruction Tracer (TRACER) --
-    IO_TRACER_EN        : boolean                        := false;
-    IO_TRACER_BUFFER    : natural range 1 to 32768       := 1;
-    IO_TRACER_SIMLOG_EN : boolean                        := false
+    -- Execution Trace Buffer (TRACEBUF) --
+    IO_TRACEBUF_EN      : boolean                        := false;
+    IO_TRACEBUF_DEPTH   : natural range 1 to 32768       := 1
   );
   port (
     -- Global control --

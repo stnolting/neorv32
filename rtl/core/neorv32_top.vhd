@@ -22,8 +22,9 @@ entity neorv32_top is
   generic (
     -- General --
     CLOCK_FREQUENCY     : natural                        := 0;             -- clock frequency of clk_i in Hz
-    TRACE_PORT_EN       : boolean                        := false;         -- enable CPU execution trace port
     DUAL_CORE_EN        : boolean                        := false;         -- enable dual-core homogeneous SMP
+    TRACE_PORT_EN       : boolean                        := false;         -- enable CPU execution trace port
+    TRACE_SIMLOG_EN     : boolean                        := false;         -- enable simulation trace logging
 
     -- Boot Configuration --
     BOOT_MODE_SELECT    : natural range 0 to 2           := 0;             -- boot configuration select (default = 0 = bootloader)
@@ -548,6 +549,8 @@ begin
       BOOT_ADDR           => cpu_boot_addr_c,
       DEBUG_PARK_ADDR     => dm_park_entry_c,
       DEBUG_EXC_ADDR      => dm_exc_entry_c,
+      TRACE_PORT_EN       => trace_port_en_c,
+      TRACE_SIMLOG_EN     => TRACE_SIMLOG_EN,
       RISCV_ISA_C         => RISCV_ISA_C,
       RISCV_ISA_E         => RISCV_ISA_E,
       RISCV_ISA_M         => RISCV_ISA_M,
@@ -580,7 +583,6 @@ begin
       RISCV_ISA_Smcntrpmf => RISCV_ISA_Smcntrpmf,
       RISCV_ISA_Smpmp     => cpu_smpmp_en_c,
       RISCV_ISA_Xcfu      => RISCV_ISA_Xcfu,
-      CPU_TRACE_EN        => trace_en_c,
       CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
       CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
       CPU_FAST_MUL_REGS   => CPU_FAST_MUL_REGS,
