@@ -221,11 +221,11 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
   end function;
 
   -- list of all currently supported instructions --
-  type inst_touple_c is record
+  type inst_touple_t is record
     machine  : std_ulogic_vector(31 downto 0); -- instruction word
     mnemonic : string(1 to 11); -- according assembly mnemonic
   end record;
-  type inst_t is array (230 downto 0) of inst_touple_c;
+  type inst_t is array (238 downto 0) of inst_touple_t;
   constant inst_c : inst_t := (
     0   => ("-------------------------0110111", "lui        "), -- base ISA
     1   => ("-------------------------0010111", "auipc      "),
@@ -457,7 +457,15 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
     227 => ("----------------100111---1101101", "c.sext.h   "),
     228 => ("----------------100111---1110101", "c.not      "),
     229 => ("----------------100111---10---01", "c.mul      "),
-    230 => ("--------------------------------", "INVALID    ") -- last entry matches all: invalid
+    230 => ("----------------0110000010000001", "c.mop1     "), -- Zcmop
+    231 => ("----------------0110000110000001", "c.mop3     "),
+    232 => ("----------------0110001010000001", "c.mop5     "),
+    233 => ("----------------0110001110000001", "c.mop7     "),
+    234 => ("----------------0110010010000001", "c.mop9     "),
+    235 => ("----------------0110010110000001", "c.mop11    "),
+    236 => ("----------------0110011010000001", "c.mop13    "),
+    237 => ("----------------0110011110000001", "c.mop15    "),
+    238 => ("--------------------------------", "INVALID    ") -- last entry matches all: invalid
   );
 
   -- decode instruction mnemonic --
