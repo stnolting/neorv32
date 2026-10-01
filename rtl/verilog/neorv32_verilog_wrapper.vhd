@@ -113,9 +113,8 @@ begin
     IO_ONEWIRE_EN       => true,        -- implement 1-wire interface (ONEWIRE)
     IO_DMA_EN           => true,        -- implement direct memory access controller (DMA)
     IO_SLINK_EN         => true,        -- implement stream link interface (SLINK)
-    IO_TRACER_EN        => true,        -- implement execution tracer (TRACER)
-    IO_TRACER_BUFFER    => 32,          -- trace buffer depth
-    IO_TRACER_SIMLOG_EN => true         -- enable simulation-mode trace log
+    IO_TRACEBUF_EN      => true,        -- implement execution trace (TRACEBUF)
+    IO_TRACEBUF_DEPTH   => 32           -- trace buffer depth
   )
   port map ( -- [NOTE] add ports as required
     -- Global control --

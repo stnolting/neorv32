@@ -386,10 +386,9 @@ begin
     IO_SLINK_EN         => true,
     IO_SLINK_RX_FIFO    => 4,
     IO_SLINK_TX_FIFO    => 1,
-    -- Instruction Tracer (TRACER) --
-    IO_TRACER_EN        => true,
-    IO_TRACER_BUFFER    => 32,
-    IO_TRACER_SIMLOG_EN => TRACE_LOG_EN
+    -- Execution Trace Buffer (TRACEBUF) --
+    IO_TRACEBUF_EN      => true,
+    IO_TRACEBUF_DEPTH   => 32
   )
   port map (
     -- Global control --
