@@ -22,9 +22,6 @@
 The SYSINFO module allows the application software to determine the setting of most of the <<_processor_top_entity_generics>>
 that are related to CPU and processor/SoC configuration. This device is always implemented - regardless of the actual hardware
 configuration since the NEORV32 software framework requires information from this device for correct operation.
-However, advanced users that do not want to use the default NEORV32 software framework can choose to disable the
-entire SYSINFO module. This might also be suitable for setups that use the processor just as wrapper for a CPU-only
-configuration.
 
 
 **Register Map**
@@ -38,10 +35,10 @@ to take into account a dynamic frequency scaling of the processor.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | R/W | Description
-| `0xfffe0000` | `CLK`     | r/w | clock frequency in Hz (initialized from top's `CLOCK_FREQUENCY` generic)
-| `0xfffe0004` | `MISC[4]` | r/- | miscellaneous system configurations (see <<_sysinfo_miscellaneous_configuration>>)
-| `0xfffe0008` | `SOC`     | r/- | specific SoC configuration (see <<_sysinfo_soc_configuration>>)
-| `0xfffe000c` | `CACHE`   | r/- | cache configuration information (see <<_sysinfo_cache_configuration>>)
+| `0xfffe0000` | `CLK`   | r/w | clock frequency in Hz (initialized from top's `CLOCK_FREQUENCY` generic)
+| `0xfffe0004` | `MISC`  | r/- | miscellaneous system configurations (see <<_sysinfo_miscellaneous_configuration>>)
+| `0xfffe0008` | `SOC`   | r/- | specific SoC configuration (see <<_sysinfo_soc_configuration>>)
+| `0xfffe000c` | `CACHE` | r/- | cache configuration information (see <<_sysinfo_cache_configuration>>)
 |=======================
 
 
@@ -83,7 +80,7 @@ to take into account a dynamic frequency scaling of the processor.
 | `12` | `SYSINFO_SOC_IMEM_ROM`    | set if processor-internal <<_instruction_memory_imem>> is implemented as pre-initialized ROM (via top's `BOOT_MODE_SELECT` generic; see <<_boot_configuration>>)
 | `13` | `SYSINFO_SOC_IO_TWD`      | set if <<_two_wire_serial_device_controller_twd>> is implemented (via top's `IO_TWD_EN` generic)
 | `14` | `SYSINFO_SOC_IO_DMA`      | set if <<_direct_memory_access_controller_dma>> is implemented (via top's `IO_DMA_EN` generic)
-| `15` | `SYSINFO_SOC_IO_GPIO`     | set if <<_general_purpose_input_and_output_port_gpio>> is implemented (via top's `IO_GPIO_EN` generic)
+| `15` | `SYSINFO_SOC_IO_GPIO`     | set if <<_general_purpose_input_and_output_port_gpio>> is implemented (via top's `IO_GPIO_NUM` generic)
 | `16` | `SYSINFO_SOC_IO_CLINT`    | set if <<_core_local_interruptor_clint>> is implemented (via top's `IO_CLINT_EN` generic)
 | `17` | `SYSINFO_SOC_IO_UART0`    | set if <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>> is implemented (via top's `IO_UART0_EN` generic)
 | `18` | `SYSINFO_SOC_IO_SPI`      | set if <<_serial_peripheral_interface_controller_spi>> is implemented (via top's `IO_SPI_EN` generic)

@@ -260,7 +260,7 @@ shows all available data registers and their addresses:
 | Bit(s) | Name      | R/W | Description
 | 31:28  | `version` | r/- | version ID, hardwired to zero
 | 27:12  | `partid`  | r/- | part ID, hardwired to zero
-| 11:1   | `manid`   | r/- | JEDEC manufacturer ID, assigned via the <<_processor_top_entity_generics, `JEDEC_ID`>> generic
+| 11:1   | `manid`   | r/- | JEDEC manufacturer ID, assigned via the <<_processor_top_entity_generics, `OCD_JEDEC_ID`>> generic
 | 0      | -         | r/- | hardwired to `1`
 |=======================
 
@@ -607,8 +607,9 @@ hart's GPRs x0 - x15/31 (abstract command register index `0x1000` - `0x101f`).
 :sectnums:
 ==== DM CPU Access
 
-From the CPU's perspective the DM acts like another memory-mapped peripheral. It occupies 512 bytes of the CPU's
-address space starting at address `base_io_dm_c` (`0xffff0000`). This address space is divided into four sections
+From the CPU's perspective the DM acts like another memory-mapped peripheral. It occupies 64kB of the CPU's
+address space starting at address `base_io_dm_c` (`0xffff0000`). Physically, only 256 byte are implemented
+which are replicated across the entire 64kB. The 256 bytes of the physical address space is divided into four sections
 with 64 bytes each to provide access to the _park loop code ROM_, the _program buffer_, the _data buffer_ and the
 _status register_. The program buffer, the data buffer and the status register do not fully occupy the 64-byte-wide
 sections and are mirrored several times across the according section.
@@ -755,7 +756,7 @@ The default openOCD configuration script provides a helper script for authentica
 several helper functions for interaction with the RISC-V debug mechanism. Additionally, the default authentication
 mechanism is implemented there (as example):
 
-.Default authentication process (`sw/openocd/authentication.cfg`)
+.Default authentication process (`sw/openocd/lib/authentication.cfg`)
 [source,tcl]
 ----
 # read challenge

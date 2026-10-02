@@ -38,7 +38,7 @@ does not currently request a bus access. The DMA controller can handle different
 them back as zero-extended words) and can also change the Endianness of data while transferring. It supports reading/writing
 data from/to fixed or auto-incrementing addresses.
 
-.DMA Bus Access
+.DMA Bus Access Privilege Level
 [NOTE]
 Transactions performed by the DMA are executed as bus transactions with elevated **machine-mode** privilege level.
 Note that any physical memory protection rules (<<_smpmp_isa_extension>>) are not applied to DMA transfers.
@@ -67,6 +67,12 @@ if the `DMA_CTRL_ERROR` flag is cleared manually.
 When the `DMA_CTRL_DONE` flag is set the DMA has completed all programmed transfers, i.e. all descriptors from the FIFO
 were executed. This flag also triggers the DMA controller's interrupt request signal. The application software has to
 clear `DMA_CTRL_DONE` in order to acknowledge the interrupt and to start further transfers.
+
+.Memory Consistency
+[IMPORTANT]
+The DMA only accesses the SoC bus when the CPU(s) is not currently using it. DMA transfers can therefore be interrupted
+by CPU accesses, which may lead to data inconsistencies if the same address ranges are accessed. See section
+<<_memory_coherence>> for more information.
 
 
 **DMA Descriptor**
