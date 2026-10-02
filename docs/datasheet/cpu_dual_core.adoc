@@ -32,7 +32,7 @@ The following table summarizes the most important aspects when using the dual-co
 [grid="rows"]
 |=======================
 | **CPU configuration** | Both cores use the same cache, CPU and ISA configuration provided by the according top generics.
-| **Debugging** | A special SMP openOCD script (`sw/openocd/openocd_neorv32.dual_core.cfg`) is required to
+| **Debugging** | A special SMP openOCD script (`sw/openocd/neorv32.dual_core.cfg`) is required to
 debug both cores at once. SMP-debugging is fully supported by the RISC-V gdb port.
 | **Clock and reset** | Both cores use the same global processor clock and reset.
 | **Address space** | Both cores have full access to the same physical <<_address_space>>.
@@ -79,7 +79,7 @@ int neorv32_smp_launch(int (*entry_point)(void), uint8_t* stack_memory, size_t s
 Core 0 will ensure that core 1 only uses start-up code from the shared executable.
 See https://github.com/stnolting/neorv32/pull/1450.
 
-Core 0 uses the two 32-bit `MTIMECMP` registers of the <<_core_local_interruptor_clint>> to submit a
+Core 0 uses the 64-bit `MTIMECMP` register of the <<_core_local_interruptor_clint>> to submit a
 _launch configuration_ to core 1. This launch configuration consists of the stack layout (via the
 `stack_memory` and `stack_size_bytes` arguments) and the actual entry point for core 1. When these
 registers have been populated, core 0 will trigger the software interrupt of core 1 (also via the CLINT)

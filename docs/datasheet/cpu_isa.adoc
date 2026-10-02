@@ -43,7 +43,7 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_zkne_isa_extension,`Zkne`>>           | Scalar cryptography NIST AES encryption instructions         | <<_processor_top_entity_generics, `RISCV_ISA_Zkne`>>
 | <<_zknh_isa_extension,`Zknh`>>           | Scalar cryptography NIST hash function instructions          | <<_processor_top_entity_generics, `RISCV_ISA_Zknh`>>
 | <<_zks_isa_extension,`Zks`>>             | Scalar cryptography ShangMi algorithm suite                  | _Implicitly_ enabled
-| <<_zksed_isa_extension,`Zksed`>>         | Scalar cryptography ShangMi block cypher instructions        | <<_processor_top_entity_generics, `RISCV_ISA_Zksed`>>
+| <<_zksed_isa_extension,`Zksed`>>         | Scalar cryptography ShangMi block cipher instructions        | <<_processor_top_entity_generics, `RISCV_ISA_Zksed`>>
 | <<_zksh_isa_extension,`Zksh`>>           | Scalar cryptography ShangMi hash instructions                | <<_processor_top_entity_generics, `RISCV_ISA_Zksh`>>
 | <<_zkt_isa_extension,`Zkt`>>             | Data independent execution time (of cryptography operations) | _Implicitly_ enabled
 | <<_zmmul_isa_extension,`Zmmul`>>         | Integer multiplication-only instructions (subset of `M`)     | <<_processor_top_entity_generics, `RISCV_ISA_Zmmul`>>
@@ -102,7 +102,7 @@ depends on actual cache configuration and main memory latency
 
 ==== `A` ISA Extension
 
-The `A` ISA extension adds instructions and mechanisms for atomic memory operations hat can be used to
+The `A` ISA extension adds instructions and mechanisms for atomic memory operations that can be used to
 manage mutually-exclusive access to shared resources. Note that this ISA extension cannot be enabled by
 a specific generic. Instead, it is enabled if a specific set of sub-extensions is enabled. The `A`
 extension is shorthand for the following set of other extensions:
@@ -230,7 +230,7 @@ RISC-V specs. Also, custom trap codes for <<_mcause>> are implemented.
 
 ==== `Zaamo` ISA Extension
 
-The `Zaamo` ISA extension is a sub-extension of the RISC-V <<_a_isa_extension>> and compromises
+The `Zaamo` ISA extension is a sub-extension of the RISC-V <<_a_isa_extension>> and comprises
 instructions for atomic read-modify-write operations. It is enabled by the top's
 <<_processor_top_entity_generics, `RISCV_ISA_Zaamo`>> generic. Atomic read-modify-write operations
 are handled by the processor's <<_atomic_memory_operations_controller>>.
@@ -245,9 +245,9 @@ are handled by the processor's <<_atomic_memory_operations_controller>>.
 
 .`aq` and `rl` Bits
 [NOTE]
-The instruction word's `aq` and `lr` memory ordering bits are not evaluated by the hardware at all.
+The instruction word's `aq` and `rl` memory ordering bits are not evaluated by the hardware at all.
 However, the CPU and especially the <<_data_cache_dcache>> treats all atomic memory operation as if
-the `aq` and `lr` bits were set (**for the targeted address / cache line**). See <<_memory_coherence>>
+the `aq` and `rl` bits were set (**for the targeted address / cache line**). See <<_memory_coherence>>
 for more information.
 
 
@@ -286,8 +286,8 @@ Some instructions may require additional ISA (sub-) extensions.
 |=======================
 | Class | Instructions | Depends on ISA Ext. | Execution cycles
 | Memory     | `c.lbu` `c.lh` `c.lhu` `c.sb` `c.sh` | -              | 4 + `T_data_latency`
-| Logic      | `c.not` `c.zext.b`                   | -              | 2
-| Logic      | `c.sext.b` `c.zext.h` `c.zext.h`     | `B` or `Zbb`   | 3
+| Logic      | `c.not`                              | -              | 2
+| Logic      | `c.sext.b` `c.sext.h` `c.zext.h`     | `B` or `Zbb`   | 3
 | Arithmetic | `c.mul`                              | `M` or `Zmmul` | 3 + `T_mul_latency`
 |=======================
 
@@ -320,15 +320,15 @@ The `Zfinx` floating-point extension is an _alternative_ of the standard `F` flo
 It also uses the integer register file `x` to store and operate on floating-point data
 instead of a dedicated floating-point register file. Thus, the `Zfinx` extension requires
 less hardware resources and features faster context changes. This also implies that there are NO dedicated `f`
-register file-related load/store or move instructions. The `Zfinx` extension'S floating-point unit is controlled
+register file-related load/store or move instructions. The `Zfinx` floating-point unit is controlled
 via dedicated <<_floating_point_csrs>>.
 This ISA extension is implemented as multi-cycle ALU co-process (`rtl/core/neorv32_cpu_alu_fpu.vhd`).
 
 .Fused / Multiply-Add and Division / Square Root Instructions
 [WARNING]
-Fused multiply-add instructions `f[n]m[add/sub].s` and division `fdiv.s` and square root `fsqrt.s` instructions
-are not supported yet. are not supported. Special GCC flags are used to prevent the compiler from emitting these
-operations (see <<_default_compiler_flags>>).
+Fused multiply-add instructions `f[n]m[add/sub].s` and division `fdiv.s` and square root `fsqrt.s`
+instructions are not supported yet. Special GCC flags are used to prevent the compiler from emitting
+these operations (see <<_default_compiler_flags>>).
 
 .Subnormal Numbers
 [WARNING]
@@ -418,7 +418,7 @@ However, access privileges are still enforced so these instruction variants _do_
 
 ==== `Zihpm` ISA Extension
 
-In additions to the base counters the NEORV32 CPU provides up to 29 hardware performance monitors (HPM; <<_mhpmcounterh>>
+In addition to the base counters the NEORV32 CPU provides up to 29 hardware performance monitors (HPM; <<_mhpmcounterh>>
 and <<_hpmcounterh>>), which can be used to benchmark applications. Each HPM consists of a counter (up to 64-bit) and a
 corresponding 32-bit event configuration CSR (<<_mhpmevent>>). The counter CRSs are split into a high-word and a low-word
 CSR. The effective counter width can be defined via the top's `HPM_CNT_WIDTH` generic.
@@ -453,7 +453,7 @@ Without the `Zimop` extension, any `mop.r*` instruction will raise an illegal in
 
 ==== `Zcmop` ISA Extension
 
-The `Zcmop` ISA extension build up upon the <<_zimop_isa_extension>> by adding compressed may-be-operation that
+The `Zcmop` ISA extension builds upon the <<_zimop_isa_extension>> by adding compressed may-be-operation that
 decompress into their 32-bit counterparts (i.e. `c.mop.n -> mop.r.n` with `r = x0`).
 Note that this extensions requires the <<_zimop_isa_extension>> & <<_c_isa_extension>>.
 
@@ -631,7 +631,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| AES decryption | `aes32esi` `aes32esmi` | 6
+| AES encryption | `aes32esi` `aes32esmi` | 6
 |=======================
 
 
@@ -670,7 +670,7 @@ A processor configuration which implements `Zks` must implement all of the above
 
 ==== `Zksed` ISA Extension
 
-The `Zksed` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds ShangMi block cypher
+The `Zksed` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds ShangMi block cipher
 and key schedule instructions. It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zksed`>> generic.
 This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_alu_crypto.vhd`).
 
@@ -679,7 +679,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| Block cyphers | `sm4ed` | 6
+| Block ciphers | `sm4ed` | 6
 | Key schedule  | `sm4ks` | 6
 |=======================
 
@@ -766,7 +766,7 @@ does not complete operation within this time window.
 ==== `Smpmp` ISA Extension
 
 The NEORV32 physical memory protection (PMP) provides an elementary memory protection mechanism that can be used
-to configure read/write(execute permission of arbitrary memory regions. In general, the PMP can **grant permissions
+to configure read/write/execute permission of arbitrary memory regions. In general, the PMP can **grant permissions
 to user mode**, which by default has none, and can **revoke permissions from M-mode**, which by default has full
 permissions. The NEORV32 PMP is fully compatible to the RISC-V Privileged Architecture Specifications and is
 configured via several CSRs (<<_machine_physical_memory_protection_csrs>>). Several <<_processor_top_entity_generics>>
@@ -777,10 +777,10 @@ result in absolutely no PMP logic being implemented
 . `PMP_MIN_GRANULARITY` defines the minimal granularity of each region (has to be a power of 2, minimal
 granularity = 4 bytes); note that a smaller granularity will lead to wider comparators and thus, to higher area footprint
 and longer critical path
-. `PMP_TOR_MODE_EN` controls the implementation of the top-of-region (TOR) mode (default = true); disabling this mode
+. `PMP_TOR_MODE_EN` controls the implementation of the top-of-region (TOR) mode (default = false); disabling this mode
 will reduce area footprint
 . `PMP_NAP_MODE_EN` controls the implementation of the naturally-aligned-power-of-two (NA4 and NAPOT) modes (default =
-true); disabling this mode will reduce area footprint and critical path length
+false); disabling this mode will reduce area footprint and critical path length
 
 .PMP Permissions when in Debug Mode
 [NOTE]
@@ -797,7 +797,7 @@ full security features and RISC-V compatibility.
 [IMPORTANT]
 Load/store accesses for which there are insufficient access permission do not trigger any memory/bus accesses at all.
 In contrast, instruction accesses for which there are insufficient access permission nevertheless lead to a memory/bus
-access (causing potential side effects on the memory side=. However, the fetched instruction will be discarded and the
+access (causing potential side effects on the memory side). However, the fetched instruction will be discarded and the
 corresponding exception will still be triggered precisely.
 
 
