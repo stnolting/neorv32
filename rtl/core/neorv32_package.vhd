@@ -1135,7 +1135,6 @@ package neorv32_package is
   );
   port (
     clk_i      : in  std_ulogic;
-    rstn_i     : in  std_ulogic;
     req_addr_i : in  std_ulogic_vector(31 downto 0);
     req_data_i : in  std_ulogic_vector(31 downto 0);
     req_ben_i  : in  std_ulogic_vector(3 downto 0);
@@ -1155,7 +1154,6 @@ package neorv32_package is
   );
   port (
     clk_i      : in  std_ulogic;
-    rstn_i     : in  std_ulogic;
     req_addr_i : in  std_ulogic_vector(31 downto 0);
     req_data_i : in  std_ulogic_vector(31 downto 0);
     req_ben_i  : in  std_ulogic_vector(3 downto 0);
@@ -1171,7 +1169,6 @@ package neorv32_package is
   component neorv32_bootrom
   port (
     clk_i      : in  std_ulogic;
-    rstn_i     : in  std_ulogic;
     req_addr_i : in  std_ulogic_vector(15 downto 0);
     req_ben_i  : in  std_ulogic_vector(3 downto 0);
     req_stb_i  : in  std_ulogic;
