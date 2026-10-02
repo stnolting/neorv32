@@ -190,7 +190,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   request_reg: process(rstn_i, clk_i)
   begin
-    if (rstn_i = '0') then
+    if (rstn_i = '0') then -- full reset required
       device_req_o <= req_terminate_c;
     elsif rising_edge(clk_i) then
       if (host_req_i.stb = '1') then -- reduce switching activity on downstream bus system
@@ -205,21 +205,11 @@ begin
 
   -- Response Register Stage ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  response_reg_reset: process(rstn_i, clk_i)
+  response_reg: process(clk_i)
   begin
-    if (rstn_i = '0') then -- full reset for control signals
-      host_rsp_o.ack <= '0';
-      host_rsp_o.err <= '0';
-    elsif rising_edge(clk_i) then
-      host_rsp_o.ack <= device_rsp_i.ack;
-      host_rsp_o.err <= device_rsp_i.err;
-    end if;
-  end process;
-
-  -- no reset required --
-  response_reg_noreset: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
+    if rising_edge(clk_i) then -- no reset required
+      host_rsp_o.ack  <= device_rsp_i.ack;
+      host_rsp_o.err  <= device_rsp_i.err;
       host_rsp_o.data <= device_rsp_i.data;
     end if;
   end process;
