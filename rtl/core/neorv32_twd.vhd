@@ -118,6 +118,7 @@ architecture neorv32_twd_rtl of neorv32_twd is
     rx_we : std_ulogic; -- write write-enable
     tx_re : std_ulogic; -- read read-enable
     com   : std_ulogic; -- active communication
+    nack  : std_ulogic; -- received or transmitted nack
   end record;
   signal engine : engine_t;
 
@@ -331,6 +332,7 @@ begin
       engine.rx_we <= '0';
       engine.tx_re <= '0';
       engine.com   <= '0';
+      engine.nack  <= '0';
     elsif rising_edge(clk_i) then
       engine.rx_we <= '0';
       engine.tx_re <= '0';
@@ -340,6 +342,7 @@ begin
         -- ------------------------------------------------------------
           engine.sda <= '1'; -- idle
           engine.com <= '0'; -- no active communication yet/anymore
+          engine.nack <= '0';
           if (ctrl.enable = '1') and (smp_start = '1') then
             engine.state <= S_INIT;
           end if;
@@ -348,6 +351,7 @@ begin
         -- ------------------------------------------------------------
           engine.cnt   <= (others => '0');
           engine.state <= S_ADDR;
+          engine.nack  <= '0';
 
         when S_ADDR => -- sample address + R/W bit and check if address match and data is available
         -- ------------------------------------------------------------
@@ -370,7 +374,10 @@ begin
 
         when S_RESP => -- send device address-match ACK
         -- ------------------------------------------------------------
-          engine.sda <= '0'; -- ACK
+          -- ACK active low, send NACK if read and no data
+          -- Remember NACK; we must not change response at undefined time, if FIFO would become available
+          engine.sda  <= engine.nack or (engine.sreg(0) and not tx_fifo.avail);
+          engine.nack <= engine.nack or (engine.sreg(0) and not tx_fifo.avail);
           engine.com <= '1'; -- communication started
           engine.cmd <= engine.sreg(0); -- READ/WRITE operation request
           if (ctrl.enable = '0') then -- disabled?
@@ -381,10 +388,10 @@ begin
 
         when S_PREP => -- prepare data transmission
         -- ------------------------------------------------------------
-          if (tx_fifo.avail = '1') and (engine.cmd = '1') then -- data available for read?
+          if (engine.cmd = '1' and engine.nack = '0') then -- data available for read?
             engine.sreg <= tx_fifo.rdata;
             engine.sda  <= tx_fifo.rdata(7);
-          else -- no TX data available or write operation
+          else -- no TX data available, write operation or nack was already sent/received
             engine.sreg <= (others => '1');
             engine.sda  <= '1';
           end if;
@@ -418,11 +425,15 @@ begin
             engine.state <= S_INIT;
           else
             if (engine.cmd = '0') then -- WRITE operation
-              engine.sda   <= not rx_fifo.free; -- ACK if RX FIFO is not full; NACK if RX FIFO is full
-              engine.rx_we <= smp_scl_fall; -- push to RX FIFO at end of bit slot (if RX FIFO not full)
+              engine.sda   <= engine.nack or not rx_fifo.free; -- NACK if RX FIFO is full or NACK was sent before
+              engine.rx_we <= smp_scl_fall and not engine.nack; -- push to RX FIFO at end of bit slot, if ACKed
+              engine.nack   <= engine.nack or not rx_fifo.free; -- once NACK is sent, no mora ACK until (re)start
             else -- READ operation
               engine.sda   <= '1'; -- keep high-Z so we can sample the ACK/NACK from the host
-              engine.tx_re <= smp_scl_rise and (not smp_sda); -- pop from TX FIFO if ACK at sample point
+              engine.tx_re <= smp_scl_rise and not engine.nack; -- pop from TX FIFO at sample point if no NACKs were received/signalled
+              if (smp_scl_rise = '1' and engine.nack = '0') then
+                engine.nack <= smp_sda;
+              end if;
             end if;
             if (smp_scl_fall = '1') then -- end of bit slot
               engine.state <= S_PREP;
