@@ -66,11 +66,9 @@ begin
 
   -- Bus Handshake --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_handshake: process(rstn_i, clk_i)
+  bus_handshake: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      bus_rsp_o.ack <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       bus_rsp_o.ack <= bus_req_i.stb;
     end if;
   end process;
