@@ -32,7 +32,7 @@ image::neorv32_cpu.png[align=center]
 
 The CPU implements a pipelined multi-cycle architecture: each instruction is executed as a series of consecutive
 micro-operations. In order to increase performance, the CPU's front-end (instruction fetch) and back-end
-(instruction execution) are de-couples via a FIFO (the instruction prefetch buffer. Thus, the front-end can already
+(instruction execution) are decouples via a FIFO (the instruction prefetch buffer. Thus, the front-end can already
 fetch new instructions while the back-end is still processing the previously-fetched instructions.
 
 Basically, the CPU's micro architecture is somewhere between a classical pipelined architecture, where each stage
@@ -57,7 +57,7 @@ See section <<_application_context_handling>> for more information.
 ==== CPU Front-End
 
 The front-end is responsible for fetching instructions in chunks of 32-bits. This can be a single aligned 32-bit
-instruction, two 16-bit instructions or a mixture of both. Unaligned 32bit instructions are explicitly supported.
+instruction, two 16-bit instructions or a mixture of both. Unaligned 32-bit instructions are explicitly supported.
 The instruction chunks are queued within the instruction prefetch buffer (IPB). A consecutive logic reads data
 from this FIFO, optionally decompresses 16-bit instructions and assembles 32-bit instruction words that are forwarded
 to the CPU back-end for execution.
@@ -79,7 +79,7 @@ an optimal CPI (cycles per instruction) value of 2 can be achieved.
 The division into individual micro-operations not only allows for small hardware that reuses CPU parts in different
 cycles (e.g., the ALU: for arithmetic/logical calculations and also for calculating the next program counter). It also
 allows for precise monitoring of execution and the generation of precise traps. Hence, the back-end also includes
-<<_control_and_status_registers_csrs>>, the<<_traps_exceptions_and_interrupts>> logic and the <<_cpu_debug_mode>> controller.
+<<_control_and_status_registers_csrs>>, the <<_traps_exceptions_and_interrupts>> logic and the <<_cpu_debug_mode>> controller.
 
 
 :sectnums:
@@ -131,7 +131,7 @@ control without requiring additional processing effort.
 ===== Register-Based with Asynchronous Read
 
 For this style, the register file is implemented as register-based SRAM, too. Writing data (`rd`) and reading
-operands (`rs1` & `rs2`) is performed by three individual port, whereby the read accesses are implemented _asynchronously_.
+operands (`rs1` & `rs2`) is performed by three individual ports, whereby the read accesses are implemented _asynchronously_.
 Hence, this architecture style can infer **FPGA distributed RAM**. If the `x0`/`zero` register is read, the respective
 operand is masked before the read data is buffered in the operand output register.
 
@@ -282,7 +282,7 @@ approach requires only a few hardware resources and does not impact the critical
 [frame="topbot",grid="none"]
 |=======================
 | Name        | Register file implementation style
-| Type        | `natural` (0..2)
+| Type        | `natural` (0..3)
 | Default     | `0` (simple-dual-port RAM with synchronous read)
 | Description | This variable can be used to select a specific architecture for the CPU's general-purpose register file that
 can be implemented most efficiently for the target platform/technology. see section <<_cpu_register_file>>.
@@ -333,7 +333,8 @@ also allows for software-based emulation of additional ISA extensions or system 
 The NEORV32 CPU provides separated instruction fetch and data access interfaces making it a **Harvard Architecture**:
 the instruction fetch interface (`i_bus_*` signals) is used for fetching instructions and the data access interface
 (`d_bus_*` signals) is used to access data via load and store operations. Each of these interfaces can access an address
-space of up to 2^32^ bytes (4GB).
+space of up to 2^32^ bytes (4GB). For the SoC these two bus interfaces are merged into a single on-chip bus system
+accessing a single address space making the system a von-Neumann-like modified Harvard architecture.
 
 The bus interface uses two custom interface types: `bus_req_t` is used to propagate the bus access requests downstream
 from a host to a device. These signals are driven by the request-issuing device (i.e. the CPU core). Vice versa, `bus_rsp_t`
@@ -381,13 +382,13 @@ remain unchanged until the transaction is completed.
 
 The transaction is completed when the accessed device returns an acknowledge via the `ack` signal, which is high
 for exactly one cycle. Together with `ack` the accessed device returns an optional error status (`err`) and read
-data (`rdata`) in case of a read-access. `err` and `data` are evaluated only when `ack` is high.
+data (`data`) in case of a read-access. `err` and `data` are evaluated only when `ack` is high.
 
 The figure below shows three exemplary single-access bus transactions:
 
 [start=1]
-. A read access to address `A_addr` returning `rdata` after several cycles (slow response; `ACK` arrives after several cycles).
-. A write access to address `B_addr` writing `wdata` (fastest response; `ACK` arrives right in the next cycle).
+. A read access to address `A_addr` returning `data` after several cycles (slow response; `ACK` arrives after several cycles).
+. A write access to address `B_addr` writing `data` (fastest response; `ACK` arrives right in the next cycle).
 . A failing read access to address `C_addr` (slow response; `ERR` arrives after several cycles).
 
 .Three Exemplary **Single-Access** Transactions
@@ -566,7 +567,7 @@ package file (`neorv32_package.vhd`).
 This feature is available in simulation only. Use the <<_execution_trace_buffer_tracebuf>> for tracing on real hardware.
 
 A human-readable execution trace log can be written to log files during simulation. This option is enabled by the
-`TRACE_SIMLOG_EN` <<_processor_top_entity_generics>>. The log files are written to the simulator simulator's home folder:
+`TRACE_SIMLOG_EN` <<_processor_top_entity_generics>>. The log files are written to the simulation home folder:
 
 * `neorv32_trace0.log` for CPU 0
 * `neorv32_trace1.log` for CPU 1 (if the <<_dual_core_configuration>> is enabled)

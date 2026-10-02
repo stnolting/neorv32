@@ -48,12 +48,13 @@ to check if the targeted bits can actually be modified.
 | 0x343 | <<_mtval>>    | `CSR_MTVAL`    | MRW | Machine trap value
 | 0x344 | <<_mip>>      | `CSR_MIP`      | MRW | Machine interrupt pending register
 5+^| **<<_machine_physical_memory_protection_csrs>>**
-| 0x3a0 .. 0x303 | <<_pmpcfg, `pmpcfg0`>> .. <<_pmpcfg, `pmpcfg3`>>      | `CSR_PMPCFG0` .. `CSR_PMPCFG3`    | MRW | Physical memory protection configuration registers
+| 0x3a0 .. 0x3a3 | <<_pmpcfg, `pmpcfg0`>> .. <<_pmpcfg, `pmpcfg3`>>      | `CSR_PMPCFG0` .. `CSR_PMPCFG3`    | MRW | Physical memory protection configuration registers
 | 0x3b0 .. 0x3bf | <<_pmpaddr, `pmpaddr0`>> .. <<_pmpaddr, `pmpaddr15`>> | `CSR_PMPADDR0` .. `CSR_PMPADDR15` | MRW | Physical memory protection address registers
 5+^| **<<_trigger_module_csrs>>**
 | 0x7a0 | <<_tselect>>  | `CSR_TSELECT`  | MRW | Trigger select register
 | 0x7a1 | <<_tdata1>>   | `CSR_TDATA1`   | MRW | Trigger data register 1
 | 0x7a2 | <<_tdata2>>   | `CSR_TDATA2`   | MRW | Trigger data register 2
+| 0x7a3 | <<_tdata3>>   | `CSR_TDATA3`   | MRW | Trigger data register 3
 | 0x7a4 | <<_tinfo>>    | `CSR_TINFO`    | MRW | Trigger information register
 5+^| **<<_cpu_debug_mode_csrs>>**
 | 0x7b0 | <<_dcsr>>      | `CSR_DCSR`      | DRW | Debug control and status register
@@ -207,7 +208,7 @@ to check if the targeted bits can actually be modified.
 | Address     | `0x301`
 | Reset value | `DEFINED`, according to enabled ISA extensions
 | ISA         | <<_zicsr_isa_extension,`Zicsr`>>
-| Description | The `misa` CSR provides information regarding the availability of basic RISC-V ISa extensions.
+| Description | The `misa` CSR provides information regarding the availability of basic RISC-V ISA extensions.
 |=======================
 
 [NOTE]
@@ -282,7 +283,7 @@ Machine-mode software can discover available `Z*` sub-extensions (like `Zicsr` o
 |=======================
 | Bit  | R/W | Function
 | 31:2 | r/w | **BASE**: in DIRECT mode = 4-byte-aligned base address of trap base handler, _all_ traps jump to `pc = BASE`;
-in VECTORED mode = 128-byte-aligned base address of trap vector table, interrupts cause a jump to `pc = BASE + 4 * mcause`
+in VECTORED mode = 128-byte-aligned base address of trap vector table, interrupts cause a jump to `pc = BASE + 4 * mcause[4:0]`
 and exceptions a jump to `pc = BASE`.
 | 1:0  | r/w | **MODE**: mode configuration, `00` = DIRECT, `01` = VECTORED; other encodings are _reserved_ and will fall back
 to DIRECT mode; the lowest address bits are hardwired to zero in VECTORED mode to enforce the according 128-byte-alignment
@@ -429,9 +430,9 @@ The `mret` instruction will return to the address stored in `mepc` by automatica
 |=======================
 | Bit | Name [C] | R/W | Function
 | 31:16 | `CSR_MIP_FIRQ15P` : `CSR_MIP_FIRQ0P` | r/- | **FIRQxP**: Fast interrupt channel 15..0 pending; cleared by source-specific mechanism; see <<_neorv32_specific_fast_interrupt_requests>>
-| 11    | `CSR_MIP_MEIP`                       | r/- | **MEIP**: Machine _external_ interrupt pending, triggered by `irq_mti_i` top port or by the processor-internal <<_core_local_interruptor_clint>>; cleared by source-specific mechanism
-| 7     | `CSR_MIP_MTIP`                       | r/- | **MTIP**: Machine _timer_ interrupt pending, triggered by `irq_msi_i` top port or by the processor-internal <<_core_local_interruptor_clint>>; cleared by source-specific mechanism
-| 3     | `CSR_MIP_MSIP`                       | r/- | **MSIP**: Machine _software_ interrupt pending, triggered by `irq_mei_i` top port; cleared by source-specific mechanism
+| 11    | `CSR_MIP_MEIP`                       | r/- | **MEIP**: Machine external interrupt pending, triggered by `irq_mei_i` top port; cleared by source-specific mechanism
+| 7     | `CSR_MIP_MTIP`                       | r/- | **MTIP**: Machine timer interrupt pending, triggered by `irq_mti_i` top port or by the processor-internal <<_core_local_interruptor_clint>>; cleared by source-specific mechanism
+| 3     | `CSR_MIP_MSIP`                       | r/- | **MSIP**: Machine software interrupt pending, triggered by `irq_msi_i` top port or by the processor-internal <<_core_local_interruptor_clint>>; cleared by source-specific mechanism
 |=======================
 
 .FIRQ Channel Mapping
@@ -502,7 +503,7 @@ always return zero. See section <<_smpmp_isa_extension>> for more information.
 | ISA         | <<_zicsr_isa_extension,`Zicsr`>> & <<_smpmp_isa_extension,`Smpmp`>>
 | Description | Configuration of physical memory protection regions. Each region provides an individual 8-bit array in these CSRs.
 Note that, depending on `PMP_NUM_REGIONS`, a **maximum** of the lowest 4 configuration registers are physically implemented (`pmpcfg0 .. pmpcfg3`).
-All remaining register are hardwired to zero.
+All remaining registers are hardwired to zero.
 |=======================
 
 .`pmpcfg*` CSR Bits
@@ -531,12 +532,12 @@ implementation of the according modes.
 [grid="none"]
 |=======================
 | Name        | Physical memory protection region address registers
-| Address     | `0x3b0` (`pmpaddr1`)
-|             | `0x3b1` (`pmpaddr2`)
-|             | `0x3b2` (`pmpaddr3`)
-|             | `0x3b3` (`pmpaddr4`)
-|             | `0x3b4` (`pmpaddr5`)
-|             | `0x3b5` (`pmpaddr6`)
+| Address     | `0x3b0` (`pmpaddr0`)
+|             | `0x3b1` (`pmpaddr1`)
+|             | `0x3b2` (`pmpaddr2`)
+|             | `0x3b3` (`pmpaddr3`)
+|             | `0x3b4` (`pmpaddr4`)
+|             | `0x3b5` (`pmpaddr5`)
 |             | `0x3b6` (`pmpaddr6`)
 |             | `0x3b7` (`pmpaddr7`)
 |             | `0x3b8` (`pmpaddr8`)
@@ -560,7 +561,7 @@ All remaining register are hardwired to zero.
 |=======================
 | Bit   | R/W | Description
 | 29:0  | r/w | address bits `31 downto 2`
-| 31:30 | r-w | address bits `33 downto 32`´, hardwired to zero
+| 31:30 | r/- | address bits `33 downto 32`, hardwired to zero
 |=======================
 
 
@@ -671,7 +672,7 @@ If trying to access an HPM-related CSR beyond `HPM_NUM_CNTS` **no illegal instru
 triggered**. These CSRs are read-only, writes are ignored and reads always return zero.
 
 The total counter width of the HPMs can be configured before synthesis via the `HPM_CNT_WIDTH` generic (0..64-bit).
-If `HPM_NUM_CNTS` is less than 64, all remaining MSB-aligned bits are hardwired to zero.
+If `HPM_CNT_WIDTH` is less than 64, all remaining MSB-aligned bits are hardwired to zero.
 
 
 [discrete]
@@ -704,11 +705,6 @@ events is observed (logical OR). Note that the counter will only increment by 1 
 | 1   | `HPMCNT_EVENT_IR`       | r/w | retired instruction (16-bit/compressed or 32-bit/uncompressed)
 | 0   | `HPMCNT_EVENT_CY`       | r/w | active clock cycle (CPU not in <<_sleep_mode>>)
 |=======================
-
-.Atomic Memory Access
-[NOTE]
-The read-modify-write instructions of the <<_zaamo_isa_extension>> operate as simple load for the CPU hardware.
-Hence, they will only trigger `HPMCNT_EVENT_LOAD` and only once.
 
 
 {empty} +
@@ -770,10 +766,10 @@ counters are read-only. Any write access will raise an illegal instruction excep
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Description
-| 31:3 | `CSR_MCOUNTINHIBIT_HPM31` : `CSR_MCOUNTINHIBIT_HPM3` | r/w | **HPMx**: Set to `1` to halt `[m]hpmcount*[h]`; hardwired to zero if `Zihpm` ISA extension is disabled; only the lowest `HPM_NUM_CNTS` bits are implemented, the remaining bits are read-only zeo
-| 2    | `CSR_MCOUNTINHIBIT_CY`                               | r/w | **CY**: Set to `1` to halt `[m]cycle[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
+| 31:3 | `CSR_MCOUNTINHIBIT_HPM31` : `CSR_MCOUNTINHIBIT_HPM3` | r/w | **HPMx**: Set to `1` to halt `[m]hpmcount*[h]`; hardwired to zero if `Zihpm` ISA extension is disabled; only the lowest `HPM_NUM_CNTS` bits are implemented, the remaining bits are read-only zero
+| 2    | `CSR_MCOUNTINHIBIT_IR`                               | r/w | **IR**: Set to `1` to halt `[m]instret[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
 | 1    | -                                                    | r/- | **TM**: Hardwired to zero as `time[h]` CSRs are not implemented
-| 0    | `CSR_MCOUNTINHIBIT_IR`                               | r/w | **IR**: Set to `1` to halt `[m]instret[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
+| 0    | `CSR_MCOUNTINHIBIT_CY`                               | r/w | **CY**: Set to `1` to halt `[m]cycle[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
 |=======================
 
 
@@ -901,7 +897,7 @@ NEORV32 as BCD-coded number (example: `mimpid = 0x01020312` → 01.02.03.12 → 
 | Address     | `0xf14`
 | Reset value | `DEFINED`
 | ISA         | <<_zicsr_isa_extension,`Zicsr`>>
-| Description | The `mhartid` CSR is read-only and provides the core's hart ID. In a multi-core system, the hard
+| Description | The `mhartid` CSR is read-only and provides the core's hart ID. In a multi-core system, the hart
 ID of each core is unique and starts at 0 and is incremented continuously.
 |=======================
 
