@@ -83,7 +83,7 @@ Depending on the transaction type, data is either read from the TX FIFO and tran
 ----
 
 For a read operation the host first generates START or REPEATED-START condition. Then, the host transmits the 7 bit device
-address (green signals `A6` to `A0`) plus the read-command bit. If the transferred address matches the one programmed to to
+address (green signals `A6` to `A0`) plus the read-command bit. If the transferred address matches the one programmed to
 `TWD_CTRL_DEV_ADDR` control register bits the TWD module will response with an ACK by pulling the SDA bus line actively
 low during the 9th SCL clock pulse. If there is no address match the TWD will not interfere with the bus and will wait for
 the next START or REPEATED-START condition.
@@ -124,7 +124,7 @@ low during the 9th SCL clock pulse. If there is no address match the TWD will no
 the next START or REPEATED-START condition.
 
 For the actual data transmission the host sends the write-data MSB first together with the clock pulses. During the 9th clock
-pulse the TWD will respond with an ACK by pulling SDA low. Note that the TWD will respond with a NACK if the RX FIFO is full.
+pulse the TWD will respond with an ACK by pulling SDA low. Note that the TWD responds with a NACK if the RX FIFO is full.
 The transaction is terminated by a STOP condition.
 
 
@@ -165,7 +165,7 @@ The interrupt can only trigger if the module is actually enabled (`TWD_CTRL_EN` 
 
 **Tristate Driver**
 
-The TWD module requires a single tristate drives (actually: open-drain drivers - signals can only be actively driven low) for
+The TWD module requires a single tristate drivers (actually: open-drain drivers - signals can only be actively driven low) for
 the SDA line, which have to be implemented by the user in the setup's top module / IO ring. The SCL signal is only read by the
 TWD module (input only) and therefore does not require a tristate driver. A generic VHDL example is shown below.
 

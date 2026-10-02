@@ -29,7 +29,7 @@ of the User Guide.
 **Key Features**
 
 * standard 4-wire JTAG access port
-* debugging of up to 4 CPU cores ("harts")
+* debugging of all CPU cores ("harts")
 * full control of the CPU: halting, single-stepping and resuming
 * indirect access to all core registers and the entire processor address space (via program buffer)
 * execution of arbitrary programs via the program buffer
@@ -95,7 +95,7 @@ However, other interfaces can be used (like Segger or Lauterbach tools) if they 
 
 openOCD is configured by a set of configuration scripts which are located in `neorv32/sw/openocd`.
 Two top-level scripts are provided: one for the single-core processor configuration (`neorv32.cfg`)
-and another one for the SMP dual-core configuration (`neorv32.dual-core.cfg`).
+and another one for the SMP dual-core configuration (`neorv32.dual_core.cfg`).
 Both scripts have the same format and include several helper scripts.
 
 .NEORV32 openOCD single-core CFG file (`neorv32.cfg`)
@@ -798,7 +798,7 @@ asynchronous interrupts) that are handled transparently by the control logic.
 * move the current program counter to <<_dpc>>
 * copy the hart's current privilege level to the `prv` flags in <<_dcsr>>
 * set `cause` in <<_dcsr>> according to the cause why debug mode is entered
-* **no update** of `mtval`, `mcause`, `mtval` and `mstatus[h]` CSRs
+* **no update** of `mtval`, `mcause`, `mepc` and `mstatus[h]` CSRs
 * load the address configured via the CPU's (<<_cpu_top_entity_generics, `CPU_DEBUG_PARK_ADDR`>>) generic to the program counter jumping to the
 "debugger park loop" code stored in the debug module (DM)
 
@@ -994,7 +994,7 @@ but before any subsequent instructions were executed; the debugger has to write 
 | 18:16 | `size`        | r/- | `000`: match accesses of any size
 | 15:12 | `action`      | r/- | `0001`: enter debug-mode on trigger match
 | 11    | `chain`       | r/- | `0`: chaining is not supported
-| 10:6  | `match`       | r/- | `0000`: equal-match only
+| 10:7  | `match`       | r/- | `0000`: equal-match only
 | 6     | `m`           | r/- | `1`: trigger enabled when in machine-mode
 | 5     | `uncertainen` | r/- | `0`: feature not supported, hardwired to zero
 | 4     | `s`           | r/- | `0`: S-mode not supported
@@ -1055,7 +1055,7 @@ This CSR is read-only, any write access is ignored.
 |=======================
 | Bit   | Name [RISC-V] | R/W | Description
 | 31:24 | `version`     | r/- | `0x01`: compatible to `Sdtrig` spec. version v1.0
-| 23:15 | reserved      | r/- | `0x00`: hardwired to zero
+| 23:16 | reserved      | r/- | `0x00`: hardwired to zero
 | 15:0  | `info`        | r/- | `0x0040`: only "type 6" (= bit 6 set) trigger is supported; for invalid value of
 <<_tselect>> this bit-field read as `0x0001` ("type 0" = none)
 |=======================

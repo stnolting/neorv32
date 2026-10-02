@@ -286,7 +286,7 @@ depending of the GCC/GDB version
 === Linker Script
 
 The NEORV32-specific linker script (`sw/common/neorv32.ld`) is used to link the compiled sources according to the
-processor's <<_address_space>>). For the final executable, only two memory segments are required:
+processor's <<_address_space>>. For the final executable, only two memory segments are required:
 
 .Linker script - Memory Segments
 [cols="<2,<8"]
@@ -298,7 +298,7 @@ processor's <<_address_space>>). For the final executable, only two memory segme
 |=======================
 
 These two sections are configured by several variables defined in the linker script and exposed to the build
-framework (aka the makefile). Those variable allow to customized the RAM/ROM sizes and base addresses. Additionally,
+framework (aka the makefile). Those variable allow to customize the RAM/ROM sizes and base addresses. Additionally,
 a certain amount of the RAM can be reserved for the software-managed heap (see <<_ram_layout>>).
 
 .Linker script - Configuration
@@ -430,7 +430,7 @@ to <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1, UART1>>.
 .Constructors and Destructors
 [NOTE]
 Constructors and destructors for plain C code or for C++ applications are supported by the software framework.
-See `sw/example/hello_cpp` for a minimal example. Note that constructor and destructors are only executed
+See `sw/example/hello_cpp` for a minimal example. Note that constructors and destructors are only executed
 by core 0 (primary core) in the SMP <<_dual_core_configuration>>.
 
 .Newlib Test/Demo Program
@@ -485,7 +485,7 @@ The `crt0.S` start-up performs the following operations:
 :sectnums:
 === Executable Image Formats
 
-The <<_application_makefile>> generates a flattened binrary from the final ELF file, which is further processed
+The <<_application_makefile>> generates a flattened binary from the final ELF file, which is further processed
 by the NEORV32 executable image generator (`sw/image_gen`). This utility tool can generate various types of standalone
 and portable executable file formats, which are used, for example, for uploading via the <<_bootloader>> or for
 initializing SoC ROM modules.
@@ -517,7 +517,7 @@ Image formats (using little-Endian byte ordering):
 ----
 
 The image generator can be used as a stand-alone program, but it is also integrated into the application makefile.
-This provides corresponding <<_makefile_targets>>) for the different image types:
+This provides corresponding <<_makefile_targets>> for the different image types:
 
 .Image Generation Targets
 [cols="<1,<10"]

@@ -44,7 +44,7 @@ settings:
 Any terminal program that can connect to a serial port should work. However, make sure the program can transfer
 data in _raw_ byte mode without any protocol overhead (e.g. XMODEM). Note that some terminal programs struggle
 with transmitting files larger than 4kB (see https://github.com/stnolting/neorv32/pull/215).
-**For Windows I can recommend TeraTerm (GUI) and SimplySerial (Window terminal). For Linux I can recommend `picocom`.**
+**For Windows I can recommend TeraTerm (GUI) and SimplySerial (Windows terminal). For Linux I can recommend `picocom`.**
 
 By default the bootloader uses the LSB of the GPIO output port (`gpio_o(0)`) for a high-active status LED.
 If the GPIO's direction control feature is implemented, only pin 0 is configured as output; the remaining pins
@@ -137,7 +137,7 @@ contains all the necessary information from the ELF and can be processed by the 
 After the executable has been compiled, the image generator extracts the relevant sections and combines them into
 an image that corresponds to the <<_rom_layout>> of the processor configuration. This image is preceded by a simple
 header containing information for transmission as well as for relocation and booting. The header consists of
-four individual 32-bit words, which, like the actual image, are stored in low-endian byte order.
+four individual 32-bit words, which, like the actual image, are stored in little-endian byte order.
 
 .Bootloader Executable Header
 [source,c]
@@ -311,7 +311,7 @@ overridden by Makefile directives.
 4+<| **TWI flash** - requires <<_two_wire_serial_interface_controller_twi>>
 | `TWI_FLASH_EN`          | `0`             | `0,1`     | Set to `1` to enable the TWI flash (boot) options.
 | `TWI_FLASH_PROG_EN`     | `1`             | `0,1`     | Set to `1` to enable programming the TWI flash from the bootloader menu.
-| `TWI_FLASH_CLK_PRSC`    | `CLK_PRSC_1024` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | TWI clock prescaler.
+| `TWI_FLASH_CLK_PRSC`    | `CLK_PRSC_1024` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2048` `CLK_PRSC_4096` | TWI clock prescaler.
 | `TWI_FLASH_CLK_DIV`     | `0`             | `0..15`   | TWI clock divider value.
 | `TWI_FLASH_ID`          | `0xA0`          | any       | 8-bit TWI device address (with R/W bit cleared).
 | `TWI_FLASH_BASE_ADDR`   | `0x00000000`    | 32-bit    | Defines the TWI flash base address for the executable.
@@ -320,7 +320,7 @@ overridden by Makefile directives.
 | `SPI_FLASH_EN`          | `1`           | `0,1`     | Set to `1` to enable the SPI flash (boot) options.
 | `SPI_FLASH_PROG_EN`     | `1`           | `0,1`     | Set to `1` to enable programming the SPI flash from the bootloader menu.
 | `SPI_FLASH_CS`          | `0`           | `0..7`    | SPI chip select line (port `spi_csn_o`) for selecting the SPI flash.
-| `SPI_FLASH_CLK_PRSC`    | `CLK_PRSC_64` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | SPI clock prescaler.
+| `SPI_FLASH_CLK_PRSC`    | `CLK_PRSC_64` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2048` `CLK_PRSC_4096` | SPI clock prescaler.
 | `SPI_FLASH_CLK_DIV`     | `0`           | `0..15`   | SPI clock divider value.
 | `SPI_FLASH_BASE_ADDR`   | `0x00400000`  | 32-bit    | Defines the SPI flash base address for the executable.
 | `SPI_FLASH_ADDR_BYTES`  | `3`           | `1,2,3,4` | SPI flash address size in number of bytes.
@@ -328,7 +328,7 @@ overridden by Makefile directives.
 4+<| **SPI SD card** - requires <<_serial_peripheral_interface_controller_spi>>
 | `SPI_SDCARD_EN`         | `0`           | `0,1`          | Set to `1` to enable booting from SD card.
 | `SPI_SDCARD_CS`         | `1`           | `0..7`         | SPI chip select line (port `spi_csn_o`) for selecting the SD card.
-| `SPI_SDCARD_CLK_PRSC`   | `CLK_PRSC_64` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | SPI clock prescaler.
+| `SPI_SDCARD_CLK_PRSC`   | `CLK_PRSC_64` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2048` `CLK_PRSC_4096` | SPI clock prescaler.
 | `SPI_SDCARD_CLK_DIV`    | `0`           | `0..15`        | SPI clock divider value.
 | `SPI_SDCARD_FILE`       | `"boot.bin"`  | 8.3 DOS format | File name of the boot image. Has to be located in the root directory.
 4+<| **Branding**

@@ -59,11 +59,11 @@ that can be accessed by the cache must also be able to process bursts (including
 **Cache Bypass**
 
 The cache provides direct/uncached accesses (bypassing the cache) in order to access memory-mapped peripherals.
-The base adress of the uncached address space is configured by the `CACHE_UC_BASE` generic. Note that only the
-4 MSBs of this address are evaluated resulting in a 256MB granulrity. All accesses that target the address range
+The base address of the uncached address space is configured by the `CACHE_UC_BASE` generic. Note that only the
+4 MSBs of this address are evaluated resulting in a 256MB granularity. All accesses that target the address range
 from `CACHE_UC_BASE` to `0xFFFFFFFF` will bypass the cache. See section <<_address_space>> for more information.
 
-All atomic memory accesses also bypass the cache regardless of the adress; however, in this case, the cache
+All atomic memory accesses also bypass the cache regardless of the address; however, in this case, the cache
 explicitly ensures <<_memory_coherence>>: if the address of an atomic memory access is cached, the corresponding
 line is first written back to main memory if it has been modified. The corresponding line is then invalidated,
 and the atomic access is finally executed as a cache-bypassing access.
@@ -92,8 +92,8 @@ whose fetch caused the error.
 
 . **Cache Miss With Eviction**: If the CPU request results in a cache miss that requires the write-back of
 a modified ("dirty") cache block, the modified is copied back to main memory before fetching the actual requested
-memory block. If this write-back causes any buss error, the modified cache block being written back is discarded
-and the bus error is reported to the CPU _immediately_ and _imprecisley_. The address reported in <<_mtval>>
+memory block. If this write-back causes any bus error, the modified cache block being written back is discarded
+and the bus error is reported to the CPU _immediately_ and _impreciseley_. The address reported in <<_mtval>>
 only represents an address inside the requested memory block - not an address within the block that the cache was
 trying to write back.
 
@@ -104,6 +104,6 @@ be fatal when occurring in machine mode. A future version of NEORV32 will includ
 determining the _exact_ address of this type of bus error.
 
 . **Cache Synchronization**: If the cache encounters a bus error while writing modified cache blocks back to main
-memory during a cache synchronization operation (`fence`), the cache block that caused the error is remains valid
+memory during a cache synchronization operation (`fence`), the cache block that caused the error remains valid
 but also "dirty" (not sync with main memory). The next CPU access that results in a **cache miss with eviction**
 of this block will encounter a bus error that is reported to the CPU _immediately_ and _imprecisley_ (see above).

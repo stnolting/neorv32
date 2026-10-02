@@ -42,7 +42,7 @@ data from/to fixed or auto-incrementing addresses.
 [NOTE]
 Transactions performed by the DMA are executed as bus transactions with elevated **machine-mode** privilege level.
 Note that any physical memory protection rules (<<_smpmp_isa_extension>>) are not applied to DMA transfers.
-Furthermore, the DMA uses single-transfers only (.e. no burst transfers).
+Furthermore, the DMA uses single-transfers only (i.e. no burst transfers).
 
 .DMA Demo Program
 [TIP]

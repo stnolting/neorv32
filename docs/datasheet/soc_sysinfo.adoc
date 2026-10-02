@@ -51,7 +51,7 @@ to take into account a dynamic frequency scaling of the processor.
 [cols="^2,<6,<10"]
 [options="header",grid="all"]
 |=======================
-| Byte | Name [C] | Description
+| Bits | Name [C] | Description
 | `7:0`   | `SYSINFO_MISC_IMEM_MBS : SYSINFO_MISC_IMEM_LSB` | _log2_(internal IMEM size in bytes), via top's `IMEM_SIZE` generic
 | `15:8`  | `SYSINFO_MISC_DMEM_MSB : SYSINFO_MISC_DMEM_LSB` | _log2_(internal DMEM size in bytes), via top's `DMEM_SIZE` generic
 | `19:16` | `SYSINFO_MISC_HART_MSB : SYSINFO_MISC_HART_LSB` | number of physical CPU cores ("harts")
