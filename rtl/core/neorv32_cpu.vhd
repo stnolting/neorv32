@@ -26,6 +26,8 @@ entity neorv32_cpu is
     BOOT_ADDR           : std_ulogic_vector(31 downto 0) := x"00000000"; -- CPU boot address
     DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0) := x"00000000"; -- CPU debug mode parking loop entry address
     DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0) := x"00000000"; -- CPU debug mode exception entry address
+    TRACE_PORT_EN       : boolean                        := false;       -- enable CPU trace port
+    TRACE_SIMLOG_EN     : boolean                        := false;       -- enable simulation trace logging
     -- RISC-V ISA Extensions --
     RISCV_ISA_C         : boolean                        := false;       -- compressed extension
     RISCV_ISA_E         : boolean                        := false;       -- embedded RF extension
@@ -60,7 +62,6 @@ entity neorv32_cpu is
     RISCV_ISA_Smpmp     : boolean                        := false;       -- physical memory protection
     RISCV_ISA_Xcfu      : boolean                        := false;       -- custom (instr.) functions unit
     -- Tuning Options --
-    CPU_TRACE_EN        : boolean                        := false;       -- enable CPU execution trace generator
     CPU_CONSTT_BR_EN    : boolean                        := false;       -- constant-time branches
     CPU_FAST_MUL_EN     : boolean                        := false;       -- use DSPs for M extension's multiplier
     CPU_FAST_MUL_REGS   : natural range 1 to 3           := 1;           -- number of fast multiplier register stages (needs CPU_FAST_MUL_EN)
@@ -83,7 +84,7 @@ entity neorv32_cpu is
     rstn_i     : in  std_ulogic;                     -- global reset, low-active, async
     -- status --
     mtime_i    : in  std_ulogic_vector(63 downto 0); -- system time input from CLINT/MTIME
-    trace_o    : out trace_port_t;                   -- execution trace port (enabled when CPU_TRACE_EN = true)
+    trace_o    : out trace_port_t;                   -- execution trace port (enabled when TRACE_PORT_EN = true)
     sleep_o    : out std_ulogic;                     -- CPU is in sleep mode
     -- interrupts --
     msi_i      : in  std_ulogic;                     -- RISC-V machine software interrupt
@@ -105,6 +106,7 @@ end entity;
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- auto-configuration --
+  constant trace_log_c   : string  := "neorv32_trace" & natural'image(HART_ID) & ".log"; -- simulation trace log file
   constant rf_awidth_c   : natural := sel_natural_f(RISCV_ISA_E, 4, 5); -- register file address width
   constant any_amo_c     : boolean := RISCV_ISA_Zaamo or RISCV_ISA_Zalrsc; -- any AMO extension available
   constant riscv_a_c     : boolean := RISCV_ISA_Zaamo and RISCV_ISA_Zalrsc; -- A: atomic memory operations
@@ -141,6 +143,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal lsu_wait    : std_ulogic;                     -- wait for current data bus access
   signal csr_rdata   : std_ulogic_vector(31 downto 0); -- CSR read data
   signal irq_machine : std_ulogic_vector(2 downto 0);  -- RISC-V standard machine-level interrupts
+  signal trace       : trace_port_t;                   -- execution trace port
 
   -- external CSR interface read-back --
   signal xcsr_tm, xcsr_cnt, xcsr_pmp, xcsr_alu, xcsr_res : std_ulogic_vector(31 downto 0);
@@ -197,9 +200,12 @@ begin
       sel_string_f(RISCV_ISA_xcfu,      "_xcfu",      "" )
       severity note;
 
+    -- trace logging --
+    assert not (TRACE_SIMLOG_EN and is_simulation_c) report
+      "[NEORV32] Trace logging enabled" severity note;
+
     -- CPU tuning options --
     assert false report "[NEORV32] CPU tuning options: " &
-      sel_string_f(CPU_TRACE_EN,                 "trace ",              "") &
       sel_string_f(CPU_CONSTT_BR_EN,             "constt_br ",          "") &
       sel_string_f(CPU_FAST_MUL_EN,              "fast_mul ",           "") &
       "fast_mul_regs=" & natural'image(CPU_FAST_MUL_REGS) & " " &
@@ -535,10 +541,10 @@ begin
   end generate;
 
 
-  -- Trace Generator ------------------------------------------------------------------------
+  -- Execution Trace ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   trace_enabled:
-  if CPU_TRACE_EN generate
+  if TRACE_PORT_EN or (TRACE_SIMLOG_EN and is_simulation_c) generate
     cpu_trace_inst: entity neorv32.neorv32_cpu_trace
     port map (
       -- global control --
@@ -553,13 +559,30 @@ begin
       mem_addr_i  => dbus_req.addr, -- memory address
       mem_wdata_i => dbus_req.data, -- memory write data
       -- trace port --
-      trace_o     => trace_o        -- execution trace port
+      trace_o     => trace          -- execution trace port
     );
   end generate;
 
   trace_disabled:
-  if not CPU_TRACE_EN generate
-    trace_o <= trace_port_terminate_c;
+  if not (TRACE_PORT_EN or (TRACE_SIMLOG_EN and is_simulation_c)) generate
+    trace <= trace_port_terminate_c;
   end generate;
+
+  -- simulation-only trace logger --
+  sim_trace_enabled:
+  if TRACE_SIMLOG_EN and is_simulation_c generate
+    trace_simlog_inst: entity neorv32.neorv32_cpu_trace_simlog
+    generic map (
+      LOG_FILE => trace_log_c
+    )
+    port map (
+      clk_i   => clk_i,
+      rstn_i  => rstn_i,
+      trace_i => trace
+    );
+  end generate;
+
+  -- external trace port --
+  trace_o <= trace when TRACE_PORT_EN else trace_port_terminate_c;
 
 end architecture;

@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 01.10.2026 | 1.13.6.2 | rework trace infrastructure; :warning: rename `TRACER` -> `TRACEBUF`; make trace log more verbose | [#1658](https://github.com/stnolting/neorv32/pull/1658) |
 | 20.09.2026 | 1.13.6.1 | do not increment a counter CSR during a write access to that CSR | [#1654](https://github.com/stnolting/neorv32/pull/1654) |
 | 20.09.2026 | [**1.13.6**](https://github.com/stnolting/neorv32/releases/tag/v1.13.6) | :rocket: **New release** | |
 | 19.09.2026 | 1.13.5.9 | bus and AMO improvements | [#1651](https://github.com/stnolting/neorv32/pull/1651) |

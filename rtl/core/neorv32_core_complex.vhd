@@ -22,6 +22,8 @@ entity neorv32_core_complex is
     BOOT_ADDR           : std_ulogic_vector(31 downto 0) := x"00000000"; -- CPU boot address
     DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0) := x"00000000"; -- CPU debug mode parking loop entry address
     DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0) := x"00000000"; -- CPU debug mode exception entry address
+    TRACE_PORT_EN       : boolean                        := false;       -- enable CPU trace port
+    TRACE_SIMLOG_EN     : boolean                        := false;       -- enable simulation trace logging
     -- RISC-V ISA Extensions --
     RISCV_ISA_C         : boolean                        := false;       -- compressed extension
     RISCV_ISA_E         : boolean                        := false;       -- embedded RF extension
@@ -56,7 +58,6 @@ entity neorv32_core_complex is
     RISCV_ISA_Smpmp     : boolean                        := false;       -- physical memory protection
     RISCV_ISA_Xcfu      : boolean                        := false;       -- custom (instr.) functions unit
     -- Tuning Options --
-    CPU_TRACE_EN        : boolean                        := false;       -- enable CPU execution trace generator
     CPU_CONSTT_BR_EN    : boolean                        := false;       -- constant-time branches
     CPU_FAST_MUL_EN     : boolean                        := false;       -- use DSPs for M extension's multiplier
     CPU_FAST_MUL_REGS   : natural range 1 to 3           := 1;           -- number of fast multiplier register stages (needs CPU_FAST_MUL_EN)
@@ -120,6 +121,8 @@ begin
     BOOT_ADDR           => BOOT_ADDR,
     DEBUG_PARK_ADDR     => DEBUG_PARK_ADDR,
     DEBUG_EXC_ADDR      => DEBUG_EXC_ADDR,
+    TRACE_PORT_EN       => TRACE_PORT_EN,
+    TRACE_SIMLOG_EN     => TRACE_SIMLOG_EN,
     RISCV_ISA_C         => RISCV_ISA_C,
     RISCV_ISA_E         => RISCV_ISA_E,
     RISCV_ISA_M         => RISCV_ISA_M,
@@ -152,7 +155,6 @@ begin
     RISCV_ISA_Smcntrpmf => RISCV_ISA_Smcntrpmf,
     RISCV_ISA_Smpmp     => RISCV_ISA_Smpmp,
     RISCV_ISA_Xcfu      => RISCV_ISA_Xcfu,
-    CPU_TRACE_EN        => CPU_TRACE_EN,
     CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
     CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
     CPU_FAST_MUL_REGS   => CPU_FAST_MUL_REGS,
@@ -256,7 +258,7 @@ begin
   generic map (
     ROUND_ROBIN_EN => false, -- use prioritizing arbitration
     A_READ_ONLY    => false,
-    B_READ_ONLY    => true -- instruction fetch is read-only
+    B_READ_ONLY    => true   -- instruction fetch is read-only
   )
   port map (
     clk_i   => clk_i,

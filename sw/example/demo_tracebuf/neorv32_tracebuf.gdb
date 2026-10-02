@@ -1,16 +1,16 @@
 # ***********************************************
 # read out NEORV32 trace buffer and show the according code points
 # ***********************************************
-define tracer_get
+define tracebuf_get
 
-  set $tracer_base = 0xFFF30000
-  set $tracer_ctrl = $tracer_base + 0x0
-  set $tracer_delta_src = $tracer_base + 0x8
-  set $tracer_delta_dst = $tracer_base + 0xc
+  set $tracebuf_base = 0xFFF30000
+  set $tracebuf_ctrl = $tracebuf_base + 0x0
+  set $tracebuf_delta_src = $tracebuf_base + 0x8
+  set $tracebuf_delta_dst = $tracebuf_base + 0xc
   set $i = 0
 
   # trace data available?
-  set $ctrl = *((unsigned int*)($tracer_ctrl))
+  set $ctrl = *((unsigned int*)($tracebuf_ctrl))
   set $ctrl = $ctrl & (1 << 5)
 
   if $ctrl == 0
@@ -20,8 +20,8 @@ define tracer_get
       printf "---------------------------\n"
 
       # get trace data
-      set $delta_src = *((unsigned int*)($tracer_delta_src))
-      set $delta_dst = *((unsigned int*)($tracer_delta_dst))
+      set $delta_src = *((unsigned int*)($tracebuf_delta_src))
+      set $delta_dst = *((unsigned int*)($tracebuf_delta_dst))
       set $src = $delta_src & 0xfffffffe
       set $dst = $delta_dst & 0xfffffffe
 
@@ -45,34 +45,33 @@ define tracer_get
       info line *$dst
 
       # trace data available?
-      set $ctrl = *((unsigned int*)($tracer_ctrl))
+      set $ctrl = *((unsigned int*)($tracebuf_ctrl))
       set $ctrl = $ctrl & (1 << 5)
     end
   end
 end
 
-
 # ***********************************************
-# (re-)start the NEORV32 tracer in free-running
+# (re-)start the NEORV32 trace buffer in free-running
 # argument: CPU select (0 or 1)
 # ***********************************************
-define tracer_start
+define tracebuf_start
 
   set $hart = $arg0 & 1
 
-  printf "Tracer started for CPU %d\n", $hart
+  printf "tracebuf started for CPU %d\n", $hart
 
-  set $tracer_base = 0xFFF30000
-  set $tracer_ctrl = $tracer_base + 0x0
-  set $tracer_stop = $tracer_base + 0x4
+  set $tracebuf_base = 0xFFF30000
+  set $tracebuf_ctrl = $tracebuf_base + 0x0
+  set $tracebuf_stop = $tracebuf_base + 0x4
 
-  # reset tracer
-  set *((unsigned int*)($tracer_ctrl)) = 0
+  # reset tracebuf
+  set *((unsigned int*)($tracebuf_ctrl)) = 0
 
   # not stop address
-  set *((unsigned int*)($tracer_stop)) = -1
+  set *((unsigned int*)($tracebuf_stop)) = -1
 
-  # enable tracer and start
-  set *((unsigned int*)($tracer_ctrl)) = 0b101 + ($hart << 1)
+  # enable tracebuf and start
+  set *((unsigned int*)($tracebuf_ctrl)) = 0b101 + ($hart << 1)
 
 end

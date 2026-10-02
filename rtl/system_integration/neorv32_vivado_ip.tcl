@@ -197,11 +197,9 @@ proc setup_ip_gui {} {
     { OCD_JEDEC_ID        {JEDEC ID}           {JTAG tap identification}               {$OCD_EN}}
   }
 
-  set group [add_group $page {Execution Trace Buffer (TRACER)}]
+  set group [add_group $page {Execution Trace Logging}]
   add_params $group {
-    { IO_TRACER_EN        {Enable tracer}      {Implement execution tracer module} }
-    { IO_TRACER_BUFFER    {Trace buffer depth} {Maximum number of logged execution deltas}    {$IO_TRACER_EN} {$IO_TRACER_EN ? $IO_TRACER_BUFFER : 1} }
-    { IO_TRACER_SIMLOG_EN {Simulation logging} {Generate full trace log; only for simulation} {$IO_TRACER_EN} }
+    { TRACE_SIMLOG_EN {Generate trace log - for simulation only!} {Generate full trace log in simulator home folder} }
   }
 
 
@@ -481,6 +479,12 @@ proc setup_ip_gui {} {
   add_params $group {
     { IO_DMA_EN       {Enable DMA} }
     { IO_DMA_DSC_FIFO {Descriptor FIFO depth} {Number of entries (use a power of two)} {$IO_DMA_EN} }
+  }
+
+  set group [add_group $page {Execution Trace Buffer (TRACEBUF)}]
+  add_params $group {
+    { IO_TRACEBUF_EN    {Enable trace buffer} {Implement execution trace buffer} }
+    { IO_TRACEBUF_DEPTH {Trace buffer depth}  {Maximum number of logged execution deltas} {$IO_TRACEBUF_EN} {$IO_TRACEBUF_EN ? $IO_TRACEBUF_DEPTH : 1} }
   }
 }
 

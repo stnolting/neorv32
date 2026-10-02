@@ -99,13 +99,14 @@ begin
       if (ctrl_i.cpu_exec = '1') then
         trace_buf.mode  <= ctrl_i.cpu_priv & ctrl_i.cpu_priv;
         trace_buf.debug <= ctrl_i.cpu_debug;
-        trace_buf.compr <= ctrl_i.cnt_event(cnt_event_ci_c);
-        if (ctrl_i.cnt_event(cnt_event_ci_c) = '1') then
-          trace_buf.insn <= x"0000" & ctrl_i.ir_rvc;
-        else
-          trace_buf.insn <= ctrl_i.ir_funct12 & ctrl_i.rf_rs1 & ctrl_i.ir_funct3 & ctrl_i.rf_rd & ctrl_i.ir_opcode;
-        end if;
         trace_buf.cmd32 <= ctrl_i.ir_funct12 & ctrl_i.rf_rs1 & ctrl_i.ir_funct3 & ctrl_i.rf_rd & ctrl_i.ir_opcode;
+      end if;
+      if (ctrl_i.cnt_event(cnt_event_ci_c) = '1') then
+        trace_buf.compr <= '1';
+        trace_buf.insn  <= x"0000" & ctrl_i.ir_rvc;
+      else
+        trace_buf.compr <= '0';
+        trace_buf.insn  <= ctrl_i.ir_funct12 & ctrl_i.rf_rs1 & ctrl_i.ir_funct3 & ctrl_i.rf_rd & ctrl_i.ir_opcode;
       end if;
       if (arbiter.delta = '1') then
         trace_buf.delta <= '1';
@@ -119,10 +120,10 @@ begin
       trace_buf.rs1_rdata <= rs1_rdata_i;
       trace_buf.rs2_rdata <= rs2_rdata_i;
       if (ctrl_i.rf_wb_en = '1') and (or_reduce_f(ctrl_i.rf_rd) = '1') then
-        trace_buf.rd_rdata <= rd_wdata_i;
+        trace_buf.rd_wdata <= rd_wdata_i;
         trace_buf.rd_addr  <= ctrl_i.rf_rd;
       elsif (trace_buf.valid = '1') then
-        trace_buf.rd_rdata <= (others => '0');
+        trace_buf.rd_wdata <= (others => '0');
         trace_buf.rd_addr  <= (others => '0');
       end if;
 
@@ -221,11 +222,11 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
   end function;
 
   -- list of all currently supported instructions --
-  type inst_touple_c is record
+  type inst_touple_t is record
     machine  : std_ulogic_vector(31 downto 0); -- instruction word
     mnemonic : string(1 to 11); -- according assembly mnemonic
   end record;
-  type inst_t is array (230 downto 0) of inst_touple_c;
+  type inst_t is array (238 downto 0) of inst_touple_t;
   constant inst_c : inst_t := (
     0   => ("-------------------------0110111", "lui        "), -- base ISA
     1   => ("-------------------------0010111", "auipc      "),
@@ -457,7 +458,15 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
     227 => ("----------------100111---1101101", "c.sext.h   "),
     228 => ("----------------100111---1110101", "c.not      "),
     229 => ("----------------100111---10---01", "c.mul      "),
-    230 => ("--------------------------------", "INVALID    ") -- last entry matches all: invalid
+    230 => ("----------------0110000010000001", "c.mop1     "), -- Zcmop
+    231 => ("----------------0110000110000001", "c.mop3     "),
+    232 => ("----------------0110001010000001", "c.mop5     "),
+    233 => ("----------------0110001110000001", "c.mop7     "),
+    234 => ("----------------0110010010000001", "c.mop9     "),
+    235 => ("----------------0110010110000001", "c.mop11    "),
+    236 => ("----------------0110011010000001", "c.mop13    "),
+    237 => ("----------------0110011110000001", "c.mop15    "),
+    238 => ("--------------------------------", "INVALID    ") -- last entry matches all: invalid
   );
 
   -- decode instruction mnemonic --
@@ -491,8 +500,8 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       when csr_menvcfgh_c       => return "menvcfgh";
       -- machine counter setup --
       when csr_mcountinhibit_c  => return "mcountinhibit";
-      when csr_mcyclecfg_c      => return "csr_mcyclecfg";
-      when csr_minstretcfg_c    => return "csr_minstretcfg";
+      when csr_mcyclecfg_c      => return "mcyclecfg";
+      when csr_minstretcfg_c    => return "minstretcfg";
       when csr_mhpmevent3_c     => return "mhpmevent3";
       when csr_mhpmevent4_c     => return "mhpmevent4";
       when csr_mhpmevent5_c     => return "mhpmevent5";
@@ -760,8 +769,10 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
     end case;
   end function;
 
-  -- time stamp counter --
+  -- logging stuff --
   signal cycle_cnt : std_ulogic_vector(31 downto 0);
+  signal reset : std_ulogic;
+  signal header : std_ulogic;
 
 -- RTL_SYNTHESIS ON
 -- pragma translate_on
@@ -771,8 +782,7 @@ begin
 -- pragma translate_off
 -- RTL_SYNTHESIS OFF
 
-  -- Write Trace to Log File (SIMULATION ONLY) ----------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- write trace to log file (SIMULATION ONLY) --
   sim_trace_gen:
   if is_simulation_c generate
     sim_trace: process(rstn_i, clk_i)
@@ -781,47 +791,87 @@ begin
     begin
       if (rstn_i = '0') then
         cycle_cnt <= (others => '0');
+        reset     <= '1';
+        header    <= '0';
       elsif rising_edge(clk_i) then
+        if (header = '0') then
+          header <= '1';
+          write(line_v, string'("-----------------------------------------------------------------------------------------------------------------------------------------------------------------"));
+          writeline(file_v, line_v);
+          write(line_v, string'("Index        Time         Address     Instr       P  Mnemonic    Operands                Registers                                        Memory       Events"));
+          writeline(file_v, line_v);
+          write(line_v, string'("-----------------------------------------------------------------------------------------------------------------------------------------------------------------"));
+          writeline(file_v, line_v);
+        end if;
         cycle_cnt <= std_ulogic_vector(unsigned(cycle_cnt) + 1);
         if (trace_i.valid = '1') then
-          -- [1] index --
-          write(line_v, integer'(to_integer(unsigned(trace_i.order(31 downto 0)))));
-          write(line_v, string'(" "));
-          -- [2] timestamp --
-          write(line_v, integer'(to_integer(unsigned(cycle_cnt))));
-          write(line_v, string'(" "));
-          -- [3] instruction address --
+          -- index --
+          write(line_v, integer'(to_integer(unsigned(trace_i.order(31 downto 0)))), left, 13);
+          -- timestamp --
+          write(line_v, integer'(to_integer(unsigned(cycle_cnt))), left, 13);
+          -- instruction address --
           write(line_v, string'("0x"));
           write(line_v, string'(to_hexstring_f(trace_i.pc_rdata)));
-          write(line_v, string'(" "));
-          -- [4] instruction word --
+          write(line_v, string'("  "));
+          -- instruction word --
           write(line_v, string'("0x"));
           if (trace_i.compr = '1') then -- compressed instruction
-            write(line_v, string'(to_hexstring_f(trace_i.insn(15 downto 0))));
-            write(line_v, string'("     "));
+            write(line_v, string'(to_hexstring_f(trace_i.insn(15 downto 0))), left, 10);
           else
-            write(line_v, string'(to_hexstring_f(trace_i.insn)));
-            write(line_v, string'(" "));
+            write(line_v, string'(to_hexstring_f(trace_i.insn)), left, 10);
           end if;
-          -- [5] privilege level --
+          -- privilege level --
           if (trace_i.debug = '1') then
-            write(line_v, string'("D "));
+            write(line_v, string'("D"), left, 3);
           elsif (trace_i.mode = "11") then
-            write(line_v, string'("M "));
+            write(line_v, string'("M"), left, 3);
           elsif (trace_i.mode = "00") then
-            write(line_v, string'("U "));
+            write(line_v, string'("U"), left, 3);
           else
-            write(line_v, string'("? "));
+            write(line_v, string'("?"), left, 3);
           end if;
-          -- [6] decoded instruction --
-          write(line_v, string'(decode_mnemonic_f(trace_i.insn)));
-          write(line_v, string'(" "));
-          write(line_v, string'(decode_operands_f(trace_i.cmd32)));
-          -- [7] annotations --
-          if (trace_i.intr = '1') then -- exception/interrupt
-            write(line_v, string'(" <TRAP_ENTRY>"));
+          -- decoded instruction (mnemonic + operands) --
+          write(line_v, string'(decode_mnemonic_f(trace_i.insn)), left, 12);
+          write(line_v, string'(decode_operands_f(trace_i.cmd32)), left, 24);
+          -- registers --
+          if (trace_i.rd_addr = "00000") then
+            write(line_v, string'(" "), left, 17);
+          else
+            write(line_v, string'("x"));
+            write(line_v, integer'(to_integer(unsigned(trace_i.rd_addr))), left, 2);
+            write(line_v, string'("<=0x"));
+            write(line_v, string'(to_hexstring_f(trace_i.rd_wdata)));
+            write(line_v, string'(", "));
           end if;
-          -- flush line --
+          write(line_v, string'("x"));
+          write(line_v, integer'(to_integer(unsigned(trace_i.rs1_addr))), left, 2);
+          write(line_v, string'("=0x"));
+          write(line_v, string'(to_hexstring_f(trace_i.rs1_rdata)));
+          write(line_v, string'(", x"));
+          write(line_v, integer'(to_integer(unsigned(trace_i.rs2_addr))), left, 2);
+          write(line_v, string'("=0x"));
+          write(line_v, string'(to_hexstring_f(trace_i.rs2_rdata)));
+          write(line_v, string'("  "));
+          -- memory access address --
+          if (trace_i.mem_rmask /= "0000") or (trace_i.mem_wmask /= "0000") then
+            write(line_v, string'("@0x"));
+            write(line_v, string'(to_hexstring_f(trace_i.mem_addr)));
+            write(line_v, string'(" "));
+          else
+            write(line_v, string'(" "), left, 12);
+          end if;
+          -- events --
+          if (reset = '1') then -- hardware reset
+            write(line_v, string'(" RESET"));
+            reset <= '0';
+          end if;
+          if (trace_i.halt = '1') then -- entering sleep mode
+            write(line_v, string'(" SLEEP"));
+          end if;
+          if (trace_i.intr = '1') then -- first instruction of trap handler
+            write(line_v, string'(" TRAP_ENTRY"));
+          end if;
+          -- flush line to file --
           writeline(file_v, line_v);
         end if;
       end if;

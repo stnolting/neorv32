@@ -37,7 +37,7 @@ $NEORV32_HOME/rtl/core/neorv32_neoled.vhd
 $NEORV32_HOME/rtl/core/neorv32_gptmr.vhd
 $NEORV32_HOME/rtl/core/neorv32_onewire.vhd
 $NEORV32_HOME/rtl/core/neorv32_slink.vhd
-$NEORV32_HOME/rtl/core/neorv32_tracer.vhd
+$NEORV32_HOME/rtl/core/neorv32_tracebuf.vhd
 $NEORV32_HOME/rtl/core/neorv32_sysinfo.vhd
 $NEORV32_HOME/rtl/core/neorv32_debug_dtm.vhd
 $NEORV32_HOME/rtl/core/neorv32_debug_auth.vhd

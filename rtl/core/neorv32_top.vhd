@@ -22,8 +22,9 @@ entity neorv32_top is
   generic (
     -- General --
     CLOCK_FREQUENCY     : natural                        := 0;             -- clock frequency of clk_i in Hz
-    TRACE_PORT_EN       : boolean                        := false;         -- enable CPU execution trace port
     DUAL_CORE_EN        : boolean                        := false;         -- enable dual-core homogeneous SMP
+    TRACE_PORT_EN       : boolean                        := false;         -- enable CPU execution trace port
+    TRACE_SIMLOG_EN     : boolean                        := false;         -- enable simulation trace logging
 
     -- Boot Configuration --
     BOOT_MODE_SELECT    : natural range 0 to 2           := 0;             -- boot configuration select (default = 0 = bootloader)
@@ -177,10 +178,9 @@ entity neorv32_top is
     IO_SLINK_RX_FIFO    : natural range 1 to 32768       := 1;             -- RX FIFO depth, has to be a power of two
     IO_SLINK_TX_FIFO    : natural range 1 to 32768       := 1;             -- TX FIFO depth, has to be a power of two
 
-    -- Instruction Tracer (TRACER) --
-    IO_TRACER_EN        : boolean                        := false;         -- implement instruction tracer
-    IO_TRACER_BUFFER    : natural range 1 to 32768       := 1;             -- trace buffer depth, has to be a power of two
-    IO_TRACER_SIMLOG_EN : boolean                        := false          -- write full trace log to file (simulation-only)
+    -- Execution Trace Buffer (TRACEBUF) --
+    IO_TRACEBUF_EN      : boolean                        := false;         -- implement instruction trace buffer
+    IO_TRACEBUF_DEPTH   : natural range 1 to 32768       := 1              -- trace buffer depth, has to be a power of two
   );
   port (
     -- Global control --
@@ -319,7 +319,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant cpu_smpmp_en_c  : boolean := boolean(PMP_NUM_REGIONS > 0);
   constant ocd_auth_en_c   : boolean := OCD_EN and OCD_AUTHENTICATION;
   constant cpu_sdtrig_en_c : boolean := OCD_EN and boolean(OCD_NUM_HW_TRIGGERS > 0);
-  constant trace_en_c      : boolean := TRACE_PORT_EN or IO_TRACER_EN;
+  constant trace_port_en_c : boolean := TRACE_PORT_EN or IO_TRACEBUF_EN;
   constant vendorid_c      : std_ulogic_vector(31 downto 0) := x"00000" & '0' & OCD_JEDEC_ID;
   constant bursts_en_c     : boolean := CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN) and boolean(CACHE_BLOCK_SIZE >= 8);
   constant cc_reg_en_c     : boolean := DUAL_CORE_EN and ICACHE_EN and DCACHE_EN;
@@ -363,7 +363,7 @@ architecture neorv32_top_rtl of neorv32_top is
   type io_devices_enum_t is (
     IODEV_BOOTROM, IODEV_OCD, IODEV_SYSINFO, IODEV_NEOLED, IODEV_GPIO, IODEV_WDT, IODEV_TRNG,
     IODEV_TWI, IODEV_SPI, IODEV_SDI, IODEV_UART1, IODEV_UART0, IODEV_CLINT, IODEV_ONEWIRE,
-    IODEV_GPTMR, IODEV_PWM, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_TWD, IODEV_TRACER, IODEV_SMC
+    IODEV_GPTMR, IODEV_PWM, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_TWD, IODEV_TRACEBUF, IODEV_SMC
   );
   type iodev_req_t is array (io_devices_enum_t) of bus_req_t;
   type iodev_rsp_t is array (io_devices_enum_t) of bus_rsp_t;
@@ -373,7 +373,7 @@ architecture neorv32_top_rtl of neorv32_top is
   -- interrupts --
   type firq_enum_t is (
     FIRQ_TWD, FIRQ_UART0, FIRQ_UART1, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI, FIRQ_CFS, FIRQ_NEOLED,
-    FIRQ_GPIO, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_SLINK, FIRQ_TRNG, FIRQ_TRACER
+    FIRQ_GPIO, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_SLINK, FIRQ_TRNG, FIRQ_TRACEBUF
   );
   type firq_t is array (firq_enum_t) of std_ulogic;
   signal firq     : firq_t;
@@ -432,7 +432,7 @@ begin
       sel_string_f(IO_DMA_EN,       "DMA ",      "") &
       sel_string_f(IO_SLINK_EN,     "SLINK ",    "") &
       sel_string_f(true,            "SYSINFO ",  "") & -- always enabled
-      sel_string_f(IO_TRACER_EN,    "TRACER ",   "") &
+      sel_string_f(IO_TRACEBUF_EN,  "TRACEBUF ", "") &
       sel_string_f(OCD_EN,          "OCD ",      "") &
       sel_string_f(ocd_auth_en_c,   "OCD-AUTH ", "") &
       sel_string_f(cpu_sdtrig_en_c, "OCD-HWBP ", "") &
@@ -525,7 +525,7 @@ begin
   cpu_firq(2)  <= firq(FIRQ_UART0);
   cpu_firq(3)  <= firq(FIRQ_UART1);
   cpu_firq(4)  <= firq(FIRQ_TWD);
-  cpu_firq(5)  <= firq(FIRQ_TRACER);
+  cpu_firq(5)  <= firq(FIRQ_TRACEBUF);
   cpu_firq(6)  <= firq(FIRQ_SPI);
   cpu_firq(7)  <= firq(FIRQ_TWI);
   cpu_firq(8)  <= firq(FIRQ_GPIO);
@@ -548,6 +548,8 @@ begin
       BOOT_ADDR           => cpu_boot_addr_c,
       DEBUG_PARK_ADDR     => dm_park_entry_c,
       DEBUG_EXC_ADDR      => dm_exc_entry_c,
+      TRACE_PORT_EN       => trace_port_en_c,
+      TRACE_SIMLOG_EN     => TRACE_SIMLOG_EN,
       RISCV_ISA_C         => RISCV_ISA_C,
       RISCV_ISA_E         => RISCV_ISA_E,
       RISCV_ISA_M         => RISCV_ISA_M,
@@ -580,7 +582,6 @@ begin
       RISCV_ISA_Smcntrpmf => RISCV_ISA_Smcntrpmf,
       RISCV_ISA_Smpmp     => cpu_smpmp_en_c,
       RISCV_ISA_Xcfu      => RISCV_ISA_Xcfu,
-      CPU_TRACE_EN        => trace_en_c,
       CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
       CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
       CPU_FAST_MUL_REGS   => CPU_FAST_MUL_REGS,
@@ -979,7 +980,7 @@ begin
       DEV_16_EN => io_pwm_en_c,       DEV_16_BASE => base_io_pwm_c,
       DEV_17_EN => io_gptmr_en_c,     DEV_17_BASE => base_io_gptmr_c,
       DEV_18_EN => IO_ONEWIRE_EN,     DEV_18_BASE => base_io_onewire_c,
-      DEV_19_EN => IO_TRACER_EN,      DEV_19_BASE => base_io_tracer_c,
+      DEV_19_EN => IO_TRACEBUF_EN,    DEV_19_BASE => base_io_tracebuf_c,
       DEV_20_EN => IO_CLINT_EN,       DEV_20_BASE => base_io_clint_c,
       DEV_21_EN => IO_UART0_EN,       DEV_21_BASE => base_io_uart0_c,
       DEV_22_EN => IO_UART1_EN,       DEV_22_BASE => base_io_uart1_c,
@@ -998,38 +999,38 @@ begin
       rstn_i       => rstn_sys,
       main_req_i   => io_req,
       main_rsp_o   => io_rsp,
-      dev_00_req_o => iodev_req(IODEV_BOOTROM), dev_00_rsp_i => iodev_rsp(IODEV_BOOTROM),
-      dev_01_req_o => open,                     dev_01_rsp_i => rsp_terminate_c, -- reserved
-      dev_02_req_o => open,                     dev_02_rsp_i => rsp_terminate_c, -- reserved
-      dev_03_req_o => open,                     dev_03_rsp_i => rsp_terminate_c, -- reserved
-      dev_04_req_o => open,                     dev_04_rsp_i => rsp_terminate_c, -- reserved
-      dev_05_req_o => open,                     dev_05_rsp_i => rsp_terminate_c, -- reserved
-      dev_06_req_o => open,                     dev_06_rsp_i => rsp_terminate_c, -- reserved
-      dev_07_req_o => open,                     dev_07_rsp_i => rsp_terminate_c, -- reserved
-      dev_08_req_o => open,                     dev_08_rsp_i => rsp_terminate_c, -- reserved
-      dev_09_req_o => open,                     dev_09_rsp_i => rsp_terminate_c, -- reserved
-      dev_10_req_o => iodev_req(IODEV_TWD),     dev_10_rsp_i => iodev_rsp(IODEV_TWD),
-      dev_11_req_o => iodev_req(IODEV_CFS),     dev_11_rsp_i => iodev_rsp(IODEV_CFS),
-      dev_12_req_o => iodev_req(IODEV_SLINK),   dev_12_rsp_i => iodev_rsp(IODEV_SLINK),
-      dev_13_req_o => iodev_req(IODEV_DMA),     dev_13_rsp_i => iodev_rsp(IODEV_DMA),
-      dev_14_req_o => open,                     dev_14_rsp_i => rsp_terminate_c, -- reserved
-      dev_15_req_o => iodev_req(IODEV_SMC),     dev_15_rsp_i => iodev_rsp(IODEV_SMC),
-      dev_16_req_o => iodev_req(IODEV_PWM),     dev_16_rsp_i => iodev_rsp(IODEV_PWM),
-      dev_17_req_o => iodev_req(IODEV_GPTMR),   dev_17_rsp_i => iodev_rsp(IODEV_GPTMR),
-      dev_18_req_o => iodev_req(IODEV_ONEWIRE), dev_18_rsp_i => iodev_rsp(IODEV_ONEWIRE),
-      dev_19_req_o => iodev_req(IODEV_TRACER),  dev_19_rsp_i => iodev_rsp(IODEV_TRACER),
-      dev_20_req_o => iodev_req(IODEV_CLINT),   dev_20_rsp_i => iodev_rsp(IODEV_CLINT),
-      dev_21_req_o => iodev_req(IODEV_UART0),   dev_21_rsp_i => iodev_rsp(IODEV_UART0),
-      dev_22_req_o => iodev_req(IODEV_UART1),   dev_22_rsp_i => iodev_rsp(IODEV_UART1),
-      dev_23_req_o => iodev_req(IODEV_SDI),     dev_23_rsp_i => iodev_rsp(IODEV_SDI),
-      dev_24_req_o => iodev_req(IODEV_SPI),     dev_24_rsp_i => iodev_rsp(IODEV_SPI),
-      dev_25_req_o => iodev_req(IODEV_TWI),     dev_25_rsp_i => iodev_rsp(IODEV_TWI),
-      dev_26_req_o => iodev_req(IODEV_TRNG),    dev_26_rsp_i => iodev_rsp(IODEV_TRNG),
-      dev_27_req_o => iodev_req(IODEV_WDT),     dev_27_rsp_i => iodev_rsp(IODEV_WDT),
-      dev_28_req_o => iodev_req(IODEV_GPIO),    dev_28_rsp_i => iodev_rsp(IODEV_GPIO),
-      dev_29_req_o => iodev_req(IODEV_NEOLED),  dev_29_rsp_i => iodev_rsp(IODEV_NEOLED),
-      dev_30_req_o => iodev_req(IODEV_SYSINFO), dev_30_rsp_i => iodev_rsp(IODEV_SYSINFO),
-      dev_31_req_o => iodev_req(IODEV_OCD),     dev_31_rsp_i => iodev_rsp(IODEV_OCD)
+      dev_00_req_o => iodev_req(IODEV_BOOTROM),  dev_00_rsp_i => iodev_rsp(IODEV_BOOTROM),
+      dev_01_req_o => open,                      dev_01_rsp_i => rsp_terminate_c, -- reserved
+      dev_02_req_o => open,                      dev_02_rsp_i => rsp_terminate_c, -- reserved
+      dev_03_req_o => open,                      dev_03_rsp_i => rsp_terminate_c, -- reserved
+      dev_04_req_o => open,                      dev_04_rsp_i => rsp_terminate_c, -- reserved
+      dev_05_req_o => open,                      dev_05_rsp_i => rsp_terminate_c, -- reserved
+      dev_06_req_o => open,                      dev_06_rsp_i => rsp_terminate_c, -- reserved
+      dev_07_req_o => open,                      dev_07_rsp_i => rsp_terminate_c, -- reserved
+      dev_08_req_o => open,                      dev_08_rsp_i => rsp_terminate_c, -- reserved
+      dev_09_req_o => open,                      dev_09_rsp_i => rsp_terminate_c, -- reserved
+      dev_10_req_o => iodev_req(IODEV_TWD),      dev_10_rsp_i => iodev_rsp(IODEV_TWD),
+      dev_11_req_o => iodev_req(IODEV_CFS),      dev_11_rsp_i => iodev_rsp(IODEV_CFS),
+      dev_12_req_o => iodev_req(IODEV_SLINK),    dev_12_rsp_i => iodev_rsp(IODEV_SLINK),
+      dev_13_req_o => iodev_req(IODEV_DMA),      dev_13_rsp_i => iodev_rsp(IODEV_DMA),
+      dev_14_req_o => open,                      dev_14_rsp_i => rsp_terminate_c, -- reserved
+      dev_15_req_o => iodev_req(IODEV_SMC),      dev_15_rsp_i => iodev_rsp(IODEV_SMC),
+      dev_16_req_o => iodev_req(IODEV_PWM),      dev_16_rsp_i => iodev_rsp(IODEV_PWM),
+      dev_17_req_o => iodev_req(IODEV_GPTMR),    dev_17_rsp_i => iodev_rsp(IODEV_GPTMR),
+      dev_18_req_o => iodev_req(IODEV_ONEWIRE),  dev_18_rsp_i => iodev_rsp(IODEV_ONEWIRE),
+      dev_19_req_o => iodev_req(IODEV_TRACEBUF), dev_19_rsp_i => iodev_rsp(IODEV_TRACEBUF),
+      dev_20_req_o => iodev_req(IODEV_CLINT),    dev_20_rsp_i => iodev_rsp(IODEV_CLINT),
+      dev_21_req_o => iodev_req(IODEV_UART0),    dev_21_rsp_i => iodev_rsp(IODEV_UART0),
+      dev_22_req_o => iodev_req(IODEV_UART1),    dev_22_rsp_i => iodev_rsp(IODEV_UART1),
+      dev_23_req_o => iodev_req(IODEV_SDI),      dev_23_rsp_i => iodev_rsp(IODEV_SDI),
+      dev_24_req_o => iodev_req(IODEV_SPI),      dev_24_rsp_i => iodev_rsp(IODEV_SPI),
+      dev_25_req_o => iodev_req(IODEV_TWI),      dev_25_rsp_i => iodev_rsp(IODEV_TWI),
+      dev_26_req_o => iodev_req(IODEV_TRNG),     dev_26_rsp_i => iodev_rsp(IODEV_TRNG),
+      dev_27_req_o => iodev_req(IODEV_WDT),      dev_27_rsp_i => iodev_rsp(IODEV_WDT),
+      dev_28_req_o => iodev_req(IODEV_GPIO),     dev_28_rsp_i => iodev_rsp(IODEV_GPIO),
+      dev_29_req_o => iodev_req(IODEV_NEOLED),   dev_29_rsp_i => iodev_rsp(IODEV_NEOLED),
+      dev_30_req_o => iodev_req(IODEV_SYSINFO),  dev_30_rsp_i => iodev_rsp(IODEV_SYSINFO),
+      dev_31_req_o => iodev_req(IODEV_OCD),      dev_31_rsp_i => iodev_rsp(IODEV_OCD)
     );
 
     -- Processor-Internal Bootloader ROM (BOOTROM) --------------------------------------------
@@ -1524,33 +1525,30 @@ begin
       slink_tx_lst_o         <= '0';
     end generate;
 
-    -- Execution Tracer (TRACER) --------------------------------------------------------------
+    -- Execution Trace Buffer (TRACEBUF) ------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    tracer_enabled:
-    if IO_TRACER_EN generate
-      tracer_inst: entity neorv32.neorv32_tracer
+    tracebuf_enabled:
+    if IO_TRACEBUF_EN generate
+      tracebuf_inst: entity neorv32.neorv32_tracebuf
       generic map (
-        TRACE_DEPTH   => IO_TRACER_BUFFER,
-        DUAL_CORE_EN  => DUAL_CORE_EN,
-        SIM_LOG_EN    => IO_TRACER_SIMLOG_EN,
-        SIM_LOG_FILE0 => "neorv32.tracer0.log",
-        SIM_LOG_FILE1 => "neorv32.tracer1.log"
+        DUAL_CORE_EN => DUAL_CORE_EN,
+        TRACE_DEPTH  => IO_TRACEBUF_DEPTH
       )
       port map (
         clk_i     => clk_i,
         rstn_i    => rstn_sys,
         trace0_i  => cpu_trace(cpu_trace'low),
         trace1_i  => cpu_trace(cpu_trace'high),
-        bus_req_i => iodev_req(IODEV_TRACER),
-        bus_rsp_o => iodev_rsp(IODEV_TRACER),
-        irq_o     => firq(FIRQ_TRACER)
+        bus_req_i => iodev_req(IODEV_TRACEBUF),
+        bus_rsp_o => iodev_rsp(IODEV_TRACEBUF),
+        irq_o     => firq(FIRQ_TRACEBUF)
       );
     end generate;
 
-    tracer_disabled:
-    if not IO_TRACER_EN generate
-      iodev_rsp(IODEV_TRACER) <= rsp_terminate_c;
-      firq(FIRQ_TRACER)       <= '0';
+    tracebuf_disabled:
+    if not IO_TRACEBUF_EN generate
+      iodev_rsp(IODEV_TRACEBUF) <= rsp_terminate_c;
+      firq(FIRQ_TRACEBUF)       <= '0';
     end generate;
 
     -- System Configuration Information Memory (SYSINFO) --------------------------------------
@@ -1596,7 +1594,7 @@ begin
       IO_ONEWIRE_EN     => IO_ONEWIRE_EN,
       IO_DMA_EN         => IO_DMA_EN,
       IO_SLINK_EN       => IO_SLINK_EN,
-      IO_TRACER_EN      => IO_TRACER_EN
+      IO_TRACEBUF_EN    => IO_TRACEBUF_EN
     )
     port map (
       clk_i     => clk_i,

@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 SoC - Execution Tracer                                                   --
+-- NEORV32 SoC - Execution Trace Buffer                                             --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -15,13 +15,10 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_tracer is
+entity neorv32_tracebuf is
   generic (
-    TRACE_DEPTH   : natural range 1 to 32768; -- trace buffer depth (has to be a power of two)
-    DUAL_CORE_EN  : boolean;                  -- trace the dual-core configuration
-    SIM_LOG_EN    : boolean;                  -- enable simulation trace logging
-    SIM_LOG_FILE0 : string := "";             -- trace log file CPU 0
-    SIM_LOG_FILE1 : string := ""              -- trace log file CPU 1
+    DUAL_CORE_EN : boolean;                 -- trace the dual-core configuration
+    TRACE_DEPTH  : natural range 1 to 32768 -- trace buffer depth (has to be a power of two)
   );
   port (
     clk_i     : in  std_ulogic;   -- global clock line
@@ -34,7 +31,7 @@ entity neorv32_tracer is
   );
 end entity;
 
-architecture neorv32_tracer_rtl of neorv32_tracer is
+architecture neorv32_tracebuf_rtl of neorv32_tracebuf is
 
   -- control register bits --
   constant ctrl_enable_c  : natural :=  0; -- r/w: module enable; reset module if 0
@@ -88,12 +85,9 @@ begin
 
   -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_handshake: process(rstn_i, clk_i)
+  bus_handshake: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      bus_ack  <= '0';
-      bus_rden <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       bus_ack  <= bus_req_i.stb;
       bus_rden <= bus_req_i.stb and (not bus_req_i.rw);
     end if;
@@ -260,39 +254,5 @@ begin
       discard <= ctrl_en and arbiter.run and (not fifo.free);
     end if;
   end process;
-
-
-  -- Simulation Trace Logging ---------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-
-  -- CPU 0 --
-  sim_trace0_enabled:
-  if is_simulation_c and SIM_LOG_EN generate
-    assert false report "[NEORV32] CPU 0 trace logging enabled -> " & SIM_LOG_FILE0 severity note;
-    neorv32_cpu_trace_simlog0_inst: entity neorv32.neorv32_cpu_trace_simlog
-    generic map (
-      LOG_FILE => SIM_LOG_FILE0
-    )
-    port map (
-      clk_i   => clk_i,
-      rstn_i  => rstn_i,
-      trace_i => trace0_i
-    );
-  end generate;
-
-  -- CPU 1 --
-  sim_trace1_enabled:
-  if is_simulation_c and SIM_LOG_EN and DUAL_CORE_EN generate
-    assert false report "[NEORV32] CPU 1 trace logging enabled -> " & SIM_LOG_FILE1 severity note;
-    neorv32_cpu_trace_simlog1_inst: entity neorv32.neorv32_cpu_trace_simlog
-    generic map (
-      LOG_FILE => SIM_LOG_FILE1
-    )
-    port map (
-      clk_i   => clk_i,
-      rstn_i  => rstn_i,
-      trace_i => trace1_i
-    );
-  end generate;
 
 end architecture;
