@@ -25,7 +25,7 @@
 
 The general purpose timer module provides up to 16 individual timers organized as slices (the number of
 implemented slices is configured by `IO_GPTMR_NUM`. Each slice can operate as single-shot timer or as
-continuous/interval timer and provides a 32-bit counter (`SLICE[i].CNT`) and a 32-bit threshold registers
+continuous/interval timer and provides a 32-bit counter (`SLICE[i].CNT`) and a 32-bit threshold register
 (`SLICE[i].THR`). Operation is controlled by two 32-bit control and status registers (`CSR0` and `CSR1`).
 An interrupt is triggered when a slice counter matches the according threshold value.
 
@@ -38,7 +38,7 @@ mode (e.g. `CSR0.ENABLE`) to update configuration sub-words with a single memory
 **Theory of Operation**
 
 A slice _i_ is enabled when the according bit of `CSR0.ENABLE` is set. Only the lowest `IO_GPTMR_NUM`
-bits are available. When enabled, the slice`s counter register `SLICE[i].CNT` starts incrementing at
+bits are available. When enabled, the slice's counter register `SLICE[i].CNT` starts incrementing at
 a prescaled clock frequency. This prescaler is globally configured (= for all slices) by the
 `CSR1.PRSC` register:
 
@@ -54,7 +54,7 @@ When `SLICE[i].CNT` matches the threshold value in `SLICE[i].THR` the according 
 `CSR1.IRQ` becomes set. Disabled slices (`CSR0.ENABLE(i) = 0`) cannot generate any new interrupt requests.
 However, pending interrupt in `CSR1.IRQ` will remain pending even if the according slice is disabled via.
 Software can clear pending interrupts by writing zero to the according `CSR1.IRQ` bits. A CPU interrupt
-request is generates if any slice interrupt _i_ is pending and slice _i_ is enabled (`CSR0.ENABLE(i) = 1`
+request is generated if any slice interrupt _i_ is pending and slice _i_ is enabled (`CSR0.ENABLE(i) = 1`
 and `CSR1.IRQ(i) = 1`).
 
 The time until a slice interrupt is triggered (_T[i]_) depends on the processor clock (_f~main~_) global
