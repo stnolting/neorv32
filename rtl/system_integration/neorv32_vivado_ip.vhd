@@ -28,6 +28,7 @@ entity neorv32_vivado_ip is
     -- General --
     CLOCK_FREQUENCY       : natural                        := 100_000_000;
     DUAL_CORE_EN          : boolean                        := false;
+    TRACE_SIMLOG_EN       : boolean                        := false;
     -- Boot Configuration --
     BOOT_MODE_SELECT      : natural range 0 to 2           := 0;
     BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := x"00000000";
@@ -158,10 +159,9 @@ entity neorv32_vivado_ip is
     IO_SLINK_EN           : boolean                        := false;
     IO_SLINK_RX_FIFO      : natural range 1 to 32768       := 1;
     IO_SLINK_TX_FIFO      : natural range 1 to 32768       := 1;
-    -- Instruction Tracer (TRACER) --
-    IO_TRACER_EN          : boolean                        := false;
-    IO_TRACER_BUFFER      : natural range 1 to 32768       := 1;
-    IO_TRACER_SIMLOG_EN   : boolean                        := false
+    -- Execution Trace Buffer (TRACEBUF) --
+    IO_TRACEBUF_EN        : boolean                        := false;
+    IO_TRACEBUF_DEPTH     : natural range 1 to 32768       := 1
   );
   port (
     -- ------------------------------------------------------------
@@ -342,6 +342,8 @@ begin
     -- General --
     CLOCK_FREQUENCY     => CLOCK_FREQUENCY,
     DUAL_CORE_EN        => DUAL_CORE_EN,
+    TRACE_PORT_EN       => false,
+    TRACE_SIMLOG_EN     => TRACE_SIMLOG_EN,
     -- Boot Configuration --
     BOOT_MODE_SELECT    => BOOT_MODE_SELECT,
     BOOT_ADDR_CUSTOM    => BOOT_ADDR_CUSTOM,
@@ -467,10 +469,9 @@ begin
     IO_SLINK_EN         => IO_SLINK_EN,
     IO_SLINK_RX_FIFO    => IO_SLINK_RX_FIFO,
     IO_SLINK_TX_FIFO    => IO_SLINK_TX_FIFO,
-    -- Instruction Tracer --
-    IO_TRACER_EN        => IO_TRACER_EN,
-    IO_TRACER_BUFFER    => IO_TRACER_BUFFER,
-    IO_TRACER_SIMLOG_EN => IO_TRACER_SIMLOG_EN
+    -- Execution Trace Buffer --
+    IO_TRACEBUF_EN      => IO_TRACEBUF_EN,
+    IO_TRACEBUF_DEPTH   => IO_TRACEBUF_DEPTH
   )
   port map (
     -- Global control --
