@@ -324,7 +324,7 @@ overridden by Makefile directives.
 | `SPI_FLASH_CLK_DIV`     | `0`           | `0..15`   | SPI clock divider value.
 | `SPI_FLASH_BASE_ADDR`   | `0x00400000`  | 32-bit    | Defines the SPI flash base address for the executable.
 | `SPI_FLASH_ADDR_BYTES`  | `3`           | `1,2,3,4` | SPI flash address size in number of bytes.
-| `SPI_FLASH_SECTOR_SIZE` | `16*1024`     | any       | Number of SPI flash address bytes.
+| `SPI_FLASH_SECTOR_SIZE` | `16*1024`     | any       | Size of a flash sector in bytes.
 4+<| **SPI SD card** - requires <<_serial_peripheral_interface_controller_spi>>
 | `SPI_SDCARD_EN`         | `0`           | `0,1`          | Set to `1` to enable booting from SD card.
 | `SPI_SDCARD_CS`         | `1`           | `0..7`         | SPI chip select line (port `spi_csn_o`) for selecting the SD card.

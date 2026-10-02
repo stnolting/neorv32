@@ -59,9 +59,9 @@ transfer and will also reset/clear the descriptor FIFO. A programmed DMA transfe
 register's `DMA_CTRL_START` bit. Setting this bit while the descriptor FIFO is empty has no effect. The current status
 of the FIFO can be checked via the `DMA_CTRL_D*` flags.
 
-The DMA uses an atomic read-modify-write transfer process. Data is read from the current source address, modified/aligned
+The DMA uses a read-modify-write transfer process. Data is read from the current source address, modified/aligned
 internally and then written back to the current destination address. If the DMA controller encounters a bus error during
-operation, it will set the `DMA_CTRL_ERROR` flag and will terminate the current transfer. An new transfer can only start
+operation, it will set the `DMA_CTRL_ERROR` flag and will terminate the current transfer. A new transfer can only start
 if the `DMA_CTRL_ERROR` flag is cleared manually.
 
 When the `DMA_CTRL_DONE` flag is set the DMA has completed all programmed transfers, i.e. all descriptors from the FIFO
@@ -97,7 +97,7 @@ The descriptor FIFO has a minimal size of 4 entries. This can be extended by the
 
 .Incomplete Descriptors
 [NOTE]
-The DMA controller consumes 3 entries from the FIFO for each transfer. If the FIFO does not provide a complete
+The DMA controller consumes 3 32-bit words from the FIFO for each transfer. If the FIFO does not provide a complete
 DMA descriptor, the controller will wait until a complete descriptor is available.
 
 The source and destination data addresses can target any memory location in the entire 32-bit address space including

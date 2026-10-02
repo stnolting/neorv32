@@ -54,11 +54,11 @@ The trace buffer provides four memory-mapped registers: the status and control r
 address register `STOP_ADDR` and two read-only registers to read trace data (`DELTA_SRC` and `DELTA_DST`).
 
 The trace module is enabled by setting the `TRACEBUF_CTRL_EN` bit in the control register. If this bit is cleared,
-the module i enabled and the internal trace buffer is cleared. Bit `TRACEBUF_CTRL_HSEL` selects the hart / CPU core
-that shall be traced. This bit is read-only zero for the single-core configuration.
+the module is disabled, reset and the internal trace buffer is cleared. Bit `TRACEBUF_CTRL_HSEL` selects the
+hart / CPU core that shall be traced. This bit is read-only zero for the single-core configuration.
 
 Tracing is started by writing `1` to the `TRACEBUF_CTRL_START` control register bit. Tracing can be stopped at any
-time by manually writing `1` to the `TRACEBUF_CTRL_START` control register bit. Software can check if tracing is
+time by manually writing `1` to the `TRACEBUF_CTRL_STOP` control register bit. Software can check if tracing is
 in progress by reading the `TRACEBUF_CTRL_RUN`. Tracing is _automatically stopped_ when program execution reaches
 the address in the `STOP_ADDR` register. Automatic trace stopping can be disabled by writing -1 to this register.
 
@@ -148,8 +148,8 @@ Line 68 of "main.c" starts at address 0x2cc <test_code> and ends at 0x2d0 <test_
                                 <| `6`    `TRACEBUF_CTRL_IRQ_CLR`                         ^| r/w <| Clear pending interrupt when writing `1`, flag always reads as zero
                                 <| `10:7` `TRACEBUF_CTRL_TBM_MSB : TRACEBUF_CTRL_TBM_LSB` ^| r/- <| `log2(IO_TRACEBUF_DEPTH)`: trace buffer depth
                                 <| `31:11` _reserved_                                     ^| r/- <| _reserved_, hardwired to zero
-| `0xfff30004` | `STOP_ADDR` | `31:0` | r/w | Stop-tracing-address register
-.2+<| `0xfff30008` .2+<| `DELTA_SRC` <| `31:1` ^| r/- | Branch source address, set to `-1` to disable automatic stopping
+| `0xfff30004` | `STOP_ADDR` | `31:0` | r/w | Stop-tracing-address register, set to `-1` to disable automatic stopping
+.2+<| `0xfff30008` .2+<| `DELTA_SRC` <| `31:1` ^| r/- | Branch source address
                                      <| `0`    ^| r/- | `1` = very first instruction delta in current trace; `0` = any further instruction delta
 .2+<| `0xfff3000c` .2+<| `DELTA_DST` <| `31:1` ^| r/- | Branch destination address
                                      <| `0`    ^| r/- | `1` = branch due trap entry (interrupt or synchronous exception); `0` = branch due to jump/call/branch instruction

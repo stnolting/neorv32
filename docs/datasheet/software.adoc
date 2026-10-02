@@ -403,7 +403,7 @@ an executable layout. Note that depending on the application some sections might
 [start=1]
 . **Program code (`.text`)**: This section contains the actual instructions of the program.
 . **Read-only data (`.rodata`)**: Read-only data, for example for constants and strings.
-. **Heap (`.heap`)**: Initialization data that is copied at runtime to the RAM's `data` section by by the <<_start_up_code_crt0>>.
+. **Data (`.data`)**: Initialization data that is copied at runtime to the RAM's `data` section by by the <<_start_up_code_crt0>>.
 
 .Binary Executable Image
 [NOTE]
@@ -524,13 +524,13 @@ This provides corresponding <<_makefile_targets>> for the different image types:
 [cols="<1,<10"]
 [grid="none"]
 |=======================
-| `exe` | Generates an executable binary file (including a header; see <<_bootloader_image_format>>) for upload via the <<_bootloader>>.
-| `vhd` | Generates a raw VHDL memory image (package file, package name is the same as the output file name).
-| `bin` | Generates a raw binary file for custom purpose.
-| `hex` | Generates a raw HEX file for custom purpose (like memory initialization via `$readmemh()` / `hread()`).
-| `coe` | Generates a raw COE file for FPGA memory initialization.
-| `mem` | Generates a raw MEM file for FPGA memory initialization.
-| `mif` | Generates a raw MIF file for FPGA memory initialization.
+| `exe`   | Generates an executable binary file (including a header; see <<_bootloader_image_format>>) for upload via the <<_bootloader>>.
+| `image` | Generates a raw VHDL memory image (package file, package name is the same as the output file name).
+| `bin`   | Generates a raw binary file for custom purpose.
+| `hex`   | Generates a raw HEX file for custom purpose (like memory initialization via `$readmemh()` / `hread()`).
+| `coe`   | Generates a raw COE file for FPGA memory initialization.
+| `mem`   | Generates a raw MEM file for FPGA memory initialization.
+| `mif`   | Generates a raw MIF file for FPGA memory initialization.
 |=======================
 
 .Image Generator Compilation

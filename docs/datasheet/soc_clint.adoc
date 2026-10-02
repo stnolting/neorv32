@@ -41,7 +41,7 @@ The original RISC-V ACLINT specifications are available online at https://github
 
 The MTIMER device provides a global 64-bit machine timer (`NEORV32_CLINT->MTIME`) that increments with every main
 processor clock tick. Upon reset the timer is reset to all zero. Each hart provides an individual 64-bit timer-compare
-register (`NEORV32_CLINT->MTIMECMP[0]` for hart 0). Whenever `MTIMECMP >= MTIME` the according hart's machine timer
+register (`NEORV32_CLINT->MTIMECMP[0]` for hart 0). Whenever `MTIME >= MTIMECMP` the according hart's machine timer
 interrupt becomes pending.
 
 .CSR Access
