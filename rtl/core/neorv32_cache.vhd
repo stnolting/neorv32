@@ -98,11 +98,9 @@ architecture neorv32_cache_rtl of neorv32_cache is
   end record;
   signal ctrl, ctrl_nxt : ctrl_t; -- FSM
 
-  -- status check --
-  signal valid    : std_ulogic_vector(block_num_c-1 downto 0);
-  signal valid_rd : std_ulogic;
-  signal dirty_rd : std_ulogic;
-  signal dirty_we : std_ulogic;
+  -- status memory --
+  signal valid,    dirty    : std_ulogic_vector(block_num_c-1 downto 0);
+  signal valid_rd, dirty_rd : std_ulogic;
 
 begin
 
@@ -508,32 +506,25 @@ begin
   -- -------------------------------------------------------------------------------------------
   status_dirty_enabled:
   if not READ_ONLY generate
-    dirty_flag_inst: entity neorv32.neorv32_prim_spram
-    generic map (
-      AWIDTH => index_size_f(NUM_BLOCKS),
-      DWIDTH => 1,
-      OUTREG => false
-    )
-    port map (
-      clk_i     => clk_i,
-      en_i      => '1',
-      rw_i      => dirty_we,
-      addr_i    => cache_o.addr(31-tag_width_c downto 2+offset_width_c), -- index
-      data_i(0) => cache_o.drt,
-      data_o(0) => dirty_rd
-    );
-    dirty_we <= cache_o.set or cache_o.drt;
+    status_dirty: process(clk_i)
+    begin
+      if rising_edge(clk_i) then -- no reset required; readout guarded by valid flag
+        if (cache_o.set = '1') or (cache_o.drt = '1') then
+          dirty(to_integer(unsigned(cache_o.addr(31-tag_width_c downto 2+offset_width_c)))) <= cache_o.drt;
+        end if;
+        dirty_rd <= dirty(to_integer(unsigned(cache_o.addr(31-tag_width_c downto 2+offset_width_c))));
+      end if;
+    end process;
+    cache_i.drt <= '0' when (ctrl.cln = '1') else (dirty_rd and valid_rd); -- block dirty?
   end generate;
 
   -- blocks cannot be modified --
   status_dirty_disabled:
   if READ_ONLY generate
-    dirty_rd <= '0';
-    dirty_we <= '0';
+    dirty       <= (others => '0');
+    dirty_rd    <= '0';
+    cache_i.drt <= '0';
   end generate;
-
-  -- block dirty --
-  cache_i.drt <= '0' when (ctrl.cln = '1') else (dirty_rd and valid_rd);
 
 
   -- Cache Data and Tag Memory (Wrapper) ----------------------------------------------------
