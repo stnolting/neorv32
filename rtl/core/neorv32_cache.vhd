@@ -491,12 +491,18 @@ begin
   status_valid: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      valid    <= (others => '0');
-      valid_rd <= '0';
+      valid <= (others => '0');
     elsif rising_edge(clk_i) then
       if (cache_o.set = '1') then
         valid(to_integer(unsigned(cache_o.addr(31-tag_width_c downto 2+offset_width_c)))) <= cache_o.vld;
       end if;
+    end if;
+  end process;
+
+  -- synchronous read --
+  status_valid_read: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
       valid_rd <= valid(to_integer(unsigned(cache_o.addr(31-tag_width_c downto 2+offset_width_c))));
     end if;
   end process;
@@ -547,7 +553,7 @@ begin
   );
 
   -- cache hit --
-  cache_i.hit <= '1' when (ctrl.hit = '1') or ((valid_rd = '1') and
-                          (cache_i.tag(tag_width_c-1 downto 0) = host_req_i.addr(31 downto 31-(tag_width_c-1)))) else '0';
+  cache_i.hit <= '1' when ((cache_i.tag(tag_width_c-1 downto 0) = host_req_i.addr(31 downto 31-(tag_width_c-1))) and
+                           (valid_rd = '1')) or (ctrl.hit = '1') else '0';
 
 end architecture;
