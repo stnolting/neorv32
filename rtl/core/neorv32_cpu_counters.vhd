@@ -183,7 +183,7 @@ begin
 
   -- Counter Increment ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  counter_increment: process(ctrl_i, cnt_we, inhibit, pmf_inh)
+  counter_increment: process(ctrl_i, hpmevent, cnt_we, inhibit, pmf_inh)
   begin
     if (ctrl_i.cpu_debug = '1') then -- no increment when in debug-mode
       cnt_inc <= (others => '0');
