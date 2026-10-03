@@ -35,7 +35,7 @@ entity neorv32_cpu_counters is
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
     ctrl_i  : in  ctrl_bus_t; -- main control bus
     -- system time --
-    mtime_i : in  std_ulogic_vector(63 downto 0); -- from CLINT/MTIME
+    mtime_i : in  std_ulogic_vector(63 downto 0); -- from CLINT.MTIME
     -- read back --
     rdata_o : out std_ulogic_vector(31 downto 0) -- read data
   );
@@ -125,7 +125,7 @@ begin
   inhibit_rd(63 downto 32) <= (others => '0');
 
 
-  -- Privilege-Mode Filtering ---------------------------------------------------------------
+  -- Privilege-Mode Filtering (Smcntrpmf) ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   filtering_enabled:
   if SMCNTRPMF_EN and ZICNTR_EN generate
@@ -183,7 +183,7 @@ begin
 
   -- Counter Increment ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  counter_increment: process(ctrl_i, cnt_we, inhibit, pmf_inh)
+  counter_increment: process(ctrl_i, hpmevent, cnt_we, inhibit, pmf_inh)
   begin
     if (ctrl_i.cpu_debug = '1') then -- no increment when in debug-mode
       cnt_inc <= (others => '0');

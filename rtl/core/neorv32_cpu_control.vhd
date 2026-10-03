@@ -790,11 +790,9 @@ begin
 
   -- Instruction Execution Monitor (trap if multi-cycle instruction does not complete) ------
   -- -------------------------------------------------------------------------------------------
-  multi_cycle_monitor: process(rstn_i, clk_i)
+  multi_cycle_monitor: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      monitor_cnt <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (exec.state = S_ALU_WAIT) then
         monitor_cnt <= std_ulogic_vector(unsigned(monitor_cnt) + 1);
       else
