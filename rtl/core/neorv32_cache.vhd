@@ -244,38 +244,54 @@ begin
       when S_SYNC_START => -- start synchronization
       -- ------------------------------------------------------------
         ctrl_nxt.pnd_syn <= '0'; -- sync request accepted
-        ctrl_nxt.sync    <= '1'; -- syncing in progress
-        ctrl_nxt.idx     <= (others => '0');
-        ctrl_nxt.state   <= S_SYNC_DELAY;
+        if READ_ONLY then
+          ctrl_nxt.state <= S_IDLE;
+        else
+          ctrl_nxt.sync  <= '1'; -- syncing in progress
+          ctrl_nxt.idx   <= (others => '0');
+          ctrl_nxt.state <= S_SYNC_DELAY;
+        end if;
 
       when S_SYNC_DELAY => -- cache read access latency
       -- ------------------------------------------------------------
-        cache_o.addr   <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
-        ctrl_nxt.state <= S_SYNC_CHECK;
+        if not READ_ONLY then
+          cache_o.addr   <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
+          ctrl_nxt.state <= S_SYNC_CHECK;
+        else
+          ctrl_nxt.state <= S_IDLE;
+        end if;
 
       when S_SYNC_CHECK => -- check if current block is dirty
       -- ------------------------------------------------------------
-        cache_o.addr     <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
-        ctrl_nxt.ofs_ext <= (others => '0');
-        ctrl_nxt.ofs_int <= (others => '0');
-        ctrl_nxt.bus_err <= '0'; -- reset bus error flag
-        if (cache_i.drt = '1') and (READ_ONLY = false) then -- block is dirty: upload to memory
-          ctrl_nxt.state <= S_WRITE_START;
-        else -- block is clean: go to next block
-          ctrl_nxt.state <= S_SYNC_NEXT;
+        if not READ_ONLY then
+          cache_o.addr     <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
+          ctrl_nxt.ofs_ext <= (others => '0');
+          ctrl_nxt.ofs_int <= (others => '0');
+          ctrl_nxt.bus_err <= '0'; -- reset bus error flag
+          if (cache_i.drt = '1') and (READ_ONLY = false) then -- block is dirty: upload to memory
+            ctrl_nxt.state <= S_WRITE_START;
+          else -- block is clean: go to next block
+            ctrl_nxt.state <= S_SYNC_NEXT;
+          end if;
+        else
+          ctrl_nxt.state <= S_IDLE;
         end if;
 
       when S_SYNC_NEXT => -- update block status and prepare next block
       -- ------------------------------------------------------------
-        cache_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
-        cache_o.set  <= '1'; -- update cache block status
-        cache_o.drt  <= ctrl.bus_err; -- block is still dirty if there was a bus error
-        cache_o.vld  <= ctrl.bus_err; -- keep block valid if there was a bus error (skip block)
-        ctrl_nxt.idx <= std_ulogic_vector(unsigned(ctrl.idx) + 1);
-        if (and_reduce_f(ctrl.idx) = '1') then -- all blocks checked
+        if not READ_ONLY then
+          cache_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
+          cache_o.set  <= '1'; -- update cache block status
+          cache_o.drt  <= ctrl.bus_err; -- block is still dirty if there was a bus error
+          cache_o.vld  <= ctrl.bus_err; -- keep block valid if there was a bus error (skip block)
+          ctrl_nxt.idx <= std_ulogic_vector(unsigned(ctrl.idx) + 1);
+          if (and_reduce_f(ctrl.idx) = '1') then -- all blocks checked
+            ctrl_nxt.state <= S_IDLE;
+          else -- access next block
+            ctrl_nxt.state <= S_SYNC_DELAY;
+          end if;
+        else
           ctrl_nxt.state <= S_IDLE;
-        else -- access next block
-          ctrl_nxt.state <= S_SYNC_DELAY;
         end if;
 
       -- ==========================================================================
@@ -493,7 +509,9 @@ begin
     if (rstn_i = '0') then
       valid <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (cache_o.set = '1') then
+      if READ_ONLY and (ctrl.state = S_SYNC_START) then -- full parallel clear for i-cache
+        valid <= (others => '0');
+      elsif (cache_o.set = '1') then
         valid(to_integer(unsigned(cache_o.addr(31-tag_width_c downto 2+offset_width_c)))) <= cache_o.vld;
       end if;
     end if;
