@@ -404,7 +404,7 @@ begin
 
     -- show SoC configuration --
     assert false report
-      "[NEORV32] Processor Configuration: CPU " & -- cpu core is always enabled
+      "[NEORV32] Processor Configuration: CPU " &
       sel_string_f(boolean(num_cores_c = 1), "(single-core) ",   "") &
       sel_string_f(boolean(num_cores_c = 2), "(smp-dual-core) ", "") &
       sel_string_f(IMEM_EN,         sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
@@ -824,7 +824,6 @@ begin
       )
       port map (
         clk_i      => clk_i,
-        rstn_i     => rstn_sys,
         req_addr_i => imem_req.addr,
         req_data_i => imem_req.data,
         req_ben_i  => imem_req.ben,
@@ -853,7 +852,6 @@ begin
       )
       port map (
         clk_i      => clk_i,
-        rstn_i     => rstn_sys,
         req_addr_i => dmem_req.addr,
         req_data_i => dmem_req.data,
         req_ben_i  => dmem_req.ben,
@@ -904,7 +902,6 @@ begin
       smc_csn_o            <= (others => '1');
       smc_sdo_o            <= '0';
     end generate;
-
 
     -- External Bus Interface (XBUS) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1041,7 +1038,6 @@ begin
       boot_rom_inst: neorv32_bootrom -- component declaration in package file
       port map (
         clk_i      => clk_i,
-        rstn_i     => rstn_sys,
         req_addr_i => iodev_req(IODEV_BOOTROM).addr(15 downto 0),
         req_ben_i  => iodev_req(IODEV_BOOTROM).ben,
         req_stb_i  => iodev_req(IODEV_BOOTROM).stb,

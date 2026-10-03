@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 02.10.2026 | 1.13.6.3 | :test_tube: remove reset from bus response (`ack` and `err`) | [#1659](https://github.com/stnolting/neorv32/pull/1659) |
 | 01.10.2026 | 1.13.6.2 | rework trace infrastructure; :warning: rename `TRACER` -> `TRACEBUF`; make trace log more verbose | [#1658](https://github.com/stnolting/neorv32/pull/1658) |
 | 20.09.2026 | 1.13.6.1 | do not increment a counter CSR during a write access to that CSR | [#1654](https://github.com/stnolting/neorv32/pull/1654) |
 | 20.09.2026 | [**1.13.6**](https://github.com/stnolting/neorv32/releases/tag/v1.13.6) | :rocket: **New release** | |

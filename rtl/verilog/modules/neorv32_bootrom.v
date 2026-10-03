@@ -11,7 +11,6 @@
 module neorv32_bootrom (
   // global control
   input         clk_i,      // clock, trigger on rising edge
-  input         rstn_i,     // async reset, low-active
   // bus request
   input  [15:0] req_addr_i, // access address (byte-addressing)
   input   [3:0] req_ben_i,  // byte enable
@@ -42,12 +41,8 @@ module neorv32_bootrom (
 
   // Bus Handshake --------------------------------------------------------------------------
   // -------------------------------------------------------------------------------------------
-  always @(posedge clk_i or negedge rstn_i) begin
-    if (rstn_i == 1'b0) begin
-      ack <= 1'b0;
-    end else begin
-      ack <= req_stb_i & ~req_rw_i;
-    end
+  always @(posedge clk_i) begin
+    ack <= req_stb_i & ~req_rw_i;
   end
 
   assign rsp_data_o = (ack == 1'b1) ? rdata : 32'h00000000;

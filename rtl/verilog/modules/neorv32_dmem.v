@@ -14,7 +14,6 @@ module neorv32_dmem #(
 )(
   // global control
   input         clk_i,      // clock, trigger on rising edge
-  input         rstn_i,     // async reset, low-active
   // bus request
   input  [31:0] req_addr_i, // access address (byte-addressing)
   input  [31:0] req_data_i, // write data
@@ -92,12 +91,8 @@ module neorv32_dmem #(
 
   // Bus Handshake --------------------------------------------------------------------------
   // -------------------------------------------------------------------------------------------
-  always @(posedge clk_i or negedge rstn_i) begin
-    if (rstn_i == 1'b0) begin
-      ack <= 2'b00;
-    end else begin
-      ack <= {ack[0], req_stb_i & ~req_rw_i};
-    end
+  always @(posedge clk_i) begin
+    ack <= {ack[0], req_stb_i & ~req_rw_i};
   end
 
   generate
