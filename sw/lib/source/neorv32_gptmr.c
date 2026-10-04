@@ -13,10 +13,8 @@
 
 #include <neorv32.h>
 
-
 /**********************************************************************//**
  * Check if general purpose timer unit was synthesized.
- *
  * @return 0 if GPTMR was not synthesized, non-zero if GPTMR is available.
  **************************************************************************/
 int neorv32_gptmr_available(void) {
@@ -24,10 +22,8 @@ int neorv32_gptmr_available(void) {
   return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPTMR));
 }
 
-
 /**********************************************************************//**
  * Get number of implemented GPTMR timer slices.
- *
  * @return Number of implemented GPTMR slices (0..16).
  **************************************************************************/
 int neorv32_gptmr_get_num_slices(void) {
@@ -47,10 +43,8 @@ int neorv32_gptmr_get_num_slices(void) {
   return cnt;
 }
 
-
 /**********************************************************************//**
  * Reset module and configure GPTMR global clock prescaler.
- *
  * @param[in] prsc Clock prescaler select (0..7). See #NEORV32_CLOCK_PRSC_enum.
  **************************************************************************/
 void neorv32_gptmr_setup(int prsc) {
@@ -70,10 +64,8 @@ void neorv32_gptmr_setup(int prsc) {
   }
 }
 
-
 /**********************************************************************//**
  * Enable single GPTMR timer slice.
- *
  * @param[in] sel Timer slice to enable (0..15).
  **************************************************************************/
 void neorv32_gptmr_enable_single(int sel) {
@@ -81,10 +73,8 @@ void neorv32_gptmr_enable_single(int sel) {
   __MMREG16_BSET(NEORV32_GPTMR->CSR0.ENABLE, 1 << (sel & 15));
 }
 
-
 /**********************************************************************//**
  * Disable single GPTMR timer slice.
- *
  * @param[in] sel Timer slice to disable (0..15).
  **************************************************************************/
 void neorv32_gptmr_disable_single(int sel) {
@@ -92,10 +82,8 @@ void neorv32_gptmr_disable_single(int sel) {
   __MMREG16_BCLR(NEORV32_GPTMR->CSR0.ENABLE, 1 << (sel & 15));
 }
 
-
 /**********************************************************************//**
  * Enable multiple GPTMR timer slices.
- *
  * @param[in] mask Bit mask, one bit for each slice; bit set = enable slice.
  **************************************************************************/
 void neorv32_gptmr_enable_mask(uint16_t mask) {
@@ -103,10 +91,8 @@ void neorv32_gptmr_enable_mask(uint16_t mask) {
   __MMREG16_BSET(NEORV32_GPTMR->CSR0.ENABLE, mask);
 }
 
-
 /**********************************************************************//**
  * Disable multiple GPTMR timer slices.
- *
  * @param[in] mask Bit mask, one bit for each slice; bit set = disable slice.
  **************************************************************************/
 void neorv32_gptmr_disable_mask(uint16_t mask) {
@@ -114,10 +100,8 @@ void neorv32_gptmr_disable_mask(uint16_t mask) {
   __MMREG16_BCLR(NEORV32_GPTMR->CSR0.ENABLE, mask);
 }
 
-
 /**********************************************************************//**
  * Configure timer slice.
- *
  * @param[in] sel Timer slice to enable (0..15).
  * @param[in] cnt Initial counter value (32-bit).
  * @param[in] thr Counter threshold value (32-bit).
@@ -135,10 +119,8 @@ void neorv32_gptmr_configure(int sel, uint32_t cnt, uint32_t thr, int mode) {
   NEORV32_GPTMR->CSR0.MODE = tmp;
 }
 
-
 /**********************************************************************//**
  * Get highest-priority pending interrupt.
- *
  * @return Id of highest-priority pending slice interrupt (0..15). -1 if
  * no interrupt is pending.
  **************************************************************************/
@@ -161,10 +143,8 @@ int neorv32_gptmr_irq_get(void) {
   return i;
 }
 
-
 /**********************************************************************//**
  * Clear pending timer interrupt.
- *
  * @param[in] sel Timer slice interrupt to acknowledge/clear (0..15); no
  * pending interrupt is cleared if an other value is provided).
  **************************************************************************/

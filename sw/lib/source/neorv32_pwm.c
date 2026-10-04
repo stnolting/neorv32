@@ -13,10 +13,8 @@
 
 #include <neorv32.h>
 
-
 /**********************************************************************//**
  * Check if PWM unit was synthesized.
- *
  * @return 0 if PWM was not synthesized, non-zero if PWM is available.
  **************************************************************************/
 int neorv32_pwm_available(void) {
@@ -24,10 +22,8 @@ int neorv32_pwm_available(void) {
   return(int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_PWM));
 }
 
-
 /**********************************************************************//**
  * Get number of implemented PWM channels.
- *
  * @return Number of implemented PWM channels (0..32).
  **************************************************************************/
 int neorv32_pwm_get_num_channels(void) {
@@ -47,10 +43,8 @@ int neorv32_pwm_get_num_channels(void) {
   return (int)cnt;
 }
 
-
 /**********************************************************************//**
  * Set global PWM counter clock prescaler.
- *
  * @param[in] prsc Clock prescaler select (0..7). See #NEORV32_CLOCK_PRSC_enum.
  **************************************************************************/
 void neorv32_pwm_set_clock(int prsc) {
@@ -58,10 +52,8 @@ void neorv32_pwm_set_clock(int prsc) {
   NEORV32_PWM->CLKPRSC = prsc;
 }
 
-
 /**********************************************************************//**
  * Enable PWM channel using bit mask.
- *
  * @param[in] mask Channel bit mask.
  **************************************************************************/
 void neorv32_pwm_ch_enable_mask(uint32_t mask) {
@@ -69,10 +61,8 @@ void neorv32_pwm_ch_enable_mask(uint32_t mask) {
   __MMREG32_BSET(NEORV32_PWM->ENABLE, mask);
 }
 
-
 /**********************************************************************//**
  * Disable PWM channel using bit mask.
- *
  * @param[in] mask Channel bit mask.
  **************************************************************************/
 void neorv32_pwm_ch_disable_mask(uint32_t mask) {
@@ -80,10 +70,8 @@ void neorv32_pwm_ch_disable_mask(uint32_t mask) {
   __MMREG32_BCLR(NEORV32_PWM->ENABLE, mask);
 }
 
-
 /**********************************************************************//**
  * Enable individual PWM channel.
- *
  * @param[in] ch Channel select (0..31).
  **************************************************************************/
 void neorv32_pwm_ch_enable_single(int ch) {
@@ -91,10 +79,8 @@ void neorv32_pwm_ch_enable_single(int ch) {
   __MMREG32_BSET(NEORV32_PWM->ENABLE, 1 << (ch & 31u));
 }
 
-
 /**********************************************************************//**
  * Disable individual PWM channel using bit mask.
- *
  * @param[in] ch Channel select (0..31).
  **************************************************************************/
 void neorv32_pwm_ch_disable_single(int ch) {
@@ -102,10 +88,8 @@ void neorv32_pwm_ch_disable_single(int ch) {
   __MMREG32_BCLR(NEORV32_PWM->ENABLE, 1 << (ch & 31u));
 }
 
-
 /**********************************************************************//**
  * Configure a single channel's wrap value and polarity.
- *
  * @param[in] ch Channel select (0..31).
  * @param[in] top Wrap value for PWM counter (16-bit).
  * @param[in] pol Polarity of PWM output (0 = normal, 1 = inverse).
@@ -131,10 +115,8 @@ void neorv32_pwm_ch_setup(int ch, int top, int pol, int mode) {
   NEORV32_PWM->CHANNEL[ch].TOP = top;
 }
 
-
 /**********************************************************************//**
  * Set PWM channel's duty cycle.
- *
  * @param[in] ch Channel select (0..31).
  * @param[in] duty Duty cycle (16-bit).
  **************************************************************************/

@@ -41,7 +41,6 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 #define NEORV32_PWM ((neorv32_pwm_t*) (NEORV32_PWM_BASE))
 /**@}*/
 
-
 /**********************************************************************//**
  * @name Prototypes
  **************************************************************************/

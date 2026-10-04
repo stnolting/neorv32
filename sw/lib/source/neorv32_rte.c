@@ -13,7 +13,6 @@
 
 #include <neorv32.h>
 
-
 /**********************************************************************//**
  * @name Terminal style modifier
  **************************************************************************/
@@ -22,16 +21,13 @@
 #define RTE_TERM_HL_OFF "\033[0m"    // restore default
 /**@}*/
 
-
 /**********************************************************************//**
  * global trap handler table (for all CPU cores)
  **************************************************************************/
 static volatile uint32_t __attribute__((aligned(4))) __neorv32_rte_vector_lut[2][32];
 
-
 /**********************************************************************//**
  * Print a simple string via UART0.
- *
  * @param[in] s Pointer to string.
  **************************************************************************/
 static void __neorv32_rte_puts(const char *s) {
@@ -41,10 +37,8 @@ static void __neorv32_rte_puts(const char *s) {
   }
 }
 
-
 /**********************************************************************//**
  * Print 32-bit value as 8-char hexadecimal number (with "0x" prefix) via UART0.
- *
  * @param[in] num Value to print as hexadecimal.
  **************************************************************************/
 static void __neorv32_rte_puth(uint32_t num) {
@@ -60,7 +54,6 @@ static void __neorv32_rte_puth(uint32_t num) {
     }
   }
 }
-
 
 /**********************************************************************//**
  * Default trap handler printing panic information.
@@ -149,7 +142,6 @@ static void __neorv32_rte_panic(void) {
   // outro
   __neorv32_rte_puts(" </NEORV32-RTE-PANIC>\n" RTE_TERM_HL_OFF);
 }
-
 
 /**********************************************************************//**
  * Core of the NEORV32 RTE (first-level trap handler).
@@ -290,12 +282,9 @@ static void __attribute__((naked,aligned(4))) __neorv32_rte_core(void) {
   : "i" (__neorv32_rte_vector_lut));
 }
 
-
 /**********************************************************************//**
  * Setup NEORV32 runtime environment.
- *
  * @note This function must be called on all cores that wish to use the RTE.
- *
  * @note This function installs a debug handler for ALL trap sources, which
  * prints detailed information about the trap. Actual handlers can be
  * installed afterwards via #neorv32_rte_handler_install().
@@ -323,19 +312,11 @@ void neorv32_rte_setup(void) {
   neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&__neorv32_rte_core) & 0xfffffffcU);
 }
 
-
 /**********************************************************************//**
  * Install trap handler function (second-level trap handler).
- *
- * @note Trap handler installation applies to both cores. Hence, both
- * cores will execute the same handler for the same trap.
- *
- * @param[in] code Trap code (MCAUSE CSR value) of the targeted trap.
- * See #NEORV32_EXCEPTION_CODES_enum.
- *
- * @param[in] handler The actual handler function for the specified trap
- * (function must be of type "void function(void);").
- *
+ * @note Trap handler installation applies to both cores. Hence, both cores will execute the same handler for the same trap.
+ * @param[in] code Trap code (MCAUSE CSR value) of the targeted trap. See #NEORV32_EXCEPTION_CODES_enum.
+ * @param[in] handler The actual handler function for the specified trap (function must be of type "void function(void);").
  * @return 0 if success, -1 if invalid trap code.
  **************************************************************************/
 int neorv32_rte_handler_install(uint32_t code, void (*handler)(void)) {
@@ -350,17 +331,10 @@ int neorv32_rte_handler_install(uint32_t code, void (*handler)(void)) {
   return 0;
 }
 
-
 /**********************************************************************//**
- * Uninstall trap handler (second-level trap handler) and restore original
- * debug handler.
- *
- * @note Trap handler installation applies to both cores. Hence, both
- * cores will execute the same handler for the same trap.
- *
- * @param[in] code Trap code (MCAUSE CSR value) of the targeted trap.
- * See #NEORV32_EXCEPTION_CODES_enum.
- *
+ * Uninstall trap handler (second-level trap handler) and restore original debug handler.
+ * @note Trap handler installation applies to both cores. Hence, both cores will execute the same handler for the same trap.
+ * @param[in] code Trap code (MCAUSE CSR value) of the targeted trap. See #NEORV32_EXCEPTION_CODES_enum.
  * @return 0 if success, -1 if invalid trap code.
  **************************************************************************/
 int neorv32_rte_handler_uninstall(uint32_t code) {
@@ -375,15 +349,10 @@ int neorv32_rte_handler_uninstall(uint32_t code) {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Read register from application context (on stack).
- *
- * @note This function operates on the RTE instance of the
- * core on which this function is executed.
- *
+ * @note This function operates on the RTE instance of the core on which this function is executed.
  * @param[in] x Register number (0..31, corresponds to register x0..x31).
- *
  * @return Content of register x.
  **************************************************************************/
 uint32_t neorv32_rte_context_get(int x) {
@@ -403,15 +372,10 @@ uint32_t neorv32_rte_context_get(int x) {
   }
 }
 
-
 /**********************************************************************//**
  * Write register to application context (on stack).
- *
- * @note This function operates on the RTE instance of the
- * core on which this function is executed.
- *
+ * @note This function operates on the RTE instance of the core on which this function is executed.
  * @param[in] x Register number (0..31, corresponds to register x0..x31).
- *
  * @param[in] data Data to be written to register x.
  **************************************************************************/
 void neorv32_rte_context_put(int x, uint32_t data) {

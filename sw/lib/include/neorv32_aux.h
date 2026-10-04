@@ -30,7 +30,6 @@ typedef struct {
   uint8_t  seconds; /**< 0..59 */
 } date_t;
 
-
 /**********************************************************************//**
  * @name AUX prototypes
  **************************************************************************/
@@ -47,6 +46,5 @@ void     neorv32_aux_print_about(void);
 void     neorv32_aux_print_logo(void);
 void     neorv32_aux_print_license(void);
 /**@}*/
-
 
 #endif // NEORV32_AUX_H

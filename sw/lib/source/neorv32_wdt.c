@@ -15,7 +15,6 @@
 
 /**********************************************************************//**
  * Check if WDT unit was synthesized.
- *
  * @return 0 if WDT was not synthesized, non-zero if WDT is available.
  **************************************************************************/
 int neorv32_wdt_available(void) {
@@ -25,9 +24,7 @@ int neorv32_wdt_available(void) {
 
 /**********************************************************************//**
  * Configure and enable watchdog timer.
- *
  * @warning Once the lock bit is set it can only be removed by a hardware reset.
- *
  * @param[in] timeout LSB-aligned 24-bit timeout value (number of clock cycles).
  * @param[in] lock Control register will be locked when 1 (until next HW reset).
  **************************************************************************/
@@ -45,7 +42,6 @@ void neorv32_wdt_setup(uint32_t timeout, int lock) {
 
 /**********************************************************************//**
  * Disable watchdog timer.
- *
  * @return Returns 0 if WDT is deactivated, non-zero otherwise.
  **************************************************************************/
 int neorv32_wdt_disable(void) {
@@ -56,7 +52,6 @@ int neorv32_wdt_disable(void) {
 
 /**********************************************************************//**
  * Feed watchdog (reset timeout counter).
- *
  * @param[in] password Password for WDT reset.
  **************************************************************************/
 void neorv32_wdt_feed(uint32_t password) {
@@ -80,7 +75,6 @@ void neorv32_wdt_force_hwreset(void) {
 
 /**********************************************************************//**
  * Get cause of last system reset.
- *
  * @return Cause of last reset (#NEORV32_WDT_RCAUSE_enum).
  **************************************************************************/
 int neorv32_wdt_get_cause(void) {

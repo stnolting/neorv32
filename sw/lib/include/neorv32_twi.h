@@ -98,5 +98,4 @@ void neorv32_twi_generate_stop_nonblocking(void);
 void neorv32_twi_generate_start_nonblocking(void);
 /**@}*/
 
-
 #endif // NEORV32_TWI_H

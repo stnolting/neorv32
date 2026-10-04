@@ -15,7 +15,6 @@
 
 /**********************************************************************//**
  * Check if TRACEBUF module was synthesized.
- *
  * @return 0 if TRACER was not synthesized, non-zero if TRACER is available.
  **************************************************************************/
 int neorv32_tracebuf_available(void) {
@@ -25,7 +24,6 @@ int neorv32_tracebuf_available(void) {
 
 /**********************************************************************//**
  * Reset, enable and configure trace buffer.
- *
  * @param[in] hsel Hart ID of the CPU that is traced (0/1).
  * @param[in] stop_addr Stop tracing at this address. Use -1 to disable auto-stopping.
  **************************************************************************/
@@ -51,7 +49,6 @@ void neorv32_tracebuf_disable(void) {
 
 /**********************************************************************//**
  * Get trace buffer depth.
- *
  * @return Trace buffer depth (number of entries)
  **************************************************************************/
 int neorv32_tracebuf_get_buffer_depth(void) {
@@ -62,7 +59,6 @@ int neorv32_tracebuf_get_buffer_depth(void) {
 
 /**********************************************************************//**
  * Check if trace buffer is running.
- *
  * @return Non-zero if tracing in progress, zero if tracing is stopped/halted.
  **************************************************************************/
 int neorv32_tracebuf_run(void) {
@@ -80,7 +76,6 @@ void neorv32_tracebuf_irq_ack(void) {
 
 /**********************************************************************//**
  * Check if trace buffer data is available.
- *
  * @return Non-zero if trace data available, zero if no trace data available.
  **************************************************************************/
 int neorv32_tracebuf_data_avail(void) {
@@ -91,7 +86,6 @@ int neorv32_tracebuf_data_avail(void) {
 /**********************************************************************//**
  * Get trace data: delta-source.
  * @important Check if data is available before with #neorv32_tracer_data_avail().
- *
  * @return 32-bit delta-source address + first-packet flag (in LSB).
  **************************************************************************/
 uint32_t neorv32_tracebuf_data_get_src(void) {
@@ -102,7 +96,6 @@ uint32_t neorv32_tracebuf_data_get_src(void) {
 /**********************************************************************//**
  * Get trace data: delta-destination.
  * @important Use AFTER #neorv32_tracer_data_get_src().
- *
  * @return 32-bit delta-destination address + trap-entry flag (in LSB).
  **************************************************************************/
 uint32_t neorv32_tracebuf_data_get_dst(void) {

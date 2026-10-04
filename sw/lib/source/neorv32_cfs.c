@@ -18,10 +18,8 @@
 
 #include <neorv32.h>
 
-
 /**********************************************************************//**
  * Check if custom functions subsystem was synthesized.
- *
  * @return 0 if CFS was not synthesized, non-zero if CFS is available.
  **************************************************************************/
 int neorv32_cfs_available(void) {

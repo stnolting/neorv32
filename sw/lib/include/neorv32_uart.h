@@ -69,7 +69,6 @@ enum NEORV32_UART_DATA_enum {
 };
 /**@}*/
 
-
 /**********************************************************************//**
  * @name Prototypes
  **************************************************************************/
@@ -95,7 +94,6 @@ void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list arg
 void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...);
 int  neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int echo);
 /**@}*/
-
 
 /**********************************************************************//**
  * @name UART aliases for easy access
@@ -141,6 +139,5 @@ int  neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int ec
 #define neorv32_uart1_printf(...)                  neorv32_uart_printf(NEORV32_UART1, __VA_ARGS__)
 #define neorv32_uart1_scan(buffer, max_size, echo) neorv32_uart_scan(NEORV32_UART1, buffer, max_size, echo)
 /**@}*/
-
 
 #endif // NEORV32_UART_H

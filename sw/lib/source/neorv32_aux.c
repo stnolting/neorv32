@@ -13,12 +13,9 @@
 
 #include <neorv32.h>
 
-
 /**********************************************************************//**
  * Simple delay function using busy-wait.
- *
  * @warning Timing is imprecise! Use TIME or CYCLE CSRs for precise timing.
- *
  * @param[in] clock_hz CPU clock speed in Hz.
  * @param[in] time_ms Time in ms to wait (unsigned 32-bit).
  **************************************************************************/
@@ -42,14 +39,11 @@ void neorv32_aux_delay_ms(uint32_t clock_hz, uint32_t time_ms) {
   );
 }
 
-
 /**********************************************************************//**
  * Convert date to Unix time stamp.
- *
  * @copyright Copyright (C) 2010-2024 Oryx Embedded SARL. All rights reserved.
  * SPDX-License-Identifier: GPL-2.0-or-later
  * https://github.com/Oryx-Embedded/Common/blob/master/date_time.c
- *
  * @param[in] date Pointer to date and time struct (#date_t).
  * @return Unix time since 00:00:00 UTC, January 1, 1970 in seconds.
  **************************************************************************/
@@ -99,14 +93,11 @@ uint64_t neorv32_aux_date2unixtime(date_t* date) {
   return t;
 }
 
-
 /**********************************************************************//**
  * Convert Unix time stamp to date.
- *
  * @copyright Copyright (C) 2010-2024 Oryx Embedded SARL. All rights reserved.
  * SPDX-License-Identifier: GPL-2.0-or-later
  * https://github.com/Oryx-Embedded/Common/blob/master/date_time.c
- *
  * @param[in] unixtime Unix time since 00:00:00 UTC, January 1, 1970 in seconds.
  * @param[in,out] date Pointer to date and time struct (#date_t).
  **************************************************************************/
@@ -171,7 +162,6 @@ void neorv32_aux_unixtime2date(uint64_t unixtime, date_t* date) {
 
 /**********************************************************************//**
  * Helper function to convert a string of up to 16 hex chars into uint64_t.
- *
  * @param[in,out] buffer Pointer to array of chars to convert into number.
  * @param[in] length Length of the conversion string.
  * @return Converted number (uint64_t).
@@ -214,10 +204,8 @@ uint64_t neorv32_aux_hexstr2uint64(char *buffer, unsigned int length) {
   return res;
 }
 
-
 /**********************************************************************//**
  * XORSHIFT pseudo random number generator.
- *
  * @return Random number (uint32_t).
  **************************************************************************/
 uint32_t neorv32_aux_xorshift32(void) {
@@ -231,10 +219,8 @@ uint32_t neorv32_aux_xorshift32(void) {
   return x32;
 }
 
-
 /**********************************************************************//**
  * Simplified version of "itoa": convert number to string.
- *
  * @param[in,out] buffer Pointer to array for the result string [33 chars].
  * @param[in] num Number to convert.
  * @param[in] base Base of number representation (2..16).
@@ -280,10 +266,8 @@ void neorv32_aux_itoa(char *buffer, uint32_t num, uint32_t base) {
   *buffer = '\0';
 }
 
-
 /**********************************************************************//**
  * Print hardware configuration information via UART0.
- *
  * @warning This function overrides several CSRs!
  **************************************************************************/
 void neorv32_aux_print_hw_config(void) {
@@ -558,10 +542,8 @@ void neorv32_aux_print_hw_config(void) {
   neorv32_uart0_printf("\n\n");
 }
 
-
 /**********************************************************************//**
  * Print processor version in human-readable format via UART0.
- *
  * @param[in] impid BCD-coded implementation ID (aka the version),
  * typically from the mimpid CSR.
  **************************************************************************/
@@ -593,7 +575,6 @@ void neorv32_aux_print_hw_version(uint32_t impid) {
   }
 }
 
-
 /**********************************************************************//**
  * Print project info via UART0.
  **************************************************************************/
@@ -606,7 +587,6 @@ void neorv32_aux_print_about(void) {
                        "SPDX-License-Identifier: BSD-3-Clause\n");
   }
 }
-
 
 /**********************************************************************//**
  * Print project logo via UART0.
@@ -647,7 +627,6 @@ void neorv32_aux_print_logo(void) {
     neorv32_uart0_puts("\n");
   }
 }
-
 
 /**********************************************************************//**
  * Print project license via UART0.

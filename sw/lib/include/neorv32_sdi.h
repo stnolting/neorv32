@@ -52,7 +52,6 @@ enum NEORV32_SDI_CTRL_enum {
 };
 /**@}*/
 
-
 /**********************************************************************//**
  * @name Prototypes
  **************************************************************************/
@@ -74,6 +73,5 @@ void    neorv32_sdi_rx_clear(void);
 void    neorv32_sdi_tx_clear(void);
 int     neorv32_sdi_check_cs(void);
 /**@}*/
-
 
 #endif // NEORV32_SDI_H

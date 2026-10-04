@@ -52,7 +52,6 @@ enum NEORV32_NEOLED_CTRL_enum {
 };
 /**@}*/
 
-
 /**********************************************************************//**
  * @name Prototypes
  **************************************************************************/
@@ -73,6 +72,5 @@ int  neorv32_neoled_fifo_full(void);
 int  neorv32_neoled_fifo_empty(void);
 int  neorv32_neoled_busy(void);
 /**@}*/
-
 
 #endif // NEORV32_NEOLED_H

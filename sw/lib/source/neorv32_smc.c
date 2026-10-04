@@ -15,7 +15,6 @@
 
 /**********************************************************************//**
  * Check if SMC was synthesized.
- *
  * @return 0 if SMC was not synthesized, non-zero if SMC is available.
  **************************************************************************/
 int neorv32_smc_available(void) {
@@ -24,7 +23,6 @@ int neorv32_smc_available(void) {
 
 /**********************************************************************//**
  * Reset, configure and enable SMC.
- *
  * @param[in] dual  Enable dual-chip mode (0,1).
  * @param[in] msize Memory chip size select (#NEORV32_SMC_MSIZE_enum).
  * @param[in] cdiv  Clock divider (3-bit); f_SPI = f_cpu/(2*(cdiv+1)).
@@ -58,7 +56,6 @@ void neorv32_smc_setup(int dual, int msize, int cdiv, int rwait, uint8_t rcmd, u
 
 /**********************************************************************//**
  * Check if a SMC memory operation is in progress.
- *
  * @return Zero if SMC is idle, non-zero if memory operation in progress.
  **************************************************************************/
 int neorv32_smc_busy(void) {
@@ -81,7 +78,6 @@ void neorv32_smc_pins_disable(void) {
 
 /**********************************************************************//**
  * Get configured SMC SPI clock speed in Hz.
- *
  * @return Configured SMC interface clock speed in Hz.
  **************************************************************************/
 uint32_t neorv32_smc_get_clockspeed(void) {
@@ -92,7 +88,6 @@ uint32_t neorv32_smc_get_clockspeed(void) {
 
 /**********************************************************************//**
  * Get configured SMC memory base address.
- *
  * @return Configured base address for transparent memory access.
  **************************************************************************/
 uint32_t neorv32_smc_get_baseaddr(void) {

@@ -13,10 +13,8 @@
 
 #include <neorv32.h>
 
-
 /**********************************************************************//**
  * Check if stream link interface was synthesized.
- *
  * @return Zero if SLINK was not synthesized, non-zero if SLINK is available.
  **************************************************************************/
 int neorv32_slink_available(void) {
@@ -24,10 +22,8 @@ int neorv32_slink_available(void) {
   return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SLINK));
 }
 
-
 /**********************************************************************//**
  * Reset, enable and configure SLINK.
- *
  * @param[in] irq_mask Interrupt conditions (#NEORV32_SLINK_CTRL_enum).
  **************************************************************************/
 void neorv32_slink_setup(uint32_t irq_mask) {
@@ -43,10 +39,8 @@ void neorv32_slink_setup(uint32_t irq_mask) {
   NEORV32_SLINK->CTRL = tmp | (irq_mask & mask);
 }
 
-
 /**********************************************************************//**
  * Get FIFO depth of RX link.
- *
  * @return FIFO depth of RX link.
  **************************************************************************/
 int neorv32_slink_get_rx_fifo_depth(void) {
@@ -55,10 +49,8 @@ int neorv32_slink_get_rx_fifo_depth(void) {
   return (int)(1 << tmp);
 }
 
-
 /**********************************************************************//**
  * Get FIFO depth of TX link.
- *
  * @return FIFO depth of TX link.
  **************************************************************************/
 int neorv32_slink_get_tx_fifo_depth(void) {
@@ -67,10 +59,8 @@ int neorv32_slink_get_tx_fifo_depth(void) {
   return (int)(1 << tmp);
 }
 
-
 /**********************************************************************//**
  * Check if RX FIFO is empty.
- *
  * @return Zero if RX FIFO is not empty, non-zero if RX FIFO is empty.
  **************************************************************************/
 int neorv32_slink_rx_empty(void) {
@@ -78,10 +68,8 @@ int neorv32_slink_rx_empty(void) {
   return (int)(NEORV32_SLINK->CTRL & (1 << SLINK_CTRL_RX_EMPTY));
 }
 
-
 /**********************************************************************//**
  * Check if RX FIFO is full.
- *
  * @return Zero if RX FIFO is not full, non-zero if RX FIFO is full.
  **************************************************************************/
 int neorv32_slink_rx_full(void) {
@@ -89,10 +77,8 @@ int neorv32_slink_rx_full(void) {
   return (int)(NEORV32_SLINK->CTRL & (1 << SLINK_CTRL_RX_FULL));
 }
 
-
 /**********************************************************************//**
  * Check if TX FIFO is empty.
- *
  * @return Zero if RX FIFO is not empty, non-zero if RX FIFO is empty.
  **************************************************************************/
 int neorv32_slink_tx_empty(void) {
@@ -100,10 +86,8 @@ int neorv32_slink_tx_empty(void) {
   return (int)(NEORV32_SLINK->CTRL & (1 << SLINK_CTRL_TX_EMPTY));
 }
 
-
 /**********************************************************************//**
  * Check if TX FIFO is full.
- *
  * @return Zero if TX FIFO is not full, non-zero if TX FIFO is full.
  **************************************************************************/
 int neorv32_slink_tx_full(void) {

@@ -32,7 +32,6 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 #define NEORV32_CLINT ((neorv32_clint_t*) (NEORV32_CLINT_BASE))
 /**@}*/
 
-
 /**********************************************************************//**
  * @name Prototypes
  **************************************************************************/
@@ -48,6 +47,5 @@ uint64_t neorv32_clint_mtimecmp_get(void);
 void     neorv32_clint_unixtime_set(uint64_t unixtime);
 uint64_t neorv32_clint_unixtime_get(void);
 /**@}*/
-
 
 #endif // NEORV32_CLINT_H

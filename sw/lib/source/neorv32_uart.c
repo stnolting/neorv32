@@ -16,7 +16,6 @@
 #include <stdarg.h>
 #include <ctype.h>
 
-
 /**********************************************************************//**
  * Issue a warning when semihosting redirection is enabled.
  **************************************************************************/
@@ -29,7 +28,6 @@
 
 /**********************************************************************//**
  * Check if UART unit was synthesized.
- *
  * @param[in,out] Hardware handle to UART register struct, #neorv32_uart_t.
  * @return 0 if UART0/1 was not synthesized, non-zero if UART0/1 is available.
  **************************************************************************/
@@ -46,10 +44,8 @@ int neorv32_uart_available(neorv32_uart_t *UARTx) {
   }
 }
 
-
 /**********************************************************************//**
  * Reset, configure and enable UART.
- *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] baudrate Targeted BAUD rate (e.g. 19200).
  * @param[in] irq_mask Interrupt configuration bit mask (CTRL's irq_* bits).
@@ -137,10 +133,8 @@ int neorv32_uart_get_tx_fifo_depth(neorv32_uart_t *UARTx) {
   return (int)(1 << tmp);
 }
 
-
 /**********************************************************************//**
  * Enable UART.
- *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  **************************************************************************/
 void neorv32_uart_enable(neorv32_uart_t *UARTx) {
@@ -148,10 +142,8 @@ void neorv32_uart_enable(neorv32_uart_t *UARTx) {
   __MMREG32_BSET(UARTx->CTRL, 1 << UART_CTRL_EN);
 }
 
-
 /**********************************************************************//**
  * Disable UART.
- *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  **************************************************************************/
 void neorv32_uart_disable(neorv32_uart_t *UARTx) {
@@ -159,10 +151,8 @@ void neorv32_uart_disable(neorv32_uart_t *UARTx) {
   __MMREG32_BCLR(UARTx->CTRL, 1 << UART_CTRL_EN);
 }
 
-
 /**********************************************************************//**
  * Enable RTS/CTS hardware flow-control.
- *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  **************************************************************************/
 void neorv32_uart_rtscts_enable(neorv32_uart_t *UARTx) {
@@ -170,10 +160,8 @@ void neorv32_uart_rtscts_enable(neorv32_uart_t *UARTx) {
   __MMREG32_BSET(UARTx->CTRL, 1 << UART_CTRL_HWFC_EN);
 }
 
-
 /**********************************************************************//**
  * Disable RTS/CTS hardware flow-control.
- *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  **************************************************************************/
 void neorv32_uart_rtscts_disable(neorv32_uart_t *UARTx) {
@@ -184,9 +172,7 @@ void neorv32_uart_rtscts_disable(neorv32_uart_t *UARTx) {
 
 /**********************************************************************//**
  * Send single char via UART.
- *
  * @note This function is blocking.
- *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] c Char to be send.
  **************************************************************************/
@@ -201,10 +187,8 @@ void neorv32_uart_putc(neorv32_uart_t *UARTx, char c) {
 #endif
 }
 
-
 /**********************************************************************//**
  * Check if UART TX is busy (transmitter busy or data left in TX buffer).
- *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @return 0 if idle, non-zero if busy
  **************************************************************************/
@@ -213,10 +197,8 @@ int neorv32_uart_tx_busy(neorv32_uart_t *UARTx) {
   return (int)(UARTx->CTRL & (1 << UART_CTRL_TX_BUSY));
 }
 
-
 /**********************************************************************//**
  * Check if there is free space in the TX output FIFO.
- *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @return Zero if TX FIFO is full, non-zero if at least one free entry is left.
  **************************************************************************/
@@ -225,10 +207,8 @@ int neorv32_uart_tx_free(neorv32_uart_t *UARTx) {
   return (int)(UARTx->CTRL & (1<<UART_CTRL_TX_NFULL));
 }
 
-
 /**********************************************************************//**
  * Put char to TX output FIFO.
- *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] c Character to be send.
  **************************************************************************/
@@ -241,12 +221,9 @@ void neorv32_uart_tx_put(neorv32_uart_t *UARTx, char c) {
 #endif
 }
 
-
 /**********************************************************************//**
  * Get char from UART.
- *
  * @note This function is blocking.
- *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @return Received char.
  **************************************************************************/
@@ -255,7 +232,6 @@ char neorv32_uart_getc(neorv32_uart_t *UARTx) {
   while (neorv32_uart_char_received(UARTx) == 0); // wait until data available
   return neorv32_uart_char_received_get(UARTx);
 }
-
 
 /**********************************************************************//**
  * Check if UART has received a char.
@@ -275,13 +251,9 @@ int neorv32_uart_char_received(neorv32_uart_t *UARTx) {
 #endif
 }
 
-
 /**********************************************************************//**
  * Get a received char from UART.
- *
- * @note This function is non-blocking.
- * @note Should only be used in combination with neorv32_uart_char_received(void).
- *
+ * @note This function is non-blocking. Should only be used in combination with neorv32_uart_char_received(void).
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @return Received char.
  **************************************************************************/
@@ -294,15 +266,11 @@ char neorv32_uart_char_received_get(neorv32_uart_t *UARTx) {
 #endif
 }
 
-
 /**********************************************************************//**
  * Print string (zero-terminated) via UART.
- *
  * @note This function is blocking.
- * @note No trailing line break is added; use #neorv32_uart_println if you need one
- * (e.g. when composing a single line from several calls).
+ * @note No trailing line break is added; use #neorv32_uart_println if you need one (e.g. when composing a single line from several calls).
  * @warning "\\n" line breaks are automatically converted to "\\r\\n".
- *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] s Pointer to string.
  **************************************************************************/
@@ -321,13 +289,10 @@ void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {
 #endif
 }
 
-
 /**********************************************************************//**
  * Print string (zero-terminated) via UART and append a trailing line break.
- *
  * @note This function is blocking.
  * @warning "/n" line breaks are automatically converted to "/r/n".
- *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] s Pointer to string.
  **************************************************************************/
@@ -337,14 +302,11 @@ void neorv32_uart_println(neorv32_uart_t *UARTx, const char *s) {
   neorv32_uart_puts(UARTx, "\n");
 }
 
-
 /**********************************************************************//**
  * Custom version of 'vprintf' printing to UART.
- *
  * @warning: This functions only provides a minimal subset of the 'vprintf' formating features!
  * @warning "/n" line breaks are automatically converted to "/r/n".
  * @note This function is blocking.
- *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] format Pointer to format string.
  * @param[in] args A value identifying a variable arguments list.
@@ -419,13 +381,10 @@ void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list arg
   }
 }
 
-
 /**********************************************************************//**
  * Custom version of 'printf' printing to UART.
- *
  * @warning: This functions only provides a minimal subset of the 'printf' formatting features!
  * @note This function is blocking.
- *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] format Pointer to format string. See neorv32_uart_vprintf.
  **************************************************************************/
@@ -437,12 +396,9 @@ void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...) {
   va_end(args);
 }
 
-
 /**********************************************************************//**
  * Simplified custom version of 'scanf' reading from UART.
- *
  * @note This function is blocking.
- *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in,out] buffer Pointer to array of chars to store string.
  * @param[in] max_size Maximum number of chars to sample (including zero-termination).

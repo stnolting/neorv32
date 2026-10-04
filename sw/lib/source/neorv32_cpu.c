@@ -13,10 +13,8 @@
 
 #include <neorv32.h>
 
-
 /**********************************************************************//**
  * Get cycle counter from cycle[h].
- *
  * @return Current cycle counter (64 bit).
  **************************************************************************/
 uint64_t neorv32_cpu_get_cycle(void) {
@@ -38,10 +36,8 @@ uint64_t neorv32_cpu_get_cycle(void) {
   return data.uint64;
 }
 
-
 /**********************************************************************//**
  * Set machine cycle counter mcycle[h].
- *
  * @param[in] value New value for mcycle[h] CSR (64-bit).
  **************************************************************************/
 void neorv32_cpu_set_mcycle(uint64_t value) {
@@ -55,10 +51,8 @@ void neorv32_cpu_set_mcycle(uint64_t value) {
   neorv32_cpu_csr_write(CSR_MCYCLE,  data.uint32[0]);
 }
 
-
 /**********************************************************************//**
  * Get system time counter from time[h] (from CLINT.MTIME).
- *
  * @return Current system time (64 bit).
  **************************************************************************/
 uint64_t neorv32_cpu_get_time(void) {
@@ -80,10 +74,8 @@ uint64_t neorv32_cpu_get_time(void) {
   return data.uint64;
 }
 
-
 /**********************************************************************//**
  * Get retired instructions counter from instret[h].
- *
  * @return Current instructions counter (64 bit).
  **************************************************************************/
 uint64_t neorv32_cpu_get_instret(void) {
@@ -105,10 +97,8 @@ uint64_t neorv32_cpu_get_instret(void) {
   return data.uint64;
 }
 
-
 /**********************************************************************//**
  * Set machine retired instructions counter minstret[h].
- *
  * @param[in] value New value for mcycle[h] CSR (64-bit).
  **************************************************************************/
 void neorv32_cpu_set_minstret(uint64_t value) {
@@ -122,12 +112,9 @@ void neorv32_cpu_set_minstret(uint64_t value) {
   neorv32_cpu_csr_write(CSR_MINSTRET,  data.uint32[0]);
 }
 
-
 /**********************************************************************//**
  * Physical memory protection (PMP): Get number of available regions.
- *
  * @warning This function overrides all available PMPCFG* CSRs!
- *
  * @return Returns number of available PMP regions.
  **************************************************************************/
 uint32_t neorv32_cpu_pmp_get_num_regions(void) {
@@ -162,12 +149,9 @@ uint32_t neorv32_cpu_pmp_get_num_regions(void) {
   return num_regions;
 }
 
-
 /**********************************************************************//**
  * Physical memory protection (PMP): Get minimal region size (granularity).
- *
  * @warning This function overrides PMPCFG0[0] and PMPADDR0 CSRs!
- *
  * @return Returns minimal region size in bytes. Returns zero on error.
  **************************************************************************/
 uint32_t neorv32_cpu_pmp_get_granularity(void) {
@@ -199,12 +183,9 @@ uint32_t neorv32_cpu_pmp_get_granularity(void) {
   return 1<<i;
 }
 
-
 /**********************************************************************//**
  * Physical memory protection (PMP): Configure region.
- *
  * @warning This function expects a WORD address!
- *
  * @param[in] index Region number (index, 0..PMP_NUM_REGIONS-1).
  * @param[in] addr Region address (bits [33:2]).
  * @param[in] config Region configuration byte (see #NEORV32_PMPCFG_ATTRIBUTES_enum).
@@ -270,12 +251,9 @@ int neorv32_cpu_pmp_configure_region(int index, uint32_t addr, uint8_t config) {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Hardware performance monitors (HPM): Get number of available HPM counters.
- *
  * @warning This function overrides all available MHPMCOUNTER* CSRs!
- *
  * @return Returns number of available HPM counters.
  **************************************************************************/
 uint32_t neorv32_cpu_hpm_get_num_counters(void) {
@@ -354,12 +332,9 @@ uint32_t neorv32_cpu_hpm_get_num_counters(void) {
   return num_hpm;
 }
 
-
 /**********************************************************************//**
  * Hardware performance monitors (HPM): Get total counter width
- *
  * @warning This function overrides the mhpmcounter3[h] CSRs.
- *
  * @return Size of HPM counters (1-64, 0 if not implemented at all).
  **************************************************************************/
 uint32_t neorv32_cpu_hpm_get_size(void) {
@@ -396,10 +371,8 @@ uint32_t neorv32_cpu_hpm_get_size(void) {
   return cnt;
 }
 
-
 /**********************************************************************//**
  * Hardware trigger module: get number of implemented triggers.
- *
  * @return Number of HW triggers (0 if not implemented at all).
  **************************************************************************/
 int neorv32_cpu_hwtrig_get_number(void) {

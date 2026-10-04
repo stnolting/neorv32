@@ -15,9 +15,7 @@
 
 /**********************************************************************//**
  * Trigger SMP boot of core 1.
- *
  * @warning This function overrides MTIMECMP of hart 1.
- *
  * @param[in] addr Core's boot address.
  * @param[in] stack Core's stack base address.
  * @return 0 if launching succeeded, -1 if core is not responding.
@@ -44,15 +42,11 @@ static int __neorv32_smp_boot(uint32_t addr, uint32_t stack) {
 
 /**********************************************************************//**
  * Configure and start secondary CPU core (core 1).
- *
- * @warning This function can be executed on core 0 only and will override
- * MTIMECMP of hart 1.
- *
+ * @warning This function can be executed on core 0 only and will override MTIMECMP of hart 1.
  * @param[in] entry_point Core's main function; must be of type "int entry_point(void)".
  * @param[in] stack_memory Pointer to beginning of core's stack memory array.
  * @param[in] stack_size_bytes Core's stack size in bytes.
- * @return 0 if launching succeeded, -1 if invalid hart ID or CLINT not available,
- * -2 if core is not responding.
+ * @return 0 if launching succeeded, -1 if invalid hart ID or CLINT not available, -2 if core is not responding.
  **************************************************************************/
 int neorv32_smp_launch(int (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes) {
 
