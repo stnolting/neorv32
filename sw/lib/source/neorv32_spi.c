@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_spi_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SPI));
+  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_SPI));
 }
 
 /**********************************************************************//**
@@ -34,11 +34,11 @@ void neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity) {
   NEORV32_SPI->CTRL = 0; // reset
 
   uint32_t tmp = 0;
-  tmp |= (uint32_t)(1            & 0x01) << SPI_CTRL_EN;
-  tmp |= (uint32_t)(clk_phase    & 0x01) << SPI_CTRL_CPHA;
-  tmp |= (uint32_t)(clk_polarity & 0x01) << SPI_CTRL_CPOL;
-  tmp |= (uint32_t)(prsc         & 0x07) << SPI_CTRL_PRSC0;
-  tmp |= (uint32_t)(cdiv         & 0x0f) << SPI_CTRL_CDIV0;
+  tmp |= (uint32_t)(1U           & 0x01U) << SPI_CTRL_EN;
+  tmp |= (uint32_t)(clk_phase    & 0x01U) << SPI_CTRL_CPHA;
+  tmp |= (uint32_t)(clk_polarity & 0x01U) << SPI_CTRL_CPOL;
+  tmp |= (uint32_t)(prsc         & 0x07U) << SPI_CTRL_PRSC0;
+  tmp |= (uint32_t)(cdiv         & 0x0fU) << SPI_CTRL_CDIV0;
 
   NEORV32_SPI->CTRL = tmp;
 }
@@ -51,9 +51,9 @@ uint32_t neorv32_spi_get_clock_speed(void) {
 
   const uint16_t PRSC_LUT[8] = {2, 4, 8, 64, 128, 1024, 2048, 4096};
 
-  uint32_t ctrl = NEORV32_SPI->CTRL;
-  uint32_t prsc_sel  = (ctrl >> SPI_CTRL_PRSC0) & 0x7;
-  uint32_t clock_div = (ctrl >> SPI_CTRL_CDIV0) & 0xf;
+  uint32_t ctrl      = NEORV32_SPI->CTRL;
+  uint32_t prsc_sel  = (ctrl >> SPI_CTRL_PRSC0) & 0x7U;
+  uint32_t clock_div = (ctrl >> SPI_CTRL_CDIV0) & 0xfU;
 
   uint32_t tmp = 2 * PRSC_LUT[prsc_sel] * (1 + clock_div);
   return neorv32_sysinfo_get_clk() / tmp;
@@ -64,7 +64,7 @@ uint32_t neorv32_spi_get_clock_speed(void) {
  **************************************************************************/
 void neorv32_spi_disable(void) {
 
-  __MMREG32_BCLR(NEORV32_SPI->CTRL, 1 << SPI_CTRL_EN);
+  __MMREG32_BCLR(NEORV32_SPI->CTRL, 1U << SPI_CTRL_EN);
 }
 
 /**********************************************************************//**
@@ -72,7 +72,7 @@ void neorv32_spi_disable(void) {
  **************************************************************************/
 void neorv32_spi_enable(void) {
 
-  __MMREG32_BSET(NEORV32_SPI->CTRL, 1 << SPI_CTRL_EN);
+  __MMREG32_BSET(NEORV32_SPI->CTRL, 1U << SPI_CTRL_EN);
 }
 
 /**********************************************************************//**
@@ -81,8 +81,8 @@ void neorv32_spi_enable(void) {
  **************************************************************************/
 int neorv32_spi_get_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_SPI->CTRL >> SPI_CTRL_FIFO_LSB) & 0x0f;
-  return (int)(1 << tmp);
+  uint32_t tmp = (NEORV32_SPI->CTRL >> SPI_CTRL_FIFO_LSB) & 0x0fU;
+  return (int)(1U << tmp);
 }
 
 /**********************************************************************//**
@@ -93,7 +93,7 @@ int neorv32_spi_get_fifo_depth(void) {
  **************************************************************************/
 void neorv32_spi_cs_en(int cs) {
 
-  while (NEORV32_SPI->CTRL & (1<<SPI_CTRL_TX_FULL)); // wait for free space in TX FIFO
+  while (NEORV32_SPI->CTRL & (1U<<SPI_CTRL_TX_FULL)); // wait for free space in TX FIFO
   neorv32_spi_cs_en_nonblocking(cs);
 }
 
@@ -104,7 +104,7 @@ void neorv32_spi_cs_en(int cs) {
  **************************************************************************/
 void neorv32_spi_cs_dis(void) {
 
-  while (NEORV32_SPI->CTRL & (1<<SPI_CTRL_TX_FULL)); // wait for free space in TX FIFO
+  while (NEORV32_SPI->CTRL & (1U<<SPI_CTRL_TX_FULL)); // wait for free space in TX FIFO
   neorv32_spi_cs_dis_nonblocking();
 }
 
@@ -127,7 +127,7 @@ uint8_t neorv32_spi_transfer(uint8_t tx_data) {
  **************************************************************************/
 void neorv32_spi_put_nonblocking(uint8_t tx_data) {
 
-  NEORV32_SPI->DATA = (0 << SPI_DATA_CMD) | ((uint32_t)tx_data); // put data into TX FIFO
+  NEORV32_SPI->DATA = (0U << SPI_DATA_CMD) | ((uint32_t)tx_data); // put data into TX FIFO
 }
 
 /**********************************************************************//**
@@ -146,7 +146,7 @@ uint8_t neorv32_spi_get_nonblocking(void) {
  **************************************************************************/
 void neorv32_spi_cs_en_nonblocking(int cs) {
 
-  NEORV32_SPI->DATA = (1 << SPI_DATA_CMD) | ((1 << SPI_DATA_CSEN) + (cs & 7)); // put CS command into TX FIFO
+  NEORV32_SPI->DATA = (1U << SPI_DATA_CMD) | ((1U << SPI_DATA_CSEN) + (cs & 7U)); // put CS command into TX FIFO
 }
 
 /**********************************************************************//**
@@ -155,7 +155,7 @@ void neorv32_spi_cs_en_nonblocking(int cs) {
  **************************************************************************/
 void neorv32_spi_cs_dis_nonblocking(void) {
 
-  NEORV32_SPI->DATA = (1 << SPI_DATA_CMD) | 0; // put CS command into TX FIFO
+  NEORV32_SPI->DATA = (1U << SPI_DATA_CMD) | 0; // put CS command into TX FIFO
 }
 
 /**********************************************************************//**
@@ -164,7 +164,7 @@ void neorv32_spi_cs_dis_nonblocking(void) {
  **************************************************************************/
 int neorv32_spi_check_cs(void) {
 
-  return (int)(NEORV32_SPI->CTRL & (1 << SPI_CS_ACTIVE));
+  return (int)(NEORV32_SPI->CTRL & (1U << SPI_CS_ACTIVE));
 }
 
 /**********************************************************************//**
@@ -173,7 +173,7 @@ int neorv32_spi_check_cs(void) {
  **************************************************************************/
 int neorv32_spi_rx_avail(void) {
 
-  return (int)(NEORV32_SPI->CTRL & (1 << SPI_CTRL_RX_AVAIL));
+  return (int)(NEORV32_SPI->CTRL & (1U << SPI_CTRL_RX_AVAIL));
 }
 
 /**********************************************************************//**
@@ -182,7 +182,7 @@ int neorv32_spi_rx_avail(void) {
  **************************************************************************/
 int neorv32_spi_tx_empty(void) {
 
-  return (int)(NEORV32_SPI->CTRL & (1 << SPI_CTRL_TX_EMPTY));
+  return (int)(NEORV32_SPI->CTRL & (1U << SPI_CTRL_TX_EMPTY));
 }
 
 /**********************************************************************//**
@@ -191,7 +191,7 @@ int neorv32_spi_tx_empty(void) {
  **************************************************************************/
 int neorv32_spi_tx_full(void) {
 
-  return (int)(NEORV32_SPI->CTRL & (1 << SPI_CTRL_TX_FULL));
+  return (int)(NEORV32_SPI->CTRL & (1U << SPI_CTRL_TX_FULL));
 }
 
 /**********************************************************************//**
@@ -200,5 +200,5 @@ int neorv32_spi_tx_full(void) {
  **************************************************************************/
 int neorv32_spi_busy(void) {
 
-  return (int)(NEORV32_SPI->CTRL & (1 << SPI_CTRL_BUSY));
+  return (int)(NEORV32_SPI->CTRL & (1U << SPI_CTRL_BUSY));
 }

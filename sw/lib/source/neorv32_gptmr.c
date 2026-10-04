@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_gptmr_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPTMR));
+  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_GPTMR));
 }
 
 /**********************************************************************//**
@@ -70,7 +70,7 @@ void neorv32_gptmr_setup(int prsc) {
  **************************************************************************/
 void neorv32_gptmr_enable_single(int sel) {
 
-  __MMREG16_BSET(NEORV32_GPTMR->CSR0.ENABLE, 1 << (sel & 15));
+  __MMREG16_BSET(NEORV32_GPTMR->CSR0.ENABLE, 1U << (sel & 15U));
 }
 
 /**********************************************************************//**
@@ -79,7 +79,7 @@ void neorv32_gptmr_enable_single(int sel) {
  **************************************************************************/
 void neorv32_gptmr_disable_single(int sel) {
 
-  __MMREG16_BCLR(NEORV32_GPTMR->CSR0.ENABLE, 1 << (sel & 15));
+  __MMREG16_BCLR(NEORV32_GPTMR->CSR0.ENABLE, 1U << (sel & 15U));
 }
 
 /**********************************************************************//**
@@ -109,13 +109,13 @@ void neorv32_gptmr_disable_mask(uint16_t mask) {
  **************************************************************************/
 void neorv32_gptmr_configure(int sel, uint32_t cnt, uint32_t thr, int mode) {
 
-  int i = sel & 15;
+  int i = sel & 15U;
   NEORV32_GPTMR->SLICE[i].CNT = cnt;
   NEORV32_GPTMR->SLICE[i].THR = thr;
 
   uint16_t tmp = NEORV32_GPTMR->CSR0.MODE;
-  tmp &= ~(uint16_t)(1 << i);
-  tmp |= (uint16_t)((mode & 1) << i);
+  tmp &= ~(uint16_t)(1U << i);
+  tmp |= (uint16_t)((mode & 1U) << i);
   NEORV32_GPTMR->CSR0.MODE = tmp;
 }
 
@@ -138,7 +138,7 @@ int neorv32_gptmr_irq_get(void) {
     if (pnd & 1) {
       break;
     }
-    pnd >>= 1;
+    pnd >>= 1U;
   }
   return i;
 }
@@ -150,5 +150,5 @@ int neorv32_gptmr_irq_get(void) {
  **************************************************************************/
 void neorv32_gptmr_irq_ack(int sel) {
 
-  __MMREG16_BCLR(NEORV32_GPTMR->CSR1.IRQ, 1 << (sel & 0xf));
+  __MMREG16_BCLR(NEORV32_GPTMR->CSR1.IRQ, 1U << (sel & 0xfU));
 }

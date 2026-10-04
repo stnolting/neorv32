@@ -84,7 +84,7 @@ static inline uint32_t __attribute__((always_inline)) neorv32_slink_get(void) {
  * @return Zero if not end of stream, non-zero if end of stream.
  **************************************************************************/
 static inline int __attribute__((always_inline)) neorv32_slink_check_last(void) {
-  return (int)(NEORV32_SLINK->CTRL & (1 << SLINK_CTRL_RX_LAST));
+  return (int)(NEORV32_SLINK->CTRL & (1U << SLINK_CTRL_RX_LAST));
 }
 
 /**********************************************************************//**

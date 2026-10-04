@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_twd_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TWD));
+  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_TWD));
 }
 
 /**********************************************************************//**
@@ -36,9 +36,9 @@ void neorv32_twd_setup(int device_addr, int fsel, uint32_t irq_mask) {
   neorv32_twd_irq_config(1, irq_mask);
 
   uint32_t ctrl = NEORV32_TWD->CTRL;
-  ctrl |= ((uint32_t)(               0x01) << TWD_CTRL_EN);
-  ctrl |= ((uint32_t)(device_addr  & 0x7f) << TWD_CTRL_DEV_ADDR0);
-  ctrl |= ((uint32_t)(fsel         & 0x01) << TWD_CTRL_FSEL);
+  ctrl |= ((uint32_t)(               0x01U) << TWD_CTRL_EN);
+  ctrl |= ((uint32_t)(device_addr  & 0x7fU) << TWD_CTRL_DEV_ADDR0);
+  ctrl |= ((uint32_t)(fsel         & 0x01U) << TWD_CTRL_FSEL);
   NEORV32_TWD->CTRL = ctrl;
 }
 
@@ -49,12 +49,12 @@ void neorv32_twd_setup(int device_addr, int fsel, uint32_t irq_mask) {
  **************************************************************************/
 void neorv32_twd_irq_config(int enable, uint32_t irq_mask) {
 
-  const uint32_t mask = (1 << TWD_CTRL_IRQ_RX_AVAIL) |
-                        (1 << TWD_CTRL_IRQ_RX_FULL)  |
-                        (1 << TWD_CTRL_IRQ_TX_EMPTY) |
-                        (1 << TWD_CTRL_IRQ_TX_NFULL) |
-                        (1 << TWD_CTRL_IRQ_COM_BEG)  |
-                        (1 << TWD_CTRL_IRQ_COM_END);
+  const uint32_t mask = (1U << TWD_CTRL_IRQ_RX_AVAIL) |
+                        (1U << TWD_CTRL_IRQ_RX_FULL)  |
+                        (1U << TWD_CTRL_IRQ_TX_EMPTY) |
+                        (1U << TWD_CTRL_IRQ_TX_NFULL) |
+                        (1U << TWD_CTRL_IRQ_COM_BEG)  |
+                        (1U << TWD_CTRL_IRQ_COM_END);
 
   if (enable) {
     __MMREG32_BSET(NEORV32_TWD->CTRL, irq_mask & mask);
@@ -70,8 +70,8 @@ void neorv32_twd_irq_config(int enable, uint32_t irq_mask) {
  **************************************************************************/
 int neorv32_twd_get_rx_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_TWD->CTRL >> TWD_CTRL_RX_FIFO_LSB) & 0xf;
-  return (int)(1 << tmp);
+  uint32_t tmp = (NEORV32_TWD->CTRL >> TWD_CTRL_RX_FIFO_LSB) & 0xfU;
+  return (int)(1U << tmp);
 }
 
 /**********************************************************************//**
@@ -81,8 +81,8 @@ int neorv32_twd_get_rx_fifo_depth(void) {
  **************************************************************************/
 int neorv32_twd_get_tx_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_TWD->CTRL >> TWD_CTRL_TX_FIFO_LSB) & 0xf;
-  return (int)(1 << tmp);
+  uint32_t tmp = (NEORV32_TWD->CTRL >> TWD_CTRL_TX_FIFO_LSB) & 0xfU;
+  return (int)(1U << tmp);
 }
 
 /**********************************************************************//**
@@ -90,7 +90,7 @@ int neorv32_twd_get_tx_fifo_depth(void) {
  **************************************************************************/
 void neorv32_twd_disable(void) {
 
-  __MMREG32_BCLR(NEORV32_TWD->CTRL, 1 << TWD_CTRL_EN);
+  __MMREG32_BCLR(NEORV32_TWD->CTRL, 1U << TWD_CTRL_EN);
 }
 
 /**********************************************************************//**
@@ -98,7 +98,7 @@ void neorv32_twd_disable(void) {
  **************************************************************************/
 void neorv32_twd_enable(void) {
 
-  __MMREG32_BSET(NEORV32_TWD->CTRL, 1 << TWD_CTRL_EN);
+  __MMREG32_BSET(NEORV32_TWD->CTRL, 1U << TWD_CTRL_EN);
 }
 
 /**********************************************************************//**
@@ -106,7 +106,7 @@ void neorv32_twd_enable(void) {
  **************************************************************************/
 void neorv32_twd_clear_rx(void) {
 
-  __MMREG32_BSET(NEORV32_TWD->CTRL, 1 << TWD_CTRL_CLR_RX);
+  __MMREG32_BSET(NEORV32_TWD->CTRL, 1U << TWD_CTRL_CLR_RX);
 }
 
 /**********************************************************************//**
@@ -114,7 +114,7 @@ void neorv32_twd_clear_rx(void) {
  **************************************************************************/
 void neorv32_twd_clear_tx(void) {
 
-  __MMREG32_BSET(NEORV32_TWD->CTRL, 1 << TWD_CTRL_CLR_TX);
+  __MMREG32_BSET(NEORV32_TWD->CTRL, 1U << TWD_CTRL_CLR_TX);
 }
 
 /**********************************************************************//**
@@ -123,7 +123,7 @@ void neorv32_twd_clear_tx(void) {
  **************************************************************************/
 int neorv32_twd_com_state(void) {
 
-  return (int)(NEORV32_TWD->CTRL & (1 << TWD_CTRL_COM));
+  return (int)(NEORV32_TWD->CTRL & (1U << TWD_CTRL_COM));
 }
 
 /**********************************************************************//**
@@ -134,8 +134,8 @@ int neorv32_twd_com_state(void) {
 int neorv32_twd_com_started(void) {
 
   uint32_t ctrl_tmp = NEORV32_TWD->CTRL;
-  __MMREG32_BCLR(NEORV32_TWD->CTRL, 1 << TWD_CTRL_COM_END); // clear BEG if it is set, keep END
-  return (int)(ctrl_tmp & (1 << TWD_CTRL_COM_BEG));
+  __MMREG32_BCLR(NEORV32_TWD->CTRL, 1U << TWD_CTRL_COM_END); // clear BEG if it is set, keep END
+  return (int)(ctrl_tmp & (1U << TWD_CTRL_COM_BEG));
 }
 
 /**********************************************************************//**
@@ -146,8 +146,8 @@ int neorv32_twd_com_started(void) {
 int neorv32_twd_com_ended(void) {
 
   uint32_t ctrl_tmp = NEORV32_TWD->CTRL;
-  __MMREG32_BCLR(NEORV32_TWD->CTRL, 1 << TWD_CTRL_COM_BEG); // clear END if it is set, keep BEG
-  return (int)(ctrl_tmp & (1 << TWD_CTRL_COM_END));
+  __MMREG32_BCLR(NEORV32_TWD->CTRL, 1U << TWD_CTRL_COM_BEG); // clear END if it is set, keep BEG
+  return (int)(ctrl_tmp & (1U << TWD_CTRL_COM_END));
 }
 
 /**********************************************************************//**
@@ -156,7 +156,7 @@ int neorv32_twd_com_ended(void) {
  **************************************************************************/
 int neorv32_twd_rx_available(void) {
 
-  return (int)(NEORV32_TWD->CTRL & (1 << TWD_CTRL_RX_AVAIL));
+  return (int)(NEORV32_TWD->CTRL & (1U << TWD_CTRL_RX_AVAIL));
 }
 
 /**********************************************************************//**
@@ -165,7 +165,7 @@ int neorv32_twd_rx_available(void) {
  **************************************************************************/
 int neorv32_twd_rx_full(void) {
 
-  return (int)(NEORV32_TWD->CTRL & (1 << TWD_CTRL_RX_FULL));
+  return (int)(NEORV32_TWD->CTRL & (1U << TWD_CTRL_RX_FULL));
 }
 
 /**********************************************************************//**
@@ -174,7 +174,7 @@ int neorv32_twd_rx_full(void) {
  **************************************************************************/
 int neorv32_twd_tx_empty(void) {
 
-  return (int)(NEORV32_TWD->CTRL & (1 << TWD_CTRL_TX_EMPTY));
+  return (int)(NEORV32_TWD->CTRL & (1U << TWD_CTRL_TX_EMPTY));
 }
 
 /**********************************************************************//**
@@ -183,7 +183,7 @@ int neorv32_twd_tx_empty(void) {
  **************************************************************************/
 int neorv32_twd_tx_full(void) {
 
-  return (int)(NEORV32_TWD->CTRL & (1 << TWD_CTRL_TX_FULL));
+  return (int)(NEORV32_TWD->CTRL & (1U << TWD_CTRL_TX_FULL));
 }
 
 /**********************************************************************//**

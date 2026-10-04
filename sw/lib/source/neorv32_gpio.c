@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_gpio_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPIO));
+  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_GPIO));
 }
 
 /**********************************************************************//**
@@ -29,7 +29,7 @@ int neorv32_gpio_available(void) {
  **************************************************************************/
 void neorv32_gpio_pin_set(int pin, int value) {
 
-  uint32_t mask = (uint32_t)(1 << (pin & 31u));
+  uint32_t mask = (uint32_t)(1U << (pin & 31U));
 
   if (value) {
     __MMREG32_BSET(NEORV32_GPIO->PORT_OUT, mask);
@@ -45,7 +45,7 @@ void neorv32_gpio_pin_set(int pin, int value) {
  **************************************************************************/
 void neorv32_gpio_pin_toggle(int pin) {
 
-  __MMREG32_BINV(NEORV32_GPIO->PORT_OUT, 1 << (pin & 31u));
+  __MMREG32_BINV(NEORV32_GPIO->PORT_OUT, 1U << (pin & 31U));
 }
 
 /**********************************************************************//**
@@ -55,7 +55,7 @@ void neorv32_gpio_pin_toggle(int pin) {
  **************************************************************************/
 uint32_t neorv32_gpio_pin_get(int pin) {
 
-  return NEORV32_GPIO->PORT_IN & (uint32_t)(1 << (pin & 31u));
+  return NEORV32_GPIO->PORT_IN & (uint32_t)(1U << (pin & 31U));
 }
 
 /**********************************************************************//**
@@ -112,7 +112,7 @@ uint32_t neorv32_gpio_port_dir_get(void) {
  **************************************************************************/
 void neorv32_gpio_pin_dir_set(int pin, int dir) {
 
-  uint32_t mask = (uint32_t)(1 << (pin & 31u));
+  uint32_t mask = (uint32_t)(1U << (pin & 31U));
 
   if (dir) {
     __MMREG32_BSET(NEORV32_GPIO->PORT_DIR, mask);
@@ -129,7 +129,7 @@ void neorv32_gpio_pin_dir_set(int pin, int dir) {
  **************************************************************************/
 void neorv32_gpio_irq_setup(int pin, int trigger) {
 
-  uint32_t mask = (uint32_t)(1 << (pin & 31u));
+  uint32_t mask = (uint32_t)(1U << (pin & 31U));
 
   // trigger type
   if ((trigger == GPIO_TRIG_EDGE_FALLING) || (trigger == GPIO_TRIG_EDGE_RISING)) {

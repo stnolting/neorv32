@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_pwm_available(void) {
 
-  return(int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_PWM));
+  return(int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_PWM));
 }
 
 /**********************************************************************//**
@@ -34,7 +34,7 @@ int neorv32_pwm_get_num_channels(void) {
 
   uint32_t i = 0, cnt = 0;
   for (i=0; i<32; i++) {
-    cnt += tmp & 1;
+    cnt += tmp & 1U;
     tmp >>= 1;
   }
 
@@ -76,7 +76,7 @@ void neorv32_pwm_ch_disable_mask(uint32_t mask) {
  **************************************************************************/
 void neorv32_pwm_ch_enable_single(int ch) {
 
-  __MMREG32_BSET(NEORV32_PWM->ENABLE, 1 << (ch & 31u));
+  __MMREG32_BSET(NEORV32_PWM->ENABLE, 1U << (ch & 31U));
 }
 
 /**********************************************************************//**
@@ -85,7 +85,7 @@ void neorv32_pwm_ch_enable_single(int ch) {
  **************************************************************************/
 void neorv32_pwm_ch_disable_single(int ch) {
 
-  __MMREG32_BCLR(NEORV32_PWM->ENABLE, 1 << (ch & 31u));
+  __MMREG32_BCLR(NEORV32_PWM->ENABLE, 1U << (ch & 31U));
 }
 
 /**********************************************************************//**
@@ -97,8 +97,8 @@ void neorv32_pwm_ch_disable_single(int ch) {
  **************************************************************************/
 void neorv32_pwm_ch_setup(int ch, int top, int pol, int mode) {
 
-  ch &= 31u;
-  uint32_t mask = 1 << ch;
+  ch &= 31U;
+  uint32_t mask = 1U << ch;
 
   if (pol) {
     __MMREG32_BSET(NEORV32_PWM->POLARITY, mask);
@@ -122,5 +122,5 @@ void neorv32_pwm_ch_setup(int ch, int top, int pol, int mode) {
  **************************************************************************/
 void neorv32_pwm_ch_set_duty(int ch, int duty) {
 
-  NEORV32_PWM->CHANNEL[ch & 31u].CMP = duty;
+  NEORV32_PWM->CHANNEL[ch & 31U].CMP = duty;
 }

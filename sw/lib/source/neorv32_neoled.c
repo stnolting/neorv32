@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_neoled_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_NEOLED));
+  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_NEOLED));
 }
 
 
@@ -28,7 +28,7 @@ int neorv32_neoled_available(void) {
  **************************************************************************/
 void neorv32_neoled_enable(void) {
 
-  __MMREG32_BSET(NEORV32_NEOLED->CTRL, 1 << NEOLED_CTRL_EN);
+  __MMREG32_BSET(NEORV32_NEOLED->CTRL, 1U << NEOLED_CTRL_EN);
 }
 
 /**********************************************************************//**
@@ -36,7 +36,7 @@ void neorv32_neoled_enable(void) {
  **************************************************************************/
 void neorv32_neoled_disable(void) {
 
-  __MMREG32_BCLR(NEORV32_NEOLED->CTRL, 1 << NEOLED_CTRL_EN);
+  __MMREG32_BCLR(NEORV32_NEOLED->CTRL, 1U << NEOLED_CTRL_EN);
 }
 
 /**********************************************************************//**
@@ -52,7 +52,7 @@ void neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero,
   NEORV32_NEOLED->CTRL = 0; // reset
 
   uint32_t tmp = 0;
-  tmp |= (uint32_t)((1           & 0x01U) << NEOLED_CTRL_EN);        // module enable
+  tmp |= (uint32_t)((1U          & 0x01U) << NEOLED_CTRL_EN);        // module enable
   tmp |= (uint32_t)((prsc        & 0x07U) << NEOLED_CTRL_PRSC_LSB);  // clock prescaler
   tmp |= (uint32_t)((t_total     & 0x1fU) << NEOLED_CTRL_T_TOT_LSB); // serial data output: total period length for one bit
   tmp |= (uint32_t)((t_high_zero & 0x1fU) << NEOLED_CTRL_T_0H_LSB);  // serial data output: high-time for sending a '0'
@@ -115,7 +115,7 @@ void neorv32_neoled_setup_ws2812(void) {
 void neorv32_neoled_strobe_blocking(void) {
 
   // wait for FIFO full flag to clear
-  while (NEORV32_NEOLED->CTRL & (1 << NEOLED_CTRL_TX_FULL));
+  while (NEORV32_NEOLED->CTRL & (1U << NEOLED_CTRL_TX_FULL));
   NEORV32_NEOLED->STROBE = 0; // just write any data
 }
 
@@ -134,7 +134,7 @@ void neorv32_neoled_strobe_nonblocking(void) {
 void neorv32_neoled_write32_blocking(uint32_t data) {
 
   // wait for FIFO full flag to clear
-  while (NEORV32_NEOLED->CTRL & (1 << NEOLED_CTRL_TX_FULL));
+  while (NEORV32_NEOLED->CTRL & (1U << NEOLED_CTRL_TX_FULL));
   NEORV32_NEOLED->DATA32 = data;
 }
 
@@ -154,7 +154,7 @@ void neorv32_neoled_write32_nonblocking(uint32_t data) {
 void neorv32_neoled_write24_blocking(uint32_t data) {
 
   // wait for FIFO full flag to clear
-  while (NEORV32_NEOLED->CTRL & (1 << NEOLED_CTRL_TX_FULL));
+  while (NEORV32_NEOLED->CTRL & (1U << NEOLED_CTRL_TX_FULL));
   NEORV32_NEOLED->DATA24 = data;
 }
 
@@ -173,8 +173,8 @@ void neorv32_neoled_write24_nonblocking(uint32_t data) {
  **************************************************************************/
 int neorv32_neoled_get_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_NEOLED->CTRL >> NEOLED_CTRL_FIFO_LSB) & 0xfu;
-  return (int)(1 << tmp);
+  uint32_t tmp = (NEORV32_NEOLED->CTRL >> NEOLED_CTRL_FIFO_LSB) & 0xfU;
+  return (int)(1U << tmp);
 }
 
 /**********************************************************************//**
@@ -183,7 +183,7 @@ int neorv32_neoled_get_fifo_depth(void) {
  **************************************************************************/
 int neorv32_neoled_fifo_full(void) {
 
-  return (int)(NEORV32_NEOLED->CTRL & (1 << NEOLED_CTRL_TX_FULL));
+  return (int)(NEORV32_NEOLED->CTRL & (1U << NEOLED_CTRL_TX_FULL));
 }
 
 /**********************************************************************//**
@@ -192,7 +192,7 @@ int neorv32_neoled_fifo_full(void) {
  **************************************************************************/
 int neorv32_neoled_fifo_empty(void) {
 
-  return (int)(NEORV32_NEOLED->CTRL & (1 << NEOLED_CTRL_TX_EMPTY));
+  return (int)(NEORV32_NEOLED->CTRL & (1U << NEOLED_CTRL_TX_EMPTY));
 }
 
 /**********************************************************************//**
@@ -201,5 +201,5 @@ int neorv32_neoled_fifo_empty(void) {
  **************************************************************************/
 int neorv32_neoled_busy(void) {
 
-  return (int)(NEORV32_NEOLED->CTRL & (1 << NEOLED_CTRL_TX_BUSY));
+  return (int)(NEORV32_NEOLED->CTRL & (1U << NEOLED_CTRL_TX_BUSY));
 }

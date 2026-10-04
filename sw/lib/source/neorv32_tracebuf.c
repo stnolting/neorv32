@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_tracebuf_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRACEBUF));
+  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_TRACEBUF));
 }
 
 /**********************************************************************//**
@@ -34,8 +34,8 @@ void neorv32_tracebuf_enable(int hsel, uint32_t stop_addr) {
   NEORV32_TRACEBUF->STOP_ADDR = stop_addr;
 
   uint32_t tmp = 0;
-  tmp |= (uint32_t)(1           << TRACEBUF_CTRL_EN);
-  tmp |= (uint32_t)((hsel & 1)) << TRACEBUF_CTRL_HSEL;
+  tmp |= (uint32_t)(1U           << TRACEBUF_CTRL_EN);
+  tmp |= (uint32_t)((hsel & 1U)) << TRACEBUF_CTRL_HSEL;
   NEORV32_TRACEBUF->CTRL = tmp;
 }
 
@@ -53,8 +53,8 @@ void neorv32_tracebuf_disable(void) {
  **************************************************************************/
 int neorv32_tracebuf_get_buffer_depth(void) {
 
-  uint32_t tmp = (NEORV32_TRACEBUF->CTRL >> TRACEBUF_CTRL_TBM_LSB) & 0x0f;
-  return (int)(1 << tmp);
+  uint32_t tmp = (NEORV32_TRACEBUF->CTRL >> TRACEBUF_CTRL_TBM_LSB) & 0x0fU;
+  return (int)(1U << tmp);
 }
 
 /**********************************************************************//**
@@ -63,7 +63,7 @@ int neorv32_tracebuf_get_buffer_depth(void) {
  **************************************************************************/
 int neorv32_tracebuf_run(void) {
 
-  return (int)(NEORV32_TRACEBUF->CTRL & (1 << TRACEBUF_CTRL_RUN));
+  return (int)(NEORV32_TRACEBUF->CTRL & (1U << TRACEBUF_CTRL_RUN));
 }
 
 /**********************************************************************//**
@@ -71,7 +71,7 @@ int neorv32_tracebuf_run(void) {
  **************************************************************************/
 void neorv32_tracebuf_irq_ack(void) {
 
-  __MMREG32_BSET(NEORV32_TRACEBUF->CTRL, 1 << TRACEBUF_CTRL_IRQ_CLR);
+  __MMREG32_BSET(NEORV32_TRACEBUF->CTRL, 1U << TRACEBUF_CTRL_IRQ_CLR);
 }
 
 /**********************************************************************//**
@@ -80,7 +80,7 @@ void neorv32_tracebuf_irq_ack(void) {
  **************************************************************************/
 int neorv32_tracebuf_data_avail(void) {
 
-  return (int)(NEORV32_TRACEBUF->CTRL & (1 << TRACEBUF_CTRL_AVAIL));
+  return (int)(NEORV32_TRACEBUF->CTRL & (1U << TRACEBUF_CTRL_AVAIL));
 }
 
 /**********************************************************************//**

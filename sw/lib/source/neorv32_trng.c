@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_trng_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRNG));
+  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_TRNG));
 }
 
 /**********************************************************************//**
@@ -35,7 +35,7 @@ void neorv32_trng_enable(void) {
     asm volatile ("nop");
   }
 
-  NEORV32_TRNG->CTRL = 1 << TRNG_CTRL_EN; // enable
+  NEORV32_TRNG->CTRL = 1U << TRNG_CTRL_EN; // enable
 }
 
 /**********************************************************************//**
@@ -51,7 +51,7 @@ void neorv32_trng_disable(void) {
  **************************************************************************/
 void neorv32_trng_fifo_clear(void) {
 
-  __MMREG32_BSET(NEORV32_TRNG->CTRL, 1 << TRNG_CTRL_FIFO_CLR);
+  __MMREG32_BSET(NEORV32_TRNG->CTRL, 1U << TRNG_CTRL_FIFO_CLR);
 }
 
 /**********************************************************************//**
@@ -60,8 +60,8 @@ void neorv32_trng_fifo_clear(void) {
  **************************************************************************/
 int neorv32_trng_get_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_TRNG->CTRL >> TRNG_CTRL_FIFO_LSB) & 0x0f;
-  return (int)(1 << tmp);
+  uint32_t tmp = (NEORV32_TRNG->CTRL >> TRNG_CTRL_FIFO_LSB) & 0x0fU;
+  return (int)(1U << tmp);
 }
 
 /**********************************************************************//**
@@ -70,8 +70,8 @@ int neorv32_trng_get_fifo_depth(void) {
  **************************************************************************/
 int neorv32_trng_get_num_raw_bits(void) {
 
-  uint32_t tmp = (NEORV32_TRNG->CTRL >> TRNG_CTRL_NBIT_LSB) & 0x0f;
-  return (int)(1 << tmp);
+  uint32_t tmp = (NEORV32_TRNG->CTRL >> TRNG_CTRL_NBIT_LSB) & 0x0fU;
+  return (int)(1U << tmp);
 }
 
 /**********************************************************************//**
@@ -80,7 +80,7 @@ int neorv32_trng_get_num_raw_bits(void) {
  **************************************************************************/
 int neorv32_trng_get_num_ros(void) {
 
-  return (int)((NEORV32_TRNG->CTRL >> TRNG_CTRL_NRO_LSB) & 0xff);
+  return (int)((NEORV32_TRNG->CTRL >> TRNG_CTRL_NRO_LSB) & 0xffU);
 }
 
 /**********************************************************************//**
@@ -89,7 +89,7 @@ int neorv32_trng_get_num_ros(void) {
  **************************************************************************/
 int neorv32_trng_get_num_inv(void) {
 
-  return (int)((NEORV32_TRNG->CTRL >> TRNG_CTRL_NINV_LSB) & 0xfff);
+  return (int)((NEORV32_TRNG->CTRL >> TRNG_CTRL_NINV_LSB) & 0xfffU);
 }
 
 /**********************************************************************//**
@@ -98,7 +98,7 @@ int neorv32_trng_get_num_inv(void) {
  **************************************************************************/
 int neorv32_trng_data_avail(void) {
 
-  return (int)(NEORV32_TRNG->CTRL & (1<<TRNG_CTRL_AVAIL));
+  return (int)(NEORV32_TRNG->CTRL & (1U<<TRNG_CTRL_AVAIL));
 }
 
 /**********************************************************************//**
@@ -118,5 +118,5 @@ uint8_t neorv32_trng_data_get(void) {
  **************************************************************************/
 int neorv32_trng_check_sim_mode(void) {
 
-  return (int)(NEORV32_TRNG->CTRL & (1<<TRNG_CTRL_SIM_MODE));
+  return (int)(NEORV32_TRNG->CTRL & (1U<<TRNG_CTRL_SIM_MODE));
 }

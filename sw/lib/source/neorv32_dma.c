@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_dma_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_DMA));
+  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_DMA));
 }
 
 /**********************************************************************//**
@@ -28,8 +28,8 @@ int neorv32_dma_available(void) {
  **************************************************************************/
 int neorv32_dma_get_descriptor_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_DMA->CTRL >> DMA_CTRL_DFIFO_LSB) & 0xf;
-  return (int)(1 << tmp);
+  uint32_t tmp = (NEORV32_DMA->CTRL >> DMA_CTRL_DFIFO_LSB) & 0xfU;
+  return (int)(1U << tmp);
 }
 
 /**********************************************************************//**
@@ -38,7 +38,7 @@ int neorv32_dma_get_descriptor_fifo_depth(void) {
  **************************************************************************/
 int neorv32_dma_descriptor_fifo_full(void) {
 
-  return (int)(NEORV32_DMA->CTRL & (1 << DMA_CTRL_DFULL));
+  return (int)(NEORV32_DMA->CTRL & (1U << DMA_CTRL_DFULL));
 }
 
 /**********************************************************************//**
@@ -47,7 +47,7 @@ int neorv32_dma_descriptor_fifo_full(void) {
  **************************************************************************/
 int neorv32_dma_descriptor_fifo_empty(void) {
 
-  return (int)(NEORV32_DMA->CTRL & (1 << DMA_CTRL_DEMPTY));
+  return (int)(NEORV32_DMA->CTRL & (1U << DMA_CTRL_DEMPTY));
 }
 
 /**********************************************************************//**
@@ -55,7 +55,7 @@ int neorv32_dma_descriptor_fifo_empty(void) {
  **************************************************************************/
 void neorv32_dma_enable(void) {
 
-  __MMREG32_BSET(NEORV32_DMA->CTRL, 1 << DMA_CTRL_EN);
+  __MMREG32_BSET(NEORV32_DMA->CTRL, 1U << DMA_CTRL_EN);
 }
 
 /**********************************************************************//**
@@ -63,7 +63,7 @@ void neorv32_dma_enable(void) {
  **************************************************************************/
 void neorv32_dma_disable(void) {
 
-  __MMREG32_BCLR(NEORV32_DMA->CTRL, 1 << DMA_CTRL_EN);
+  __MMREG32_BCLR(NEORV32_DMA->CTRL, 1U << DMA_CTRL_EN);
 }
 
 /**********************************************************************//**
@@ -72,7 +72,7 @@ void neorv32_dma_disable(void) {
  **************************************************************************/
 void neorv32_dma_irq_ack(void) {
 
-  __MMREG32_BSET(NEORV32_DMA->CTRL, 1 << DMA_CTRL_ACK);
+  __MMREG32_BSET(NEORV32_DMA->CTRL, 1U << DMA_CTRL_ACK);
 }
 
 /**********************************************************************//**
@@ -86,11 +86,11 @@ void neorv32_dma_irq_ack(void) {
  **************************************************************************/
 int neorv32_dma_program(uint32_t src_addr, uint32_t dst_addr, uint32_t config) {
 
-  if (NEORV32_DMA->CTRL & (1 << DMA_CTRL_DFULL)) { return -3; } // three free entries too few
+  if (NEORV32_DMA->CTRL & (1U << DMA_CTRL_DFULL)) { return -3; } // three free entries too few
   NEORV32_DMA->DESC = src_addr;
-  if (NEORV32_DMA->CTRL & (1 << DMA_CTRL_DFULL)) { return -2; } // two free entries too few
+  if (NEORV32_DMA->CTRL & (1U << DMA_CTRL_DFULL)) { return -2; } // two free entries too few
   NEORV32_DMA->DESC = dst_addr;
-  if (NEORV32_DMA->CTRL & (1 << DMA_CTRL_DFULL)) { return -1; } // one free entry too few
+  if (NEORV32_DMA->CTRL & (1U << DMA_CTRL_DFULL)) { return -1; } // one free entry too few
   NEORV32_DMA->DESC = config;
   return 0;
 }
@@ -114,7 +114,7 @@ void neorv32_dma_program_nocheck(uint32_t src_addr, uint32_t dst_addr, uint32_t 
  **************************************************************************/
 void neorv32_dma_start(void) {
 
-  __MMREG32_BSET(NEORV32_DMA->CTRL, 1 << DMA_CTRL_START);
+  __MMREG32_BSET(NEORV32_DMA->CTRL, 1U << DMA_CTRL_START);
 }
 
 /**********************************************************************//**
@@ -125,13 +125,13 @@ int neorv32_dma_status(void) {
 
   uint32_t tmp = NEORV32_DMA->CTRL;
 
-  if (tmp & (1 << DMA_CTRL_ERROR)) {
+  if (tmp & (1U << DMA_CTRL_ERROR)) {
     return DMA_STATUS_ERROR; // error during transfer
   }
-  else if (tmp & (1 << DMA_CTRL_BUSY)) {
+  else if (tmp & (1U << DMA_CTRL_BUSY)) {
     return DMA_STATUS_BUSY; // transfer in progress
   }
-  else if (tmp & (1 << DMA_CTRL_DONE)) {
+  else if (tmp & (1U << DMA_CTRL_DONE)) {
     return DMA_STATUS_DONE; // transfer done
   }
   else {

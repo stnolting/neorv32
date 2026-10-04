@@ -121,7 +121,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_is_sim(vo
  * @return Number of physical CPU cores / harts.
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_numcores(void) {
-  return (uint32_t)((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_HART_LSB) & 0x0fu);
+  return (uint32_t)((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_HART_LSB) & 0x0fU);
 }
 
 /**********************************************************************//**
@@ -129,7 +129,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_numco
  * @return IMEM size in bytes.
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_imemsize(void) {
-  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_IMEM_LSB) & 0xffu;
+  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_IMEM_LSB) & 0xffU;
   if (tmp) {
     return (uint32_t)(1u << tmp);
   }
@@ -141,9 +141,9 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_imems
  * @return DMEM size in bytes.
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_dmemsize(void) {
-  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_DMEM_LSB) & 0xffu;
+  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_DMEM_LSB) & 0xffU;
   if (tmp) {
-    return (uint32_t)(1u << tmp);
+    return (uint32_t)(1U << tmp);
   }
   return 0;
 }
@@ -153,7 +153,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_dmems
  * @return Boot configuration ID.
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_bootmode(void) {
-  return (uint32_t)((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_BOOT_LSB) & 0x03u);
+  return (uint32_t)((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_BOOT_LSB) & 0x03U);
 }
 
 /**********************************************************************//**
@@ -161,9 +161,9 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_bootm
  * @return Bus timeout cycles.
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_intbustimeout(void) {
-  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_ITMO_LSB) & 0x1fu;
+  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_ITMO_LSB) & 0x1fU;
   if (tmp) {
-    return (uint32_t)(1u << tmp);
+    return (uint32_t)(1U << tmp);
   }
   return 0;
 }
@@ -173,9 +173,9 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_intbu
  * @return Bus timeout cycles.
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_extbustimeout(void) {
-  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_ETMO_LSB) & 0x1fu;
+  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_ETMO_LSB) & 0x1fU;
   if (tmp) {
-    return (uint32_t)(1u << tmp);
+    return (uint32_t)(1U << tmp);
   }
   return 0;
 }

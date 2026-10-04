@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_clint_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT));
+  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_CLINT));
 }
 
 /**********************************************************************//**
@@ -28,7 +28,7 @@ int neorv32_clint_available(void) {
  **************************************************************************/
 void neorv32_clint_msi_set(int hart) {
 
-  NEORV32_CLINT->MSWI[hart & 0xfff] = 1;
+  NEORV32_CLINT->MSWI[hart & 0xfffU] = 1;
 }
 
 
@@ -38,7 +38,7 @@ void neorv32_clint_msi_set(int hart) {
  **************************************************************************/
 void neorv32_clint_msi_clr(int hart) {
 
-  NEORV32_CLINT->MSWI[hart & 0xfff] = 0;
+  NEORV32_CLINT->MSWI[hart & 0xfffU] = 0;
 }
 
 /**********************************************************************//**
@@ -47,7 +47,7 @@ void neorv32_clint_msi_clr(int hart) {
  **************************************************************************/
 uint32_t neorv32_clint_msi_get(int hart) {
 
-  return NEORV32_CLINT->MSWI[hart & 0xfff];
+  return NEORV32_CLINT->MSWI[hart & 0xfffU];
 }
 
 /**********************************************************************//**

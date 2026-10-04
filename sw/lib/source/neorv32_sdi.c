@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_sdi_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SDI));
+  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_SDI));
 }
 
 /**********************************************************************//**
@@ -31,11 +31,11 @@ void neorv32_sdi_setup(uint32_t irq_mask) {
 
   NEORV32_SDI->CTRL = 0; // reset
 
-  const uint32_t mask = (1 << SDI_CTRL_IRQ_RX_NEMPTY) |
-                        (1 << SDI_CTRL_IRQ_RX_FULL)   |
-                        (1 << SDI_CTRL_IRQ_TX_EMPTY);
+  const uint32_t mask = (1U << SDI_CTRL_IRQ_RX_NEMPTY) |
+                        (1U << SDI_CTRL_IRQ_RX_FULL)   |
+                        (1U << SDI_CTRL_IRQ_TX_EMPTY);
 
-  uint32_t tmp = (uint32_t)(1 << SDI_CTRL_EN);
+  uint32_t tmp = (uint32_t)(1U << SDI_CTRL_EN);
   NEORV32_SDI->CTRL = tmp | (irq_mask & mask);
 }
 
@@ -44,7 +44,7 @@ void neorv32_sdi_setup(uint32_t irq_mask) {
  **************************************************************************/
 void neorv32_sdi_disable(void) {
 
-  __MMREG32_BCLR(NEORV32_SDI->CTRL, 1 << SDI_CTRL_EN);
+  __MMREG32_BCLR(NEORV32_SDI->CTRL, 1U << SDI_CTRL_EN);
 }
 
 /**********************************************************************//**
@@ -52,7 +52,7 @@ void neorv32_sdi_disable(void) {
  **************************************************************************/
 void neorv32_sdi_enable(void) {
 
-  __MMREG32_BSET(NEORV32_SDI->CTRL, 1 << SDI_CTRL_EN);
+  __MMREG32_BSET(NEORV32_SDI->CTRL, 1U << SDI_CTRL_EN);
 }
 
 /**********************************************************************//**
@@ -61,8 +61,8 @@ void neorv32_sdi_enable(void) {
  **************************************************************************/
 int neorv32_sdi_get_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_SDI->CTRL >> SDI_CTRL_FIFO_LSB) & 0x0f;
-  return (int)(1 << tmp);
+  uint32_t tmp = (NEORV32_SDI->CTRL >> SDI_CTRL_FIFO_LSB) & 0x0fU;
+  return (int)(1U << tmp);
 }
 
 /**********************************************************************//**
@@ -71,7 +71,7 @@ int neorv32_sdi_get_fifo_depth(void) {
  **************************************************************************/
 void neorv32_sdi_put(uint8_t data) {
 
-  while (NEORV32_SDI->CTRL & (1 << SDI_CTRL_TX_FULL));
+  while (NEORV32_SDI->CTRL & (1U << SDI_CTRL_TX_FULL));
   NEORV32_SDI->DATA = (uint32_t)data;
 }
 
@@ -81,7 +81,7 @@ void neorv32_sdi_put(uint8_t data) {
  **************************************************************************/
 uint8_t neorv32_sdi_get(void) {
 
-  while (NEORV32_SDI->CTRL & (1 << SDI_CTRL_RX_EMPTY));
+  while (NEORV32_SDI->CTRL & (1U << SDI_CTRL_RX_EMPTY));
   return (uint8_t)NEORV32_SDI->DATA;
 }
 
@@ -109,7 +109,7 @@ uint8_t neorv32_sdi_get_nonblocking(void) {
  **************************************************************************/
 int neorv32_sdi_rx_empty(void) {
 
-  return (int)(NEORV32_SDI->CTRL & (1 << SDI_CTRL_RX_EMPTY));
+  return (int)(NEORV32_SDI->CTRL & (1U << SDI_CTRL_RX_EMPTY));
 }
 
 /**********************************************************************//**
@@ -118,7 +118,7 @@ int neorv32_sdi_rx_empty(void) {
  **************************************************************************/
 int neorv32_sdi_rx_full(void) {
 
-  return (int)(NEORV32_SDI->CTRL & (1 << SDI_CTRL_RX_FULL));
+  return (int)(NEORV32_SDI->CTRL & (1U << SDI_CTRL_RX_FULL));
 }
 
 /**********************************************************************//**
@@ -127,7 +127,7 @@ int neorv32_sdi_rx_full(void) {
  **************************************************************************/
 int neorv32_sdi_tx_empty(void) {
 
-  return (int)(NEORV32_SDI->CTRL & (1 << SDI_CTRL_TX_EMPTY));
+  return (int)(NEORV32_SDI->CTRL & (1U << SDI_CTRL_TX_EMPTY));
 }
 
 /**********************************************************************//**
@@ -136,7 +136,7 @@ int neorv32_sdi_tx_empty(void) {
  **************************************************************************/
 int neorv32_sdi_tx_full(void) {
 
-  return (int)(NEORV32_SDI->CTRL & (1 << SDI_CTRL_TX_FULL));
+  return (int)(NEORV32_SDI->CTRL & (1U << SDI_CTRL_TX_FULL));
 }
 
 /**********************************************************************//**
@@ -144,7 +144,7 @@ int neorv32_sdi_tx_full(void) {
  **************************************************************************/
 void neorv32_sdi_rx_clear(void) {
 
-  __MMREG32_BSET(NEORV32_SDI->CTRL, 1 << SDI_CTRL_CLR_RX);
+  __MMREG32_BSET(NEORV32_SDI->CTRL, 1U << SDI_CTRL_CLR_RX);
 }
 
 /**********************************************************************//**
@@ -152,7 +152,7 @@ void neorv32_sdi_rx_clear(void) {
  **************************************************************************/
 void neorv32_sdi_tx_clear(void) {
 
-  __MMREG32_BSET(NEORV32_SDI->CTRL, 1 << SDI_CTRL_CLR_TX);
+  __MMREG32_BSET(NEORV32_SDI->CTRL, 1U << SDI_CTRL_CLR_TX);
 }
 
 /**********************************************************************//**
@@ -161,5 +161,5 @@ void neorv32_sdi_tx_clear(void) {
  **************************************************************************/
 int neorv32_sdi_check_cs(void) {
 
-  return (int)(NEORV32_SDI->CTRL & (1 << SDI_CTRL_CS_ACTIVE));
+  return (int)(NEORV32_SDI->CTRL & (1U << SDI_CTRL_CS_ACTIVE));
 }

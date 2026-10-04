@@ -120,12 +120,12 @@ void neorv32_cpu_set_minstret(uint64_t value) {
 uint32_t neorv32_cpu_pmp_get_num_regions(void) {
 
   // PMP implemented at all?
-  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_SMPMP)) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1U<<CSR_MXISA_SMPMP)) == 0) {
     return 0;
   }
 
   // try setting R bit in all PMPCFG CSRs
-  const uint32_t mask = 0x01010101;
+  const uint32_t mask = 0x01010101U;
   neorv32_cpu_csr_write(CSR_PMPCFG0, mask);
   neorv32_cpu_csr_write(CSR_PMPCFG1, mask);
   neorv32_cpu_csr_write(CSR_PMPCFG2, mask);
@@ -157,7 +157,7 @@ uint32_t neorv32_cpu_pmp_get_num_regions(void) {
 uint32_t neorv32_cpu_pmp_get_granularity(void) {
 
   // PMP implemented at all?
-  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_SMPMP)) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1U<<CSR_MXISA_SMPMP)) == 0) {
     return 0;
   }
 
@@ -180,7 +180,7 @@ uint32_t neorv32_cpu_pmp_get_granularity(void) {
     i++;
   }
 
-  return 1<<i;
+  return 1U<<i;
 }
 
 /**********************************************************************//**
@@ -193,13 +193,13 @@ uint32_t neorv32_cpu_pmp_get_granularity(void) {
  **************************************************************************/
 int neorv32_cpu_pmp_configure_region(int index, uint32_t addr, uint8_t config) {
 
-  if ((index > 15) || ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_SMPMP)) == 0)) {
+  if ((index > 15) || ((neorv32_cpu_csr_read(CSR_MXISA) & (1U<<CSR_MXISA_SMPMP)) == 0)) {
     return -1; // entry not available
   }
 
   // get current configuration
   uint32_t pmp_cfg = -1;
-  switch ((index >> 2) & 3) {
+  switch ((index >> 2U) & 3) {
     case 0: pmp_cfg = neorv32_cpu_csr_read(CSR_PMPCFG0); break;
     case 1: pmp_cfg = neorv32_cpu_csr_read(CSR_PMPCFG1); break;
     case 2: pmp_cfg = neorv32_cpu_csr_read(CSR_PMPCFG2); break;
@@ -208,12 +208,12 @@ int neorv32_cpu_pmp_configure_region(int index, uint32_t addr, uint8_t config) {
   }
 
   // check lock bit
-  if ((pmp_cfg >> ((index & 3) * 8)) & (1 << PMPCFG_L)) {
+  if ((pmp_cfg >> ((index & 3U) * 8)) & (1U << PMPCFG_L)) {
     return -2; // entry is locked
   }
 
   // set address
-  switch(index & 0xf) {
+  switch(index & 0xfU) {
     case 0:  neorv32_cpu_csr_write(CSR_PMPADDR0,  addr); break;
     case 1:  neorv32_cpu_csr_write(CSR_PMPADDR1,  addr); break;
     case 2:  neorv32_cpu_csr_write(CSR_PMPADDR2,  addr); break;
@@ -234,13 +234,13 @@ int neorv32_cpu_pmp_configure_region(int index, uint32_t addr, uint8_t config) {
   }
 
   // set configuration
-  uint32_t clr_mask = 0xff;
+  uint32_t clr_mask = 0xffU;
   uint32_t set_mask = (uint32_t)config;
 
-  clr_mask <<= 8*(index & 3);
-  set_mask <<= 8*(index & 3);
+  clr_mask <<= 8*(index & 3U);
+  set_mask <<= 8*(index & 3U);
 
-  switch ((index >> 2) & 3) {
+  switch ((index >> 2) & 3U) {
     case 0: neorv32_cpu_csr_clr(CSR_PMPCFG0, clr_mask); neorv32_cpu_csr_set(CSR_PMPCFG0, set_mask); break;
     case 1: neorv32_cpu_csr_clr(CSR_PMPCFG1, clr_mask); neorv32_cpu_csr_set(CSR_PMPCFG1, set_mask); break;
     case 2: neorv32_cpu_csr_clr(CSR_PMPCFG2, clr_mask); neorv32_cpu_csr_set(CSR_PMPCFG2, set_mask); break;
@@ -259,7 +259,7 @@ int neorv32_cpu_pmp_configure_region(int index, uint32_t addr, uint8_t config) {
 uint32_t neorv32_cpu_hpm_get_num_counters(void) {
 
   // HPMs implemented at all?
-  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZIHPM)) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1U<<CSR_MXISA_ZIHPM)) == 0) {
     return 0;
   }
 
@@ -267,35 +267,35 @@ uint32_t neorv32_cpu_hpm_get_num_counters(void) {
   neorv32_cpu_csr_set(CSR_MCOUNTINHIBIT, 0xfffffff8U);
 
   // try to set all HPM counters to 1
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER5,  1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER6,  1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER12, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER13, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER14, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER15, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER16, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER17, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER18, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER19, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER20, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER21, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER22, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER23, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER24, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER25, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER26, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER27, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER28, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER29, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER30, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER31, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER5,  1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER6,  1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER12, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER13, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER14, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER15, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER16, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER17, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER18, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER19, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER20, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER21, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER22, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER23, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER24, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER25, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER26, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER27, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER28, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER29, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER30, 1U);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER31, 1U);
 
   // sum-up all actually set HPMs
   uint32_t num_hpm = 0;
@@ -342,12 +342,12 @@ uint32_t neorv32_cpu_hpm_get_size(void) {
   uint32_t tmp = 0, cnt = 0;
 
   // HPMs implemented at all?
-  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZIHPM)) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1U<<CSR_MXISA_ZIHPM)) == 0) {
     return 0;
   }
 
   // inhibit auto-update of HPM counter3
-  neorv32_cpu_csr_set(CSR_MCOUNTINHIBIT, 1 << CSR_MCOUNTINHIBIT_HPM3);
+  neorv32_cpu_csr_set(CSR_MCOUNTINHIBIT, 1U << CSR_MCOUNTINHIBIT_HPM3);
 
   // try to set all 64 counter bits
   neorv32_cpu_csr_write(CSR_MHPMCOUNTER3, -1);
@@ -380,7 +380,7 @@ int neorv32_cpu_hwtrig_get_number(void) {
   int cnt = 0;
   uint32_t sel = 0;
 
-  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_SDTRIG)) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1U<<CSR_MXISA_SDTRIG)) == 0) {
     return 0;
   }
 

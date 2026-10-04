@@ -64,7 +64,7 @@ static void __neorv32_rte_panic(void) {
   __neorv32_rte_puts(RTE_TERM_HL_ON "<NEORV32-RTE-PANIC> ");
 
   // CPU ID
-  if (neorv32_cpu_csr_read(CSR_MHARTID) & 1) {
+  if (neorv32_cpu_csr_read(CSR_MHARTID) & 1U) {
     __neorv32_rte_puts("[cpu1|");
   }
   else {
@@ -72,7 +72,7 @@ static void __neorv32_rte_panic(void) {
   }
 
   // privilege level of the CPU when the trap occurred
-  if (neorv32_cpu_csr_read(CSR_MSTATUS) & (3 << CSR_MSTATUS_MPP_L)) {
+  if (neorv32_cpu_csr_read(CSR_MSTATUS) & (3U << CSR_MSTATUS_MPP_L)) {
     __neorv32_rte_puts("M] "); // machine-mode
   }
   else {
@@ -126,7 +126,7 @@ static void __neorv32_rte_panic(void) {
   // disable interrupt source if IRQ without handler
   if (((int32_t)cause) < 0) { // is interrupt
     __neorv32_rte_puts(" Disabling IRQ source");
-    neorv32_cpu_csr_clr(CSR_MIE, 1 << (cause & 0x1f));
+    neorv32_cpu_csr_clr(CSR_MIE, 1U << (cause & 0x1fU));
   }
 
   // halt if fatal exception
@@ -294,7 +294,7 @@ void neorv32_rte_setup(void) {
   int i;
 
   // clear mstatus, set previous privilege level to machine-mode
-  neorv32_cpu_csr_write(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));
+  neorv32_cpu_csr_write(CSR_MSTATUS, (1U<<CSR_MSTATUS_MPP_H) | (1U<<CSR_MSTATUS_MPP_L));
 
   // disable all IRQ channels
   neorv32_cpu_csr_write(CSR_MIE, 0);
@@ -325,7 +325,7 @@ int neorv32_rte_handler_install(uint32_t code, void (*handler)(void)) {
     return -1;
   }
 
-  __neorv32_rte_vector_lut[code >> 31][code & 31] = (uint32_t)handler;
+  __neorv32_rte_vector_lut[code >> 31U][code & 31U] = (uint32_t)handler;
   asm volatile ("fence"); // flush/reload trap vector table to/from main memory
 
   return 0;
@@ -343,7 +343,7 @@ int neorv32_rte_handler_uninstall(uint32_t code) {
     return -1;
   }
 
-  __neorv32_rte_vector_lut[code >> 31][code & 31] = (uint32_t)(&__neorv32_rte_panic);
+  __neorv32_rte_vector_lut[code >> 31U][code & 31U] = (uint32_t)(&__neorv32_rte_panic);
   asm volatile ("fence"); // flush/reload trap vector table to/from main memory
 
   return 0;
@@ -381,9 +381,9 @@ uint32_t neorv32_rte_context_get(int x) {
 void neorv32_rte_context_put(int x, uint32_t data) {
 
 #ifdef __riscv_32e
-  uint32_t tmp = (x & 15) << 2;
+  uint32_t tmp = (x & 15U) << 2;
 #else
-  uint32_t tmp = (x & 31) << 2;
+  uint32_t tmp = (x & 31U) << 2;
 #endif
 
   if (tmp) { // no store if x = x0 (hardwired to zero)
