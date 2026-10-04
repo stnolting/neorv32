@@ -21,7 +21,6 @@ uint32_t g_exe_base   = 0; // base/entry-point of executable
 uint32_t g_exe_size   = 0; // size of the loaded executable; 0 if no executable available
 uint32_t g_flash_addr = 0; // current flash/stream address
 
-
 /**********************************************************************//**
  * Bare-metal trap handler.
  **************************************************************************/
@@ -58,7 +57,7 @@ static void __attribute__((interrupt("machine"),aligned(4))) system_trap_handler
   // permanently light up status LED
 #if (STATUS_LED_EN == 1)
   if (neorv32_gpio_available()) {
-    neorv32_gpio_port_set(1 << STATUS_LED_PIN);
+    neorv32_gpio_port_set(1U << STATUS_LED_PIN);
   }
 #endif
 
@@ -67,7 +66,6 @@ static void __attribute__((interrupt("machine"),aligned(4))) system_trap_handler
   __builtin_unreachable();
   while (1); // should never be reached
 }
-
 
 /**********************************************************************//**
  * Setup processor system.
@@ -80,8 +78,8 @@ void system_setup(void) {
   // activate status GPIO LED, clear all others
 #if (STATUS_LED_EN == 1)
   if (neorv32_gpio_available()) {
-    neorv32_gpio_port_dir_set(1 << STATUS_LED_PIN); // set as output
-    neorv32_gpio_port_set(1 << STATUS_LED_PIN);
+    neorv32_gpio_port_dir_set(1U << STATUS_LED_PIN); // set as output
+    neorv32_gpio_port_set(1U << STATUS_LED_PIN);
   }
 #endif
 
@@ -101,8 +99,8 @@ void system_setup(void) {
     NEORV32_CLINT->MTIME.uint32[1] = 0;
     NEORV32_CLINT->MTIMECMP[0].uint32[0] = NEORV32_SYSINFO->CLK/4;
     NEORV32_CLINT->MTIMECMP[0].uint32[1] = 0;
-    neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE); // enable timer IRQ source
-    neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
+    neorv32_cpu_csr_write(CSR_MIE, 1U << CSR_MIE_MTIE); // enable timer IRQ source
+    neorv32_cpu_csr_set(CSR_MSTATUS, 1U << CSR_MSTATUS_MIE); // enable machine-mode interrupts
   }
 
   // setup serial memory controller
@@ -116,10 +114,8 @@ void system_setup(void) {
   USER_CODE_INIT;
 }
 
-
 /**********************************************************************//**
  * Load application executable: get data from device stream and store to main memory.
- *
  * @param dev_init Function pointer ("int foo(void)") for device setup.
  * @param stream_get Function pointer ("int bar(uint32_t* rdata)") to get
  * the next consecutive 32-bit word from an application source stream.
@@ -183,10 +179,8 @@ int system_app_load(int (*dev_init)(void), int (*stream_get)(uint32_t* rdata)) {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Store application executable: copy data from main memory to device stream.
- *
  * @param dev_init Function pointer ("int foo(void)") for device setup.
  * @param dev_erase Function pointer ("int tmp(void)") for device erasure.
  * @param stream_put Function pointer ("int bar(uint32_t wdata)") to put
@@ -270,23 +264,20 @@ int system_app_store(int (*dev_init)(void), int (*dev_erase)(void), int (*stream
   return 0;
 }
 
-
 /**********************************************************************//**
  * Boot application right from address.
- *
  * @param addr Base address of executable.
  **************************************************************************/
 void system_direct_boot(uint32_t addr) {
 
   g_exe_base = addr;
-  g_exe_size = 0xFFFFFFFFu; // to skip size-check in system_app_boot
+  g_exe_size = 0xFFFFFFFFU; // to skip size-check in system_app_boot
 
   system_app_boot();
 
   __builtin_unreachable();
   while (1); // should never be reached
 }
-
 
 /**********************************************************************//**
  * Boot application executable at address "g_exe_base".
@@ -305,7 +296,7 @@ void system_app_boot(void) {
   }
 
   // start application in machine mode; disable interrupts
-  neorv32_cpu_csr_write(CSR_MSTATUS, (1 << CSR_MSTATUS_MPP_H) + (1 << CSR_MSTATUS_MPP_L));
+  neorv32_cpu_csr_write(CSR_MSTATUS, (1U << CSR_MSTATUS_MPP_H) + (1U << CSR_MSTATUS_MPP_L));
 
   // shut down heart beat LED
 #if (STATUS_LED_EN == 1)

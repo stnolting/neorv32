@@ -21,25 +21,23 @@ extern uint32_t g_exe_size;
 
 // SPI flash commands
 enum SPI_FLASH_CMD_enum {
-  SPI_FLASH_CMD_PAGE_PROGRAM  = 0x02, /**< Program page */
-  SPI_FLASH_CMD_READ          = 0x03, /**< Read data */
-  SPI_FLASH_CMD_WRITE_DISABLE = 0x04, /**< Disallow write access */
-  SPI_FLASH_CMD_READ_STATUS   = 0x05, /**< Get status register */
-  SPI_FLASH_CMD_WRITE_ENABLE  = 0x06, /**< Allow write access */
-  SPI_FLASH_CMD_WAKE          = 0xAB, /**< Wake up from sleep mode */
-  SPI_FLASH_CMD_SECTOR_ERASE  = 0xD8  /**< Erase complete sector */
+  SPI_FLASH_CMD_PAGE_PROGRAM  = 0x02U, /**< Program page */
+  SPI_FLASH_CMD_READ          = 0x03U, /**< Read data */
+  SPI_FLASH_CMD_WRITE_DISABLE = 0x04U, /**< Disallow write access */
+  SPI_FLASH_CMD_READ_STATUS   = 0x05U, /**< Get status register */
+  SPI_FLASH_CMD_WRITE_ENABLE  = 0x06U, /**< Allow write access */
+  SPI_FLASH_CMD_WAKE          = 0xABU, /**< Wake up from sleep mode */
+  SPI_FLASH_CMD_SECTOR_ERASE  = 0xD8U  /**< Erase complete sector */
 };
 
 // SPI flash status register bits
 enum SPI_FLASH_SREG_enum {
-  FLASH_SREG_BUSY = 0, /**< Busy, write/erase in progress when set, read-only */
-  FLASH_SREG_WEL  = 1  /**< Write access enabled when set, read-only */
+  FLASH_SREG_BUSY = 0U, /**< Busy, write/erase in progress when set, read-only */
+  FLASH_SREG_WEL  = 1U  /**< Write access enabled when set, read-only */
 };
-
 
 /**********************************************************************//**
  * Send single command to SPI flash.
- *
  * @param[in] cmd Command byte.
  **************************************************************************/
 static void spi_flash_cmd(uint8_t cmd) {
@@ -49,10 +47,8 @@ static void spi_flash_cmd(uint8_t cmd) {
   neorv32_spi_cs_dis();
 }
 
-
 /**********************************************************************//**
  * Read flash status register.
- *
  * @return SPI flash status register.
  **************************************************************************/
 static uint8_t spi_flash_read_status(void) {
@@ -66,7 +62,6 @@ static uint8_t spi_flash_read_status(void) {
 
   return res;
 }
-
 
 /**********************************************************************//**
  * Send address to flash.
@@ -95,10 +90,8 @@ static void spi_flash_send_addr(void) {
 #endif
 }
 
-
 /**********************************************************************//**
  * Setup SPI flash.
- *
  * @return 0 if success, !=0 if error
  **************************************************************************/
 int spi_flash_setup(void) {
@@ -119,23 +112,21 @@ int spi_flash_setup(void) {
 
   // set WEL
   spi_flash_cmd(SPI_FLASH_CMD_WRITE_ENABLE);
-  if ((spi_flash_read_status() & (1 << FLASH_SREG_WEL)) == 0) { // fail if WEL is cleared
+  if ((spi_flash_read_status() & (1U << FLASH_SREG_WEL)) == 0) { // fail if WEL is cleared
     return -1;
   }
 
   // clear WEL
   spi_flash_cmd(SPI_FLASH_CMD_WRITE_DISABLE);
-  if ((spi_flash_read_status() & (1 << FLASH_SREG_WEL)) != 0) { // fail if WEL is set
+  if ((spi_flash_read_status() & (1U << FLASH_SREG_WEL)) != 0) { // fail if WEL is set
     return -1;
   }
 
   return 0;
 }
 
-
 /**********************************************************************//**
  * Erase flash. Call spi_flash_setup() before.
- *
  * @return 0 if success, !=0 if error
  **************************************************************************/
 int spi_flash_erase(void) {
@@ -156,7 +147,7 @@ int spi_flash_erase(void) {
 
     // write-in-progress flag cleared?
     while(1) {
-      if ((spi_flash_read_status() & (1 << FLASH_SREG_BUSY)) == 0) {
+      if ((spi_flash_read_status() & (1U << FLASH_SREG_BUSY)) == 0) {
         break;
       }
     }
@@ -171,10 +162,8 @@ int spi_flash_erase(void) {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Read stream word from SPI flash.
- *
  * @param[in,out] rdata Pointer for returned data (uint32_t).
  * @return 0 if success, !=0 if error
  **************************************************************************/
@@ -199,10 +188,8 @@ int spi_flash_stream_get(uint32_t* rdata) {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Write stream word to SPI flash.
- *
  * @param wdata SPI flash write data.
  * @return 0 if success, !=0 if error
  **************************************************************************/
@@ -224,7 +211,7 @@ int spi_flash_stream_put(uint32_t wdata) {
     neorv32_spi_cs_dis();
 
     // wait for write-in-progress flag to clear
-    while ((spi_flash_read_status() & (1 << FLASH_SREG_BUSY)));
+    while ((spi_flash_read_status() & (1U << FLASH_SREG_BUSY)));
 
     g_flash_addr++; // next destination byte address
   }
