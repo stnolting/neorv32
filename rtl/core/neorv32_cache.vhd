@@ -98,11 +98,9 @@ architecture neorv32_cache_rtl of neorv32_cache is
   end record;
   signal ctrl, ctrl_nxt : ctrl_t; -- FSM
 
-  -- status check --
-  signal valid    : std_ulogic_vector(block_num_c-1 downto 0);
-  signal valid_rd : std_ulogic;
-  signal dirty_rd : std_ulogic;
-  signal dirty_we : std_ulogic;
+  -- status memory --
+  signal valid,    dirty    : std_ulogic_vector(block_num_c-1 downto 0);
+  signal valid_rd, dirty_rd : std_ulogic;
 
 begin
 
@@ -246,38 +244,54 @@ begin
       when S_SYNC_START => -- start synchronization
       -- ------------------------------------------------------------
         ctrl_nxt.pnd_syn <= '0'; -- sync request accepted
-        ctrl_nxt.sync    <= '1'; -- syncing in progress
-        ctrl_nxt.idx     <= (others => '0');
-        ctrl_nxt.state   <= S_SYNC_DELAY;
+        if READ_ONLY then
+          ctrl_nxt.state <= S_IDLE;
+        else
+          ctrl_nxt.sync  <= '1'; -- syncing in progress
+          ctrl_nxt.idx   <= (others => '0');
+          ctrl_nxt.state <= S_SYNC_DELAY;
+        end if;
 
       when S_SYNC_DELAY => -- cache read access latency
       -- ------------------------------------------------------------
-        cache_o.addr   <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
-        ctrl_nxt.state <= S_SYNC_CHECK;
+        if not READ_ONLY then
+          cache_o.addr   <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
+          ctrl_nxt.state <= S_SYNC_CHECK;
+        else
+          ctrl_nxt.state <= S_IDLE;
+        end if;
 
       when S_SYNC_CHECK => -- check if current block is dirty
       -- ------------------------------------------------------------
-        cache_o.addr     <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
-        ctrl_nxt.ofs_ext <= (others => '0');
-        ctrl_nxt.ofs_int <= (others => '0');
-        ctrl_nxt.bus_err <= '0'; -- reset bus error flag
-        if (cache_i.drt = '1') and (READ_ONLY = false) then -- block is dirty: upload to memory
-          ctrl_nxt.state <= S_WRITE_START;
-        else -- block is clean: go to next block
-          ctrl_nxt.state <= S_SYNC_NEXT;
+        if not READ_ONLY then
+          cache_o.addr     <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
+          ctrl_nxt.ofs_ext <= (others => '0');
+          ctrl_nxt.ofs_int <= (others => '0');
+          ctrl_nxt.bus_err <= '0'; -- reset bus error flag
+          if (cache_i.drt = '1') and (READ_ONLY = false) then -- block is dirty: upload to memory
+            ctrl_nxt.state <= S_WRITE_START;
+          else -- block is clean: go to next block
+            ctrl_nxt.state <= S_SYNC_NEXT;
+          end if;
+        else
+          ctrl_nxt.state <= S_IDLE;
         end if;
 
       when S_SYNC_NEXT => -- update block status and prepare next block
       -- ------------------------------------------------------------
-        cache_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
-        cache_o.set  <= '1'; -- update cache block status
-        cache_o.drt  <= ctrl.bus_err; -- block is still dirty if there was a bus error
-        cache_o.vld  <= ctrl.bus_err; -- keep block valid if there was a bus error (skip block)
-        ctrl_nxt.idx <= std_ulogic_vector(unsigned(ctrl.idx) + 1);
-        if (and_reduce_f(ctrl.idx) = '1') then -- all blocks checked
+        if not READ_ONLY then
+          cache_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
+          cache_o.set  <= '1'; -- update cache block status
+          cache_o.drt  <= ctrl.bus_err; -- block is still dirty if there was a bus error
+          cache_o.vld  <= ctrl.bus_err; -- keep block valid if there was a bus error (skip block)
+          ctrl_nxt.idx <= std_ulogic_vector(unsigned(ctrl.idx) + 1);
+          if (and_reduce_f(ctrl.idx) = '1') then -- all blocks checked
+            ctrl_nxt.state <= S_IDLE;
+          else -- access next block
+            ctrl_nxt.state <= S_SYNC_DELAY;
+          end if;
+        else
           ctrl_nxt.state <= S_IDLE;
-        else -- access next block
-          ctrl_nxt.state <= S_SYNC_DELAY;
         end if;
 
       -- ==========================================================================
@@ -493,12 +507,20 @@ begin
   status_valid: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      valid    <= (others => '0');
-      valid_rd <= '0';
+      valid <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (cache_o.set = '1') then
+      if READ_ONLY and (ctrl.state = S_SYNC_START) then -- full parallel clear for i-cache
+        valid <= (others => '0');
+      elsif (cache_o.set = '1') then
         valid(to_integer(unsigned(cache_o.addr(31-tag_width_c downto 2+offset_width_c)))) <= cache_o.vld;
       end if;
+    end if;
+  end process;
+
+  -- synchronous read --
+  status_valid_read: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
       valid_rd <= valid(to_integer(unsigned(cache_o.addr(31-tag_width_c downto 2+offset_width_c))));
     end if;
   end process;
@@ -508,32 +530,25 @@ begin
   -- -------------------------------------------------------------------------------------------
   status_dirty_enabled:
   if not READ_ONLY generate
-    dirty_flag_inst: entity neorv32.neorv32_prim_spram
-    generic map (
-      AWIDTH => index_size_f(NUM_BLOCKS),
-      DWIDTH => 1,
-      OUTREG => false
-    )
-    port map (
-      clk_i     => clk_i,
-      en_i      => '1',
-      rw_i      => dirty_we,
-      addr_i    => cache_o.addr(31-tag_width_c downto 2+offset_width_c), -- index
-      data_i(0) => cache_o.drt,
-      data_o(0) => dirty_rd
-    );
-    dirty_we <= cache_o.set or cache_o.drt;
+    status_dirty: process(clk_i)
+    begin
+      if rising_edge(clk_i) then -- no reset required; readout guarded by valid flag
+        if (cache_o.set = '1') or (cache_o.drt = '1') then
+          dirty(to_integer(unsigned(cache_o.addr(31-tag_width_c downto 2+offset_width_c)))) <= cache_o.drt;
+        end if;
+        dirty_rd <= dirty(to_integer(unsigned(cache_o.addr(31-tag_width_c downto 2+offset_width_c))));
+      end if;
+    end process;
+    cache_i.drt <= '0' when (ctrl.cln = '1') else (dirty_rd and valid_rd); -- block dirty?
   end generate;
 
   -- blocks cannot be modified --
   status_dirty_disabled:
   if READ_ONLY generate
-    dirty_rd <= '0';
-    dirty_we <= '0';
+    dirty       <= (others => '0');
+    dirty_rd    <= '0';
+    cache_i.drt <= '0';
   end generate;
-
-  -- block dirty --
-  cache_i.drt <= '0' when (ctrl.cln = '1') else (dirty_rd and valid_rd);
 
 
   -- Cache Data and Tag Memory (Wrapper) ----------------------------------------------------
@@ -556,7 +571,7 @@ begin
   );
 
   -- cache hit --
-  cache_i.hit <= '1' when (ctrl.hit = '1') or ((valid_rd = '1') and
-                          (cache_i.tag(tag_width_c-1 downto 0) = host_req_i.addr(31 downto 31-(tag_width_c-1)))) else '0';
+  cache_i.hit <= '1' when ((cache_i.tag(tag_width_c-1 downto 0) = host_req_i.addr(31 downto 31-(tag_width_c-1))) and
+                           (valid_rd = '1')) or (ctrl.hit = '1') else '0';
 
 end architecture;
