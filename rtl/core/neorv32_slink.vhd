@@ -54,9 +54,9 @@ architecture neorv32_slink_rtl of neorv32_slink is
   constant ctrl_rx_last_c       : natural := 12; -- r/-: RX end-of-stream (according to previous read RX data)
   --
   constant ctrl_irq_rx_nempty_c : natural := 16; -- r/w: interrupt if RX FIFO not empty
-  constant ctrl_irq_rx_full_c   : natural := 18; -- r/w: interrupt if RX FIFO full
-  constant ctrl_irq_tx_empty_c  : natural := 19; -- r/w: interrupt if TX FIFO empty
-  constant ctrl_irq_tx_nfull_c  : natural := 21; -- r/w: interrupt if TX FIFO not full
+  constant ctrl_irq_rx_full_c   : natural := 17; -- r/w: interrupt if RX FIFO full
+  constant ctrl_irq_tx_empty_c  : natural := 18; -- r/w: interrupt if TX FIFO empty
+  constant ctrl_irq_tx_nfull_c  : natural := 19; -- r/w: interrupt if TX FIFO not full
   --
   constant ctrl_rx_fifo0_c      : natural := 24; -- r/-: log2(RX FIFO size), bit 0 (LSB)
   constant ctrl_rx_fifo3_c      : natural := 27; -- r/-: log2(RX FIFO size), bit 3 (MSB)
