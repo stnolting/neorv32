@@ -1871,6 +1871,33 @@ int main() {
 
 
   // ----------------------------------------------------------
+  // SLINK interrupt enable readback
+  // ----------------------------------------------------------
+  PRINT("[%i] SLINK interrupt enable readback ", cnt_test);
+
+  if (neorv32_slink_available()) {
+    cnt_test++;
+    tmp_b = 0;
+    for (tmp_a = SLINK_CTRL_IRQ_RX_NEMPTY; tmp_a <= SLINK_CTRL_IRQ_TX_NFULL; tmp_a++) {
+      neorv32_slink_setup(1U << tmp_a);
+      if ((NEORV32_SLINK->CTRL & 0x00ff0000U) != (1U << tmp_a)) {
+        tmp_b++;
+      }
+    }
+    neorv32_slink_setup(0);
+    if (tmp_b == 0) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
   // Fast interrupt channel 14 (SLINK)
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ14 (SLINK) ", cnt_test);
