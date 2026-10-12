@@ -178,12 +178,9 @@ begin
 
   -- Control and Status Registers -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_handshake: process(rstn_i, clk_i)
+  bus_handshake: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      ctrl_ack  <= '0';
-      ctrl_rden <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       ctrl_ack  <= ctrl_req_i.stb;
       ctrl_rden <= ctrl_req_i.stb and (not ctrl_req_i.rw);
     end if;

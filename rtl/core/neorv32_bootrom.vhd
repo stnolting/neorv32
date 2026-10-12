@@ -22,7 +22,6 @@ entity neorv32_bootrom is
   port (
     -- global control --
     clk_i      : in  std_ulogic;                     -- clock, trigger on rising edge
-    rstn_i     : in  std_ulogic;                     -- async reset, low-active
     -- bus request --
     req_addr_i : in  std_ulogic_vector(15 downto 0); -- access address (byte-addressing)
     req_ben_i  : in  std_ulogic_vector(3 downto 0);  -- byte enable
@@ -55,11 +54,9 @@ begin
   end process;
 
   -- bus handshake --
-  bus_handshake: process(rstn_i, clk_i)
+  bus_handshake: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      rdack <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       rdack <= req_stb_i and (not req_rw_i); -- read-only
     end if;
   end process;

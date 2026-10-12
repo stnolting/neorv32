@@ -48,7 +48,6 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 #define NEORV32_GPTMR ((neorv32_gptmr_t*) (NEORV32_GPTMR_BASE))
 /**@}*/
 
-
 /**********************************************************************//**
  * @name Prototypes
  **************************************************************************/
@@ -64,6 +63,5 @@ void neorv32_gptmr_configure(int sel, uint32_t cnt, uint32_t thr, int mode);
 int  neorv32_gptmr_irq_get(void);
 void neorv32_gptmr_irq_ack(int sel);
 /**@}*/
-
 
 #endif // NEORV32_GPTMR_H

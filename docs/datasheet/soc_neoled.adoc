@@ -159,7 +159,7 @@ The NEOLED modules features a single interrupt that gets triggered when the TX d
                                   <|`13:9`  `NEOLED_CTRL_T_0H_MSB : NEOLED_CTRL_T_0H_LSB`   ^| r/w <| pre-scaled clock ticks per high-time for sending a zero-bit (T~0H~)
                                   <|`18:14` `NEOLED_CTRL_T_1H_MSB : NEOLED_CTRL_T_1H_LSB`   ^| r/w <| pre-scaled clock ticks per high-time for sending a one-bit (T~1H~)
                                   <|`24:19` -                                               ^| r/- <| _reserved_, read as zero
-                                  <|`28:25` `NEOLED_CTRL_FIFO_MSB : NEOLED_CTRL_FIFO_LSB`   ^| r/w <| log(FIFO size)
+                                  <|`28:25` `NEOLED_CTRL_FIFO_MSB : NEOLED_CTRL_FIFO_LSB`   ^| r/- <| log(FIFO size)
                                   <|`29`    `NEOLED_CTRL_TX_EMPTY`                          ^| r/- <| TX FIFO is empty
                                   <|`30`    `NEOLED_CTRL_TX_FULL`                           ^| r/- <| TX FIFO is full
                                   <|`31`    `NEOLED_CTRL_TX_BUSY`                           ^| r/- <| TX serial engine is busy when set

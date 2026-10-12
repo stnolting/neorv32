@@ -33,13 +33,11 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 #define NEORV32_CFS ((neorv32_cfs_t*) (NEORV32_CFS_BASE))
 /**@}*/
 
-
 /**********************************************************************//**
  * @name Prototypes
  **************************************************************************/
 /**@{*/
 int neorv32_cfs_available(void);
 /**@}*/
-
 
 #endif // NEORV32_CFS_H

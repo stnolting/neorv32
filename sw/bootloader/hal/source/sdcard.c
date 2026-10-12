@@ -19,10 +19,8 @@
 // global variables
 FATFS fs;
 
-
 /**********************************************************************//**
  * Setup SD card.
- *
  * @return 0 if success, !=0 if error
  **************************************************************************/
 int sdcard_setup(void) {
@@ -50,10 +48,8 @@ int sdcard_setup(void) {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Read stream word from SD card.
- *
  * @param[in,out] rdata Pointer for returned data (uint32_t).
  * @return 0 if success, !=0 if error
  **************************************************************************/

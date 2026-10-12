@@ -49,7 +49,6 @@ enum SEMIHOSTING_SYS_enum {
 };
 /**@}*/
 
-
 /**********************************************************************//**
  * @name Semihosting "open" modes
  * Source: https://docs.zephyrproject.org/apidoc/latest/group__semihost.html
@@ -71,7 +70,6 @@ enum SEMIHOST_OPEN_MODE_enum {
 };
 /**@}*/
 
-
 /**********************************************************************//**
  * @name Prototypes
  **************************************************************************/
@@ -90,7 +88,6 @@ int neorv32_semihosting_flen(int file);
 int neorv32_semihosting_time(void);
 int neorv32_semihosting_system(char *cmd);
 /**@}*/
-
 
 /**********************************************************************//**
  * Send a semihosting request to the host.
@@ -115,6 +112,5 @@ static inline int __attribute__ ((always_inline)) neorv32_semihosting_req(int id
   );
   return value;
 }
-
 
 #endif // NEORV32_SEMIHOSTING_H

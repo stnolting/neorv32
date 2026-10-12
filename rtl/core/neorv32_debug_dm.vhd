@@ -531,16 +531,6 @@ begin
 
   -- CPU Interface --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_handshake: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      bus_rsp_o.ack <= '0';
-      bus_rsp_o.err <= '0';
-    elsif rising_edge(clk_i) then
-      bus_rsp_o.ack <= bus_req_i.stb;
-      bus_rsp_o.err <= bus_req_i.stb and (not bus_req_i.meta(2)); -- access error non-debug-mode access
-    end if;
-  end process;
 
   -- data0 register --
   data0_write: process(rstn_i, clk_i)
@@ -579,10 +569,11 @@ begin
     end if;
   end process;
 
-  -- bus read access --
-  bus_read: process(clk_i)
+  -- bus response --
+  bus_response: process(clk_i)
   begin
     if rising_edge(clk_i) then
+      bus_rsp_o.ack  <= accen; -- timeout if non-debug-mode access -> bus error
       bus_rsp_o.data <= (others => '0'); -- default
       if (accen = '1') and (bus_req_i.rw = '0') then
         case bus_req_i.addr(7 downto 6) is
@@ -599,6 +590,9 @@ begin
       end if;
     end if;
   end process;
+
+  -- unused --
+  bus_rsp_o.err <= '0';
 
   -- access only when hart is in debug mode --
   accen <= bus_req_i.stb and bus_req_i.meta(2);

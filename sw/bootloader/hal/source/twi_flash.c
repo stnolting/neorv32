@@ -18,10 +18,8 @@
 // global variables
 extern uint32_t g_flash_addr;
 
-
 /**********************************************************************//**
  * Read or write single byte from/to TWI flash.
- *
  * @param write Set for write access.
  * @param[in,out] data Pointer for read/write data byte.
  * @return 0 if success, non-zero if error
@@ -68,7 +66,7 @@ static int twi_transfer_byte(int write, uint8_t* data) {
   // repeated start + ID if read
   if (write == 0) {
     neorv32_twi_generate_start();
-    tmp = (uint8_t)TWI_FLASH_ID | 1;
+    tmp = (uint8_t)TWI_FLASH_ID | 1U;
     if (neorv32_twi_transfer(&tmp, 0)) { // abort if NACK
       return 1;
     }
@@ -81,7 +79,7 @@ static int twi_transfer_byte(int write, uint8_t* data) {
     }
   }
   else {
-    tmp = 0xff;
+    tmp = 0xffU;
     neorv32_twi_transfer(&tmp, 0);
     *data = tmp;
   }
@@ -105,10 +103,8 @@ static int twi_transfer_byte(int write, uint8_t* data) {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Setup TWI flash.
- *
  * @return 0 if success, !=0 if error
  **************************************************************************/
 int twi_flash_setup(void) {
@@ -136,10 +132,8 @@ int twi_flash_setup(void) {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Erase flash. Not required for EEPROM-style TWI memories.
- *
  * @return 0 if success, !=0 if error
  **************************************************************************/
 int twi_flash_erase(void) {
@@ -147,10 +141,8 @@ int twi_flash_erase(void) {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Read stream word from TWI flash.
- *
  * @param[in,out] rdata Pointer for returned data (uint32_t).
  * @return 0 if success, !=0 if error
  **************************************************************************/
@@ -170,10 +162,8 @@ int twi_flash_stream_get(uint32_t* rdata) {
   return rc;
 }
 
-
 /**********************************************************************//**
  * Write stream word to TWI flash.
- *
  * @param wdata TWI flash write data.
  * @return 0 if success, !=0 if error
  **************************************************************************/

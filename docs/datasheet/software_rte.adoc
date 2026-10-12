@@ -26,7 +26,7 @@ The first-level handler performs a complete context save, analyzes the source of
 internal look-up table to track the addresses of the according second-level trap handlers.
 
 After the initial RTE setup, each entry in the RTE's trap handler look-up table is initialized with a
-<<_default_rte_trap_handlers>>. These default handler do not execute any trap-related operations - they just output
+<<_default_rte_trap_handlers>>. These default handlers do not execute any trap-related operations - they just output
 a debugging message via the primary UART (UART0) (if enabled) to inform the user that a trap has occurred that is
 not (yet) handled by a proper application-specific trap handler. After sending this message, the RTE tries to resume
 normal execution by moving on to the next linear instruction.
@@ -51,7 +51,7 @@ software references are listed below.
 |=======================
 
 The RTE has to be explicitly enabled by calling the according setup function. It is recommended to do this right at the
-beginning of the application's `main` function. For the SMP <<_dual_core_configuration>> the RTE setup functions has to
+beginning of the application's `main` function. For the SMP <<_dual_core_configuration>> the RTE setup function has to
 be called on each core that wants to use the RTE.
 
 .RTE Setup Right at the Beginning of "main"
@@ -135,13 +135,13 @@ a bus access fault exception, continuing execution will most likely fail making 
 <1> Illegal 32-bit instruction `MTVAL=0x000000FF` at address `MEPC=0x000002d6` while CPU 0 was in machine-mode (`[cpu0|M]`).
 <2> Illegal 16-bit instruction `MTVAL=0x00000000` at address `MEPC=0x00000302` while CPU 0 was in user-mode (`[cpu0|U]`).
 <3> Misaligned load access at address `MEPC=0x00000440` (trying to load a full 32-bit word from address `MTVAL=0x80000101`) while CPU 0 was in user-mode (`[cpu0|U]`).
-<4> Fast interrupt request from channel 3 before executing instruction at address `MEPC=0x00000820` while CPU 1 was in machine-mode (`[cpu0|M]`).
-<5> Instruction bus access fault at address `MEPC=0x90000000` while CPU 1 was in machine-mode (`[cpu0|M]`). This is a fatal/non-resumable exception halting the CPU.
+<4> Fast interrupt request from channel 3 before executing instruction at address `MEPC=0x00000820` while CPU 1 was in machine-mode (`[cpu1|M]`).
+<5> Instruction bus access fault at address `MEPC=0x90000000` while CPU 1 was in machine-mode (`[cpu1|M]`). This is a fatal/non-resumable exception halting the CPU.
 
 
 ==== Application Context Handling
 
-Upon trap entry the RTE backups the entire application context (i.e. all `x` general purpose registers) to the
+Upon trap entry the RTE back ups the entire application context (i.e. all `x` general purpose registers) to the
 stack. The context is restored automatically after trap completion. The base address of the according stack frame
 is copied to the <<_mscratch>> CSR. By having this information available, the RTE provides dedicated functions
 for accessing and altering the application context:
@@ -159,7 +159,7 @@ neorv32_rte_context_put(28, tmp); // write 'tmp' to register 'x28'
 ----
 
 The `x` argument is used to specify one of the RISC-V general purpose register `x0` to `x31`. Note that registers
-`x16` to `x31` are not available if the RISC-V <<_e_isa_extension>> is enabled. For he SMP <<_dual_core_configuration>>
+`x16` to `x31` are not available if the RISC-V <<_e_isa_extension>> is enabled. For the SMP <<_dual_core_configuration>>
 the provided context functions will access the stack frame of the interrupted application code that was running
 on the specific CPU core that caused the trap entry.
 

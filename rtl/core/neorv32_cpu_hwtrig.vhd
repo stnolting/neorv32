@@ -45,7 +45,7 @@ architecture neorv32_cpu_hwtrig_rtl of neorv32_cpu_hwtrig is
   type tdata2_t is array (NUM_TRIGGERS-1 downto 0) of std_ulogic_vector(31 downto 0);
   signal tdata2 : tdata2_t;
   signal tdata1, tdata1_rb, tdata2_rb, tinfo_rb : std_ulogic_vector(31 downto 0);
-  signal tdata1_exec, tdata1_store, tdata1_load, tdata1_hit : std_ulogic_vector(NUM_TRIGGERS-1 downto 0);
+  signal tdata1_ex, tdata1_st, tdata1_ld, tdata1_hit : std_ulogic_vector(NUM_TRIGGERS-1 downto 0);
 
   -- trigger select --
   signal tselect     : std_ulogic_vector(log2_num_triggers_c downto 0); -- +1 to detect invalid selection
@@ -65,11 +65,11 @@ begin
   csr_write: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      tselect      <= (others => '0');
-      tdata1_exec  <= (others => '0');
-      tdata1_store <= (others => '0');
-      tdata1_load  <= (others => '0');
-      tdata2       <= (others => (others => '0'));
+      tselect   <= (others => '0');
+      tdata1_ex <= (others => '0');
+      tdata1_st <= (others => '0');
+      tdata1_ld <= (others => '0');
+      tdata2    <= (others => (others => '0'));
     elsif rising_edge(clk_i) then
       if (ctrl_i.csr_we = '1') and (csr_en = '1')  then
         -- tselect --
@@ -82,9 +82,9 @@ begin
             if (sel(i) = '1') and (sel_invalid = '0') then
               -- match control --
               if (ctrl_i.csr_addr(2 downto 0) = csr_tdata1_c(2 downto 0)) then
-                tdata1_exec(i)  <= ctrl_i.csr_wdata(2);
-                tdata1_store(i) <= ctrl_i.csr_wdata(1);
-                tdata1_load(i)  <= ctrl_i.csr_wdata(0);
+                tdata1_ex(i) <= ctrl_i.csr_wdata(2);
+                tdata1_st(i) <= ctrl_i.csr_wdata(1);
+                tdata1_ld(i) <= ctrl_i.csr_wdata(0);
               end if;
               -- address compare --
               if (ctrl_i.csr_addr(2 downto 0) = csr_tdata2_c(2 downto 0)) then
@@ -142,9 +142,9 @@ begin
   tdata1(5)            <= '0'; -- uncertainen: trigger satisfies the configured conditions
   tdata1(4)            <= '0'; -- s: supervisor-mode not supported
   tdata1(3)            <= bool_to_ulogic_f(RISCV_ISA_U); -- u: trigger always enabled when in user-mode (if implemented)
-  tdata1(2)            <= or_reduce_f(tdata1_exec  and sel); -- execute: enable trigger on instruction address match
-  tdata1(1)            <= or_reduce_f(tdata1_store and sel); -- store: enable trigger on store address match
-  tdata1(0)            <= or_reduce_f(tdata1_load  and sel); -- load: enable trigger on load address match
+  tdata1(2)            <= or_reduce_f(tdata1_ex and sel); -- execute: enable trigger on instruction address match
+  tdata1(1)            <= or_reduce_f(tdata1_st and sel); -- store: enable trigger on store address match
+  tdata1(0)            <= or_reduce_f(tdata1_ld and sel); -- load: enable trigger on load address match
   --
   tdata1_rb <= tdata1 when (sel_invalid = '0') else (others => '0'); -- all-zero if invalid trigger selection
 
@@ -182,9 +182,9 @@ begin
     elsif rising_edge(clk_i) then
       for i in 0 to NUM_TRIGGERS-1 loop
         match(i) <= (not ctrl_i.cpu_debug) and (match(i) or -- keep active until we are in debug-mode
-                    (tdata1_exec(i)  and cmp_inst(i) and ctrl_i.cpu_exec)                     or -- execute
-                    (tdata1_store(i) and cmp_data(i) and ctrl_i.cnt_event(cnt_event_store_c)) or -- store
-                    (tdata1_load(i)  and cmp_data(i) and ctrl_i.cnt_event(cnt_event_load_c)));   -- load
+                    (tdata1_ex(i) and cmp_inst(i) and ctrl_i.cpu_exec)                     or -- execute
+                    (tdata1_st(i) and cmp_data(i) and ctrl_i.cnt_event(cnt_event_store_c)) or -- store
+                    (tdata1_ld(i) and cmp_data(i) and ctrl_i.cnt_event(cnt_event_load_c)));   -- load
       end loop;
     end if;
   end process;

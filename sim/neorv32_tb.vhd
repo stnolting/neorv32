@@ -28,6 +28,7 @@ entity neorv32_tb is
     DUAL_CORE_EN      : boolean                        := true;        -- enable dual-core homogeneous SMP
     BOOT_MODE_SELECT  : natural range 0 to 2           := 2;           -- boot from pre-initialized IMEM
     BOOT_ADDR_CUSTOM  : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CPU boot address (if boot_config = 1)
+    TRACE_SIMLOG_EN    : boolean                       := true;        -- enable simulation trace logging
     RISCV_ISA_C       : boolean                        := true;        -- compressed extension
     RISCV_ISA_E       : boolean                        := false;       -- embedded RF extension
     RISCV_ISA_M       : boolean                        := true;        -- mul/div extension
@@ -73,7 +74,6 @@ entity neorv32_tb is
     DCACHE_NUM_BLOCKS : natural range 1 to 4096        := 32;          -- d-cache: number of blocks, has to be a power of 2
     CACHE_BLOCK_SIZE  : natural range 4 to 1024        := 32;          -- i-cache/d-cache: block size in bytes, has to be a power of 2
     CACHE_BURSTS_EN   : boolean                        := true;        -- enable issuing of burst transfer for cache update
-    TRACE_LOG_EN      : boolean                        := true;        -- write full trace log to file
     -- external memory A --
     EXT_MEM_A_EN      : boolean                        := false;       -- enable memory
     EXT_MEM_A_BASE    : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address, has to be word-aligned
@@ -257,8 +257,9 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY     => CLOCK_FREQUENCY,
-    TRACE_PORT_EN       => true,
     DUAL_CORE_EN        => DUAL_CORE_EN,
+    TRACE_PORT_EN       => false,
+    TRACE_SIMLOG_EN     => TRACE_SIMLOG_EN,
     -- Boot Configuration --
     BOOT_MODE_SELECT    => BOOT_MODE_SELECT,
     BOOT_ADDR_CUSTOM    => BOOT_ADDR_CUSTOM,
@@ -385,10 +386,9 @@ begin
     IO_SLINK_EN         => true,
     IO_SLINK_RX_FIFO    => 4,
     IO_SLINK_TX_FIFO    => 1,
-    -- Instruction Tracer (TRACER) --
-    IO_TRACER_EN        => true,
-    IO_TRACER_BUFFER    => 32,
-    IO_TRACER_SIMLOG_EN => TRACE_LOG_EN
+    -- Execution Trace Buffer (TRACEBUF) --
+    IO_TRACEBUF_EN      => true,
+    IO_TRACEBUF_DEPTH   => 32
   )
   port map (
     -- Global control --

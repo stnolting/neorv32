@@ -13,8 +13,8 @@
 |                         | `uart0_rtsn_o`     | flow control: RX ready to receive, low-active
 |                         | `uart0_ctsn_i`     | flow control: RX ready to receive, low-active
 | Configuration generics: | `IO_UART0_EN`      | implement UART0 when `true`
-|                         | `UART0_RX_FIFO`    | RX FIFO depth (power of 2, min 1)
-|                         | `UART0_TX_FIFO`    | TX FIFO depth (power of 2, min 1)
+|                         | `IO_UART0_RX_FIFO` | RX FIFO depth (power of 2, min 1)
+|                         | `IO_UART0_TX_FIFO` | TX FIFO depth (power of 2, min 1)
 | CPU interrupts:         | fast IRQ channel 2 | Programmable FIFO status interrupt (see <<_processor_interrupts>>)
 |=======================
 
@@ -64,7 +64,7 @@ _**Baud rate**_ = (_f~main~[Hz]_ / `clock_prescaler`) / (`baud_div` + 1)
 **RX and TX FIFOs**
 
 The UART provides individual data FIFOs for RX and TX to allow data transmission without CPU intervention. The sizes
-of these FIFOs can be configured via the according configuration generics (`UART0_RX_FIFO` and `UART0_TX_FIFO`). Write
+of these FIFOs can be configured via the according configuration generics (`IO_UART0_RX_FIFO` and `IO_UART0_TX_FIFO`). Write
 to `DATA` and reads from `DATA` are automatically buffered by the according FIFO. Both FIFOs are automatically cleared
 when disabling the module via the `UART_CTRL_EN` flag. The control register's `UART_CTRL_RX_*` and `UART_CTRL_TX_*`
 flags provide information about the RX and TX
@@ -81,7 +81,7 @@ Software can retrieve the configured sizes of the RX and TX FIFO via the accordi
 The UART module provides a single interrupt line that can be used to signal certain RX/TX data FIFO conditions. The
 interrupt conditions are based on the RX/TX FIFO status flags (`UART_CTRL_RX_*` / `UART_CTRL_TX_*`) and are configured
 via the according `UART_CTRL_IRQ_RX_*` / `UART_CTRL_IRQ_TX_*` bits. The UART interrupt will fire when the module is
-enabled (`SLINK_CTRL_EN`) and **any** of the enabled interrupt conditions is met. Hence, all enabled interrupt
+enabled (`UART_CTRL_EN`) and **any** of the enabled interrupt conditions is met. Hence, all enabled interrupt
 conditions are logically OR-ed. The interrupt remains active until all interrupt-causing conditions are resolved.
 
 
@@ -155,8 +155,8 @@ Note that this feature is only available within a simulation.
 |                         | `uart1_rtsn_o`     | flow control: RX ready to receive, low-active
 |                         | `uart1_ctsn_i`     | flow control: RX ready to receive, low-active
 | Configuration generics: | `IO_UART1_EN`      | implement UART1 when `true`
-|                         | `UART1_RX_FIFO`    | RX FIFO depth (power of 2, min 1)
-|                         | `UART1_TX_FIFO`    | TX FIFO depth (power of 2, min 1)
+|                         | `IO_UART1_RX_FIFO` | RX FIFO depth (power of 2, min 1)
+|                         | `IO_UART1_TX_FIFO` | TX FIFO depth (power of 2, min 1)
 | CPU interrupts:         | fast IRQ channel 3 | Programmable FIFO status interrupt (see <<_processor_interrupts>>)
 |=======================
 

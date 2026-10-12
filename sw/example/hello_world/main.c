@@ -1,20 +1,17 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
 
-
 /**********************************************************************//**
  * @file hello_world/main.c
- * @author Stephan Nolting
  * @brief Classic 'hello world' demo program.
  **************************************************************************/
 
 #include <neorv32.h>
-
 
 /**********************************************************************//**
  * @name User configuration
@@ -24,14 +21,10 @@
 #define BAUD_RATE 19200
 /**@}*/
 
-
-
 /**********************************************************************//**
- * Main function; prints some fancy stuff via UART.
- *
+ * Main function; prints stuff via UART.
  * @note This program requires the UART interface to be synthesized.
- *
- * @return 0 if execution was successful
+ * @return Irrelevant.
  **************************************************************************/
 int main() {
 
@@ -47,7 +40,6 @@ int main() {
 
   // say hello
   neorv32_uart0_puts("Hello world! :)\n");
-
 
   return 0;
 }

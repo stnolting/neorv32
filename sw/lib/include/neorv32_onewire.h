@@ -58,7 +58,6 @@ enum NEORV32_ONEWIRE_DCMD_enum {
 };
 /**@}*/
 
-
 /**********************************************************************//**
  * @name ONEWIRE DCMD commands
  **************************************************************************/
@@ -68,7 +67,6 @@ enum NEORV32_ONEWIRE_DCMD_enum {
 #define ONEWIRE_CMD_BYTE  (0b10) // read/write full byte
 #define ONEWIRE_CMD_RESET (0b11) // generate reset pulse and check for presence
 /**@}*/
-
 
 /**********************************************************************//**
  * @name Prototypes
@@ -96,6 +94,5 @@ void    neorv32_onewire_write_bit_blocking(uint8_t bit);
 uint8_t neorv32_onewire_read_byte_blocking(void);
 void    neorv32_onewire_write_byte_blocking(uint8_t byte);
 /**@}*/
-
 
 #endif // NEORV32_ONEWIRE_H

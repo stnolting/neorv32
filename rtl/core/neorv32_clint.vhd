@@ -58,15 +58,10 @@ architecture neorv32_clint_rtl of neorv32_clint is
   -- bus interface --
   signal bus_ack, bus_rden : std_ulogic;
 
-  -- mtime access --
+  -- device access --
   signal mtime_en : std_ulogic;
   signal mtime_we : std_ulogic_vector(1 downto 0);
-
-  -- mtimecmp access --
-  signal mtimecmp_en, mtimecmp_re, mtimecmp_we : std_ulogic_vector(NUM_HARTS-1 downto 0);
-
-  -- mswi access --
-  signal mswi_en, mswi : std_ulogic_vector(NUM_HARTS-1 downto 0);
+  signal mtimecmp_en, mtimecmp_re, mtimecmp_we, mswi_en, mswi : std_ulogic_vector(NUM_HARTS-1 downto 0);
 
   -- read-back --
   type rb32_t is array (NUM_HARTS-1 downto 0) of std_ulogic_vector(31 downto 0);
@@ -160,12 +155,9 @@ begin
 
   -- Bus Response ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_handshake: process(rstn_i, clk_i)
+  bus_handshake: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      bus_ack  <= '0';
-      bus_rden <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       bus_ack  <= bus_req_i.stb and (mtime_en or or_reduce_f(mtimecmp_en) or or_reduce_f(mswi_en));
       bus_rden <= bus_req_i.stb and (not bus_req_i.rw);
     end if;

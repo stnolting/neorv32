@@ -15,10 +15,8 @@
 #include <config.h>
 #include <uart.h>
 
-
 /**********************************************************************//**
  * Read single char from UART0.
- *
  * @return Received char.
  **************************************************************************/
 char uart_getc(void) {
@@ -31,12 +29,9 @@ char uart_getc(void) {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Print single char via UART0.
- *
  * @note Converts LF ("\n") to CR+LF ("\r\n").
- *
  * @param[in] c Character to print.
  **************************************************************************/
 void uart_putc(char c) {
@@ -51,10 +46,8 @@ void uart_putc(char c) {
 #endif
 }
 
-
 /**********************************************************************//**
  * Print zero-terminated string via UART0.
- *
  * @param[in] s Pointer to string.
  **************************************************************************/
 void uart_puts(const char *s) {
@@ -67,10 +60,8 @@ void uart_puts(const char *s) {
 #endif
 }
 
-
 /**********************************************************************//**
  * Print 32-bit number as 8-digit hexadecimal value with "0x" suffix via UART0.
- *
  * @param[in] num Number to print as hexadecimal.
  **************************************************************************/
 void uart_puth(uint32_t num) {
@@ -82,15 +73,13 @@ void uart_puth(uint32_t num) {
 
   int i;
   for (i=28; i>=0; i-=4) {
-    uart_putc(hex_symbols[(num >> i) & 0xf]);
+    uart_putc(hex_symbols[(num >> i) & 0xfU]);
   }
 #endif
 }
 
-
 /**********************************************************************//**
  * Setup UART device for executable streaming. Just a dummy.
- *
  * @return 0 if success, !=0 if error
  **************************************************************************/
 int uart_setup(void) {
@@ -102,10 +91,8 @@ int uart_setup(void) {
 #endif
 }
 
-
 /**********************************************************************//**
  * Read 32-bit binary word from UART0.
- *
  * @param[in,out] rdata Pointer for returned data (uint32_t).
  * @return 0 if success, != 0 if error
  **************************************************************************/

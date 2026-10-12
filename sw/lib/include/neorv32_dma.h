@@ -59,7 +59,6 @@ enum NEORV32_DMA_CONF_enum {
 };
 /**@}*/
 
-
 /**********************************************************************//**
  * DMA transfer type select / commands
  **************************************************************************/
@@ -84,7 +83,6 @@ enum NEORV32_DMA_TYPE_enum {
 #define DMA_BSWAP (1 << DMA_CONF_BSWAP)
 /**@}*/
 
-
 /**********************************************************************//**
  * DMA status
  **************************************************************************/
@@ -94,7 +92,6 @@ enum NEORV32_DMA_STATUS_enum {
   DMA_STATUS_BUSY  =  1, /**< DMA busy (1) */
   DMA_STATUS_DONE  =  2  /**< transfer done (2) */
 };
-
 
 /**********************************************************************//**
  * @name Prototypes
@@ -112,6 +109,5 @@ void neorv32_dma_program_nocheck(uint32_t src_addr, uint32_t dst_addr, uint32_t 
 void neorv32_dma_start(void);
 int  neorv32_dma_status(void);
 /**@}*/
-
 
 #endif // NEORV32_DMA_H

@@ -3,7 +3,7 @@
 == NEORV32 Processor (SoC)
 
 The NEORV32 Processor provides a RISC-V-based full-scale microcontroller-like SoC platform
-build around the <<_neorv32_central_processing_unit_cpu>>.
+built around the <<_neorv32_central_processing_unit_cpu>>.
 
 .The NEORV32 Processor (Block Diagram)
 image::neorv32_processor.png[align=center]
@@ -42,8 +42,8 @@ image::neorv32_processor.png[align=center]
 * _optional_ autonomous direct memory access controller (<<_direct_memory_access_controller_dma,**DMA**>>)
 * _optional_ stream link interface (<<_stream_link_interface_slink,**SLINK**>>), AXI4-Stream-compatible
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>), optional authentication and hardware breakpoint
-* _optional_ execution trace buffer to debug program flow (<<_execution_trace_buffer_tracer,**TRACER**>>) via branch tracing
-* _optional_ RVFI-compatible <<_execution_trace_port>> for advanced debugging, profiling and verification
+* _optional_ execution trace buffer to debug/analyze program flow (<<_execution_trace_buffer_tracebuf,**TRACEBUF**>>) via branch/delta tracing
+* _optional_ RVFI-compatible <<_trace_port>> for advanced debugging, profiling and verification
 * _optional_ system configuration information memory to determine hardware configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
 
 
@@ -52,7 +52,7 @@ image::neorv32_processor.png[align=center]
 :sectnums:
 === Processor Top Entity - Generics
 
-This section lists all configuration generics of the NEORV32 processor top entity (`rtl/neorv32_top.vhd`).
+This section lists all configuration generics of the NEORV32 processor top entity (`rtl/core/neorv32_top.vhd`).
 These generics allow to configure the system according to your needs. The generics are
 used to control implementation of certain CPU extensions and peripheral modules and even allow to
 optimize the system for certain design goals like minimal area or maximum performance.
@@ -74,8 +74,9 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 | Name | Type | Default | Description
 4+^| **General**
 | `CLOCK_FREQUENCY`     | natural   | 0             | The clock frequency of the processor's `clk_i` input port in Hertz (Hz). See <<_processor_clocking>>.
-| `TRACE_PORT_EN`       | boolean   | false         | Enable external CPU execution <<_execution_trace_port>>.
 | `DUAL_CORE_EN`        | boolean   | false         | Enable the SMP <<_dual_core_configuration>>.
+| `TRACE_PORT_EN`       | boolean   | false         | Enable external CPU execution <<_trace_port>>.
+| `TRACE_SIMLOG_EN`     | boolean   | false         | Enable simulation-only execution trace logging.
 4+^| **<<_boot_configuration>>**
 | `BOOT_MODE_SELECT`    | natural   | 0             | Boot mode select; see <<_boot_configuration>>.
 | `BOOT_ADDR_CUSTOM`    | suv(31:0) | x"00000000"   | Custom CPU boot address (available if `BOOT_MODE_SELECT` = 1).
@@ -101,7 +102,7 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 | `RISCV_ISA_Zcb`       | boolean   | false         | Enable <<_zcb_isa_extension>> (additional code size reduction instruction; builds upon `C`).
 | `RISCV_ISA_Zcmop`     | boolean   | false         | Enable <<_zcmop_isa_extension>> (compressed may-be-operations; builds upon `C` and `Zimop`).
 | `RISCV_ISA_Zfinx`     | boolean   | false         | Enable <<_zfinx_isa_extension>> (single-precision floating-point unit).
-| `RISCV_ISA_Zibi`      | boolean   | false         | Enable <<_zibi_isa_extension>> (CPU base counters).
+| `RISCV_ISA_Zibi`      | boolean   | false         | Enable <<_zibi_isa_extension>> (branch with immediate).
 | `RISCV_ISA_Zicntr`    | boolean   | false         | Enable <<_zicntr_isa_extension>> (CPU base counters).
 | `RISCV_ISA_Zicond`    | boolean   | false         | Enable <<_zicond_isa_extension>> (integer conditional instructions).
 | `RISCV_ISA_Zihpm`     | boolean   | false         | Enable <<_zihpm_isa_extension>> (hardware performance monitors).
@@ -109,7 +110,7 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 | `RISCV_ISA_Zknd`      | boolean   | false         | Enable <<_zknd_isa_extension>> (scalar cryptography NIST AES decryption instructions).
 | `RISCV_ISA_Zkne`      | boolean   | false         | Enable <<_zkne_isa_extension>> (scalar cryptography NIST AES encryption instructions).
 | `RISCV_ISA_Zknh`      | boolean   | false         | Enable <<_zknh_isa_extension>> (scalar cryptography NIST hash instructions).
-| `RISCV_ISA_Zksed`     | boolean   | false         | Enable <<_zksed_isa_extension>> (scalar cryptography ShangMi block cyphers).
+| `RISCV_ISA_Zksed`     | boolean   | false         | Enable <<_zksed_isa_extension>> (scalar cryptography ShangMi block ciphers).
 | `RISCV_ISA_Zksh`      | boolean   | false         | Enable <<_zksh_isa_extension>> (scalar cryptography ShangMi hash functions).
 | `RISCV_ISA_Zmmul`     | boolean   | false         | Enable <<_zmmul_isa_extension>> (hardware-based integer multiplication).
 | `RISCV_ISA_Smcntrpmf` | boolean   | false         | Enable <<_smcntrpmf_isa_extension>> (counter privilege-mode filtering).
@@ -206,10 +207,9 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 | `IO_SLINK_EN`         | boolean   | false         | Implement stream link interface (AXI4-Stream-Compatible).
 | `IO_SLINK_RX_FIFO`    | natural   | 1             | SLINK RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_SLINK_TX_FIFO`    | natural   | 1             | SLINK TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
-4+^| ** <<_execution_trace_buffer_tracer>>**
-| `IO_TRACER_EN`        | boolean   | false         | Implement the trace buffer.
-| `IO_TRACER_BUFFER`    | natural   | 1             | Depth of the trace buffer. Has to be a power of two, min 1, max 32768.
-| `IO_TRACER_SIMLOG_EN` | boolean   | false         | Write full trace log to file (simulation-only).
+4+^| ** <<_execution_trace_buffer_tracebuf>>**
+| `IO_TRACEBUF_EN`      | boolean   | false         | Implement the trace buffer.
+| `IO_TRACEBUF_DEPTH`   | natural   | 1             | Depth of the trace buffer. Has to be a power of two, min 1, max 32768.
 |=======================
 
 
@@ -220,7 +220,7 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 
 The following table shows the interface signals of the processor top entity (`rtl/core/neorv32_top.vhd`).
 All signals are of type `std_ulogic` or `std_ulogic_vector`, respectively. Custom interface type are used only
-for the <<_execution_trace_port>> (`trace_*`).
+for the <<_trace_port>> (`trace_port_t`).
 
 .Default Values of Inputs
 [NOTE]
@@ -256,7 +256,7 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 | `rstn_i`         |  1 |  in | none  | global reset, asynchronous, **low-active**
 | `rstn_ocd_o`     |  1 | out |   -   | <<_on_chip_debugger_ocd>> reset output, synchronous, **low-active**
 | `rstn_wdt_o`     |  1 | out |   -   | <<_watchdog_timer_wdt>> reset output, synchronous, **low-active**
-5+^| **<<_execution_trace_port>>**
+5+^| **<<_trace_port>>**
 | `trace_cpu0_o`   |  * | out |   -   | CPU core 0 trace port (type `trace_port_t`).
 | `trace_cpu1_o`   |  * | out |   -   | CPU core 1 trace port (type `trace_port_t`).
 5+^| **JTAG Access Port for <<_on_chip_debugger_ocd>>**
@@ -272,14 +272,14 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 | `smc_sdi_i`      |  1 |  in | `'L'` | serial data input
 5+^| **<<_processor_external_bus_interface_xbus>>**
 | `xbus_adr_o`     | 32 | out |   -   | destination address
-| `xbus_dat_o`     | 32 | out |   -   | read data
+| `xbus_dat_o`     | 32 | out |   -   | write data
 | `xbus_cti_o`     |  3 | out |   -   | cycle type
 | `xbus_tag_o`     |  3 | out |   -   | access tag
 | `xbus_we_o`      |  1 | out |   -   | write enable ('0' = read transfer)
 | `xbus_sel_o`     |  4 | out |   -   | byte enable
 | `xbus_stb_o`     |  1 | out |   -   | strobe
 | `xbus_cyc_o`     |  1 | out |   -   | valid cycle
-| `xbus_dat_i`     | 32 |  in | `'L'` | write data
+| `xbus_dat_i`     | 32 |  in | `'L'` | read data
 | `xbus_ack_i`     |  1 |  in | `'L'` | transfer acknowledge
 | `xbus_err_i`     |  1 |  in | `'L'` | transfer error
 5+^| **<<_stream_link_interface_slink>>**
@@ -330,7 +330,7 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 | `onewire_i`      |  1 |  in | `'H'` | 1-wire bus sense input
 | `onewire_o`      |  1 | out |   -   | 1-wire bus output (pull low only)
 5+^| **<<_pulse_width_modulation_controller_pwm>>**
-| `pwm_o`          | 16 | out |   -   | pulse-width modulated channels
+| `pwm_o`          | 32 | out |   -   | pulse-width modulated channels
 5+^| **<<_custom_functions_subsystem_cfs>>**
 | `cfs_in_i`       | 256 |  in | `'L'` | custom CFS input signal conduit
 | `cfs_out_o`      | 256 | out |   -   | custom CFS output signal conduit
@@ -382,11 +382,11 @@ At this time, the following modules are being considered for possible replacemen
 | Custom functions subsystem (<<_custom_functions_subsystem_cfs,CFS>>)                   | `rtl/core/neorv32_cfs.vhd`       | `rtl/verilog/neorv32_cfs.v`
 3+^| **CPU Level**
 | Register file (<<_cpu_register_file,REGFILE>>)             | `rtl/core/neorv32_cpu_regfile.vhd` | `rtl/verilog/neorv32_cpu_regfile.v`
-| Custom functions unit (<<_custom_functions_unit_cfu,CFU>>) | `rtl/core/neorv32_cpu_cfu.vhd`     | `rtl/verilog/neorv32_cpu_cfu.v`
+| Custom functions unit (<<_custom_functions_unit_cfu,CFU>>) | `rtl/core/neorv32_cpu_alu_cfu.vhd` | `rtl/verilog/neorv32_cpu_alu_cfu.v`
 |=======================
 
 .Replacing additional modules
-[NOTES]
+[NOTE]
 Others modules like peripheral/IO modules (such as the UART) should not be replaced directly. Instead,
 the default module should be disabled using the appropriate top generic. Custom modules can be connected,
 for example, via the <<_processor_external_bus_interface_xbus>>.
@@ -443,7 +443,7 @@ The actual reset cause can be determined via the <<_watchdog_timer_wdt>>.
 
 If any of these sources triggers a reset, the internal system-wide reset will be active for at least 4 clock cycles
 ensuring a valid reset of the entire processor (reset sequencer VHDL module: `neorv32_sys_reset`). This system reset is
-asserted _asynchronoulsy_ if triggered by the external `rstn_i` signal and is asserted _synchronously_ if triggered by
+asserted _asynchronously_ if triggered by the external `rstn_i` signal and is asserted _synchronously_ if triggered by
 an internal reset source. However, the system reset is always de-asserted _synchronously_ at the next rising clock edge.
 
 ==== Reset Implementation
@@ -515,7 +515,7 @@ table. The channel number also corresponds to the according FIRQ priority (0 = h
 | 2  | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>
 | 3  | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>>
 | 4  | <<_two_wire_serial_device_controller_twd>>
-| 5  | <<_execution_trace_buffer_tracer>>
+| 5  | <<_execution_trace_buffer_tracebuf>>
 | 6  | <<_serial_peripheral_interface_controller_spi>>
 | 7  | <<_two_wire_serial_interface_controller_twi>>
 | 8  | <<_general_purpose_input_and_output_port_gpio>>
@@ -565,7 +565,7 @@ starts at the configured 256 MB page and always extends to the end of the addres
 ==== Bus System
 
 The CPU core provides individual interfaces for instruction fetch and data access. Both interface access the same
-address space making the core a von-Neumann architecture. Optionally, the two interface can be equipped with data
+address space making the core a von-Neumann architecture. Optionally, the two interfaces can be equipped with data
 and/or instruction caches (<<_data_cache_dcache,i-cache>> & <<_instruction_cache_icache,d-cache>>).
 
 The two CPU interfaces are multiplexed by a simple bus switch into a single processor-internal bus. Optionally,
@@ -645,7 +645,7 @@ so that it can complete serial accesses even at the lowest SPI clock speed.
 :sectnums:
 ==== IO Switch
 
-The IO switch (VHDL component `neorv32_bus_io_switch`) decodes accesses to the _procesor-internal IO/peripheral_
+The IO switch (VHDL component `neorv32_bus_io_switch`) decodes accesses to the _processor-internal IO/peripheral_
 address space. This 2MB address space is used to map all NEORV32 peripherals (like UART, SPI, timers, etc.),
 the bootloader ROM and the on-chip debugger. Each device occupies an address range of 64kB; so up to 32 individual
 devices can be mapped. The according address map is defined in the main VHDL package file (`rtl/core/neorv32_package.vhd`).
@@ -654,7 +654,7 @@ devices can be mapped. The according address map is defined in the main VHDL pac
 :sectnums:
 ==== Atomic Memory Operations Controller
 
-The CPU's <<_a_isa_extension>> adds support for atomic memory accesses. These atomic memory accesses are handles by
+The CPU's <<_a_isa_extension>> adds support for atomic memory accesses. These atomic memory accesses are handled by
 dedicated modules of the processor bus system. The SoC bus that is driven by the CPU core(s) is fed through two
 atomic memory controller modules that handle read-modify-write operations as well as reservation-set operation:
 
@@ -918,6 +918,6 @@ include::soc_neoled.adoc[]
 
 include::soc_gptmr.adoc[]
 
-include::soc_tracer.adoc[]
+include::soc_tracebuf.adoc[]
 
 include::soc_sysinfo.adoc[]

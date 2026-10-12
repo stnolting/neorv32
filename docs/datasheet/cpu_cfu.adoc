@@ -8,7 +8,7 @@ providing a generic hardware module that can be used to implement **custom RISC-
 .CFU vs. Other Customization Options
 [NOTE]
 The CFU is _not_ intended for complex and **CPU-independent** functional units that implement complete accelerators
-(like full block-based AES encryption). These kind of accelerators should be implemented as stream- or memory-mapped
+(like full block-based AES encryption). These kinds of accelerators should be implemented as stream- or memory-mapped
 co-processor (e.g. <<_custom_functions_subsystem_cfs>>) to allow CPU-independent operation. A comparative survey of all
 NEORV32-specific hardware extension/customization options is provided in the user guide section
 https://stnolting.github.io/neorv32/ug/#_adding_custom_hardware_modules[Adding Custom Hardware Modules].
@@ -72,7 +72,7 @@ always compile-time-static.
 :sectnums:
 ===== RISC-V I-Type Instructions
 
-The I-type instructions operate on one source registers `rs1` and a 12-bit immediate operand `im12` and return
+The I-type instructions operate on one source register `rs1` and a 12-bit immediate operand `im12` and return
 the processing result via the destination register `rd`. The actual operation can be defined by using the `funct3`
 bit field. Alternatively, this immediate can also be used to pass additional data to the CFU like offsets,
 look-up-tables addresses or shift-amounts. However, the actual functionality is entirely user-defined. Note that
@@ -95,7 +95,7 @@ all immediate values are always compile-time-static.
 ==== Using Custom Instructions in Software
 
 The custom instructions provided by the CFU can be utilized in plain C-code using **intrinsics**. Intrinsics
-behave like normal C-functions but under the hood they substitute a sequence of assembly instruction for the
+behave like normal C-functions but under the hood they substitute a sequence of assembly instructions for the
 original function call. For now, the NEORV32 software framework provides two pre-defined prototypes for custom
 instructions:
 
@@ -124,7 +124,7 @@ res = RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b101, 0b1100110, res, foo);
 :sectnums:
 ==== Custom Instructions Hardware
 
-The CFU hardware module (`rtl/core/neorv32_cpu_alu_cfu.vhd`) is tightly integrated into to CPU and coupled as ALU
+The CFU hardware module (`rtl/core/neorv32_cpu_alu_cfu.vhd`) is tightly integrated into the CPU and coupled as ALU
 co-processor. A simple interface is used to communicate operands, operation definition and the processing result.
 
 .CFU Interface
@@ -141,8 +141,8 @@ co-processor. A simple interface is used to communicate operands, operation defi
 | `rs1_i`    |  in | 32 | Register operand 1 read from the CPU register file
 | `rs2_i`    |  in | 32 | Register operand 2 read from the CPU register file
 4+^| **Response**
-| `result_o` | out |  1 | Processing result that is written to the destination register (`rd`)
-| `valid_o`  | out | 32 | High for exactly one cycle when the CFU operation is done an `result` is valid
+| `result_o` | out | 32 | Processing result that is written to the destination register (`rd`)
+| `valid_o`  | out |  1 | High for exactly one cycle when the CFU operation is done and `result` is valid
 |=======================
 
 CFU operations can be entirely combinatorial (e.g. for simple operation like bit-reversal) so the result is already

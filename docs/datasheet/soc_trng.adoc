@@ -41,16 +41,16 @@ neoTRNG repository: https://github.com/stnolting/neoTRNG
 .Inferring Latches
 [NOTE]
 The synthesis tool might emit warnings regarding **inferred latches** or **combinatorial loops**. However, this
-is not design flaw as this is exactly what we want.
+is not a design flaw as this is exactly what we want.
 
 
 **Theory of Operation**
 
-The TRNG provides two memory mapped interface register. One control register (`CTRL`) for configuration and
+The TRNG provides two memory mapped interface registers. One control register (`CTRL`) for configuration and
 status check and one data register (`DATA`) for obtaining the random data. The TRNG is enabled by setting the
 control register's `TRNG_CTRL_EN`. As soon as the `TRNG_CTRL_AVAIL` bit is set a new random data byte is
 available and can be obtained from the lowest 8 bits of the `DATA` register. If this bit is cleared, there
-is no valid data available and the reading `DATA` will return all-zero.
+is no valid data available and reading `DATA` will return all-zero.
 
 The actual neoTRNG is configured by three generics:
 
@@ -58,7 +58,7 @@ The actual neoTRNG is configured by three generics:
 . `IO_TRNG_NUM_RO` defines the total number of ring-oscillators.
 . `IO_TRNG_NUM_INV` defines the number of inverters in the first ring-oscillator.
 Each subsequent RO is two inverters longer than the previous one.
-. `IO_TRNG_NUM_RBIT` defines the number of raw entropy bits obtained from the ring-oscillators that are scrmabled
+. `IO_TRNG_NUM_RBIT` defines the number of raw entropy bits obtained from the ring-oscillators that are scrambled
 and combined to produce a single random output byte.
 
 An internal entropy FIFO can be configured using the `IO_TRNG_FIFO` generic. This FIFO automatically samples

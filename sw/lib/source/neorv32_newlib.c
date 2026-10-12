@@ -34,7 +34,6 @@ extern int errno;
 char *__env[1] = { 0 };
 char **environ = __env;
 
-
 /**********************************************************************//**
  * Issue a warning when semihosting is enabled.
  **************************************************************************/
@@ -46,7 +45,6 @@ char **environ = __env;
   #warning Newlib/time.h semihosting enabled.
 #endif
 /**@}*/
-
 
  /**********************************************************************//**
  * Exit a program without cleaning up anything.
@@ -67,7 +65,6 @@ SYSCALL_ATTR void _exit(int status) {
   while(1);
 }
 
-
  /**********************************************************************//**
  * Open file handle.
  **************************************************************************/
@@ -81,7 +78,6 @@ SYSCALL_ATTR int _open(char *pathname, int flags) {
 #endif
 }
 
-
  /**********************************************************************//**
  * Close file handle.
  **************************************************************************/
@@ -94,7 +90,6 @@ SYSCALL_ATTR int _close(int file) {
 #endif
 }
 
-
  /**********************************************************************//**
  * Status of an open file. All files are regarded as character special devices.
  **************************************************************************/
@@ -104,7 +99,6 @@ SYSCALL_ATTR int _fstat(int file, struct stat *st) {
   return 0;
 }
 
-
  /**********************************************************************//**
  * Create new process.
  **************************************************************************/
@@ -113,7 +107,6 @@ SYSCALL_ATTR int _fork(void) {
   return -1;
 }
 
-
  /**********************************************************************//**
  * Process-ID; this is sometimes used to generate strings unlikely to
  * conflict with other processes.
@@ -121,7 +114,6 @@ SYSCALL_ATTR int _fork(void) {
 SYSCALL_ATTR int _getpid() {
   return 1; // there is only one process by default
 }
-
 
  /**********************************************************************//**
  * Query whether output stream is a terminal.
@@ -135,7 +127,6 @@ SYSCALL_ATTR int _isatty(int file) {
 #endif
 }
 
-
  /**********************************************************************//**
  * Send a signal.
  **************************************************************************/
@@ -146,7 +137,6 @@ SYSCALL_ATTR int _kill(int pid, int sig) {
   return -1;
 }
 
-
  /**********************************************************************//**
  * Rename existing file.
  **************************************************************************/
@@ -156,7 +146,6 @@ SYSCALL_ATTR int _link(char *old_name, char *new_name) {
   errno = EMLINK;
   return -1;
 }
-
 
  /**********************************************************************//**
  * Set position in a file.
@@ -172,7 +161,6 @@ SYSCALL_ATTR int _lseek(int file, int ptr, int dir) {
 #endif
 }
 
-
  /**********************************************************************//**
  * Status of a file.
  **************************************************************************/
@@ -181,7 +169,6 @@ SYSCALL_ATTR int _stat(char *file, struct stat *st) {
   st->st_mode = S_IFCHR; // all files are character special devices
   return 0;
 }
-
 
  /**********************************************************************//**
  * Wait for child process.
@@ -192,7 +179,6 @@ SYSCALL_ATTR int _wait(int status) {
   return -1;
 }
 
-
  /**********************************************************************//**
  * Remove a file's directory entry.
  **************************************************************************/
@@ -201,7 +187,6 @@ SYSCALL_ATTR int _unlink(char *name) {
   errno = ENOENT;
   return -1;
 }
-
 
  /**********************************************************************//**
  * Read from a file. STDIN will read from UART0, all other input streams
@@ -246,7 +231,6 @@ SYSCALL_ATTR int _read(int file, char *ptr, int len) {
 #endif
 }
 
-
  /**********************************************************************//**
  * Write to a file. STDOUT and STDERR will write to UART0, all other
  * output streams will write to UART1.
@@ -287,7 +271,6 @@ SYSCALL_ATTR int _write(int file, char *ptr, int len) {
   }
 #endif
 }
-
 
  /**********************************************************************//**
  * Dynamic memory management. Used by "malloc" and "free", among others.
@@ -334,7 +317,6 @@ SYSCALL_ATTR void *_sbrk(int incr) {
 
   return (void*)prev_heap;
 }
-
 
  /**********************************************************************//**
  * Get Unix time. Used by "time", among others.

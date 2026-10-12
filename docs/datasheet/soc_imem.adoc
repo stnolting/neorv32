@@ -62,7 +62,7 @@ are not affected by this at all.
 
 .Retrieve Memory Configuration by Software
 [TIP]
-Software can retrieve the DMEM size from the <<_sysinfo_miscellaneous_configuration>> register.
+Software can retrieve the IMEM size from the <<_sysinfo_miscellaneous_configuration>> register.
 
 .Custom IP Replacement
 [TIP]

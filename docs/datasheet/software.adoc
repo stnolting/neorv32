@@ -62,33 +62,34 @@ The NEORV32 HAL consists of the following files.
 [cols="<3,<3,<6"]
 [options="header",grid="rows"]
 |=======================
-| C source file       | C header file          | Description
-| -                   | `neorv32.h`            | Main NEORV32 library file
-| `neorv32_aux.c`     | `neorv32_aux.h`        | General auxiliary/helper function
-| `neorv32_cfs.c`     | `neorv32_cfs.h`        | <<_custom_functions_subsystem_cfs>> HAL
-| `neorv32_clint.c`   | `neorv32_clint.h`      | <<_core_local_interruptor_clint>> HAL
-| `neorv32_cpu.c`     | `neorv32_cpu.h`        | <<_neorv32_central_processing_unit_cpu>> HAL
-|                     | `neorv32_csr.h`        | <<_control_and_status_registers_csrs>> definitions
-| `neorv32_dma.c`     | `neorv32_dma.h`        | <<_direct_memory_access_controller_dma>> HAL
-| `neorv32_gpio.c`    | `neorv32_gpio.h`       | <<_general_purpose_input_and_output_port_gpio>> HAL
-| `neorv32_gptmr.c`   | `neorv32_gptmr.h`      | <<_general_purpose_timer_gptmr>> HAL
-| -                   | `neorv32_intrinsics.h` | Macros for intrinsics and custom instructions*)
-| `neorv32_neoled.c`  | `neorv32_neoled.h`     | <<_smart_led_interface_neoled>> HAL
-| `neorv32_onewire.c` | `neorv32_onewire.h`    | <<_one_wire_serial_interface_controller_onewire>> HAL
-| `neorv32_pwm.c`     | `neorv32_pwm.h`        | <<_pulse_width_modulation_controller_pwm>> HAL
-| `neorv32_rte.c`     | `neorv32_rte.h`        | <<_neorv32_runtime_environment>>
-| `neorv32_sdi.c`     | `neorv32_sdi.h`        | <<_serial_data_interface_controller_sdi>> HAL
-| `neorv32_slink.c`   | `neorv32_slink.h`      | <<_stream_link_interface_slink>> HAL
-| `neorv32_smp.c`     | `neorv32_smp.h`        | HAL for the SMP <<_dual_core_configuration>>
-| `neorv32_spi.c`     | `neorv32_spi.h`        | <<_serial_peripheral_interface_controller_spi>> HAL
-|                     | `neorv32_sysinfo.h`    | <<_system_configuration_information_memory_sysinfo>> HAL
-| `neorv32_tracer.c`  | `neorv32_tracer.h`     | <<_execution_trace_buffer_tracer>> HAL
-| `neorv32_trng.c`    | `neorv32_trng.h`       | <<_true_random_number_generator_trng>> HAL
-| `neorv32_twd.c`     | `neorv32_twd.h`        | <<_two_wire_serial_device_controller_twd>> HAL
-| `neorv32_twi.c`     | `neorv32_twi.h`        | <<_two_wire_serial_interface_controller_twi>> HAL
-| `neorv32_uart.c`    | `neorv32_uart.h`       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>> and UART1 HAL
-| `neorv32_wdt.c`     | `neorv32_wdt.h`        | <<_watchdog_timer_wdt>> HAL
-| `neorv32_newlib.c`  | -                      | Platform-specific system calls for _newlib_
+| C source file        | C header file          | Description
+| -                    | `neorv32.h`            | Main NEORV32 library file
+| `neorv32_aux.c`      | `neorv32_aux.h`        | General auxiliary/helper function
+| `neorv32_cfs.c`      | `neorv32_cfs.h`        | <<_custom_functions_subsystem_cfs>> HAL
+| `neorv32_clint.c`    | `neorv32_clint.h`      | <<_core_local_interruptor_clint>> HAL
+| `neorv32_cpu.c`      | `neorv32_cpu.h`        | <<_neorv32_central_processing_unit_cpu>> HAL
+|                      | `neorv32_csr.h`        | <<_control_and_status_registers_csrs>> definitions
+| `neorv32_dma.c`      | `neorv32_dma.h`        | <<_direct_memory_access_controller_dma>> HAL
+| `neorv32_gpio.c`     | `neorv32_gpio.h`       | <<_general_purpose_input_and_output_port_gpio>> HAL
+| `neorv32_gptmr.c`    | `neorv32_gptmr.h`      | <<_general_purpose_timer_gptmr>> HAL
+| -                    | `neorv32_intrinsics.h` | Macros for intrinsics and custom instructions*)
+| `neorv32_neoled.c`   | `neorv32_neoled.h`     | <<_smart_led_interface_neoled>> HAL
+| `neorv32_onewire.c`  | `neorv32_onewire.h`    | <<_one_wire_serial_interface_controller_onewire>> HAL
+| `neorv32_pwm.c`      | `neorv32_pwm.h`        | <<_pulse_width_modulation_controller_pwm>> HAL
+| `neorv32_rte.c`      | `neorv32_rte.h`        | <<_neorv32_runtime_environment>>
+| `neorv32_sdi.c`      | `neorv32_sdi.h`        | <<_serial_data_interface_controller_sdi>> HAL
+| `neorv32_slink.c`    | `neorv32_slink.h`      | <<_stream_link_interface_slink>> HAL
+| `neorv32_smc.c`      | `neorv32_smc.h`        | <<_serial_memory_controller_smc>> HAL
+| `neorv32_smp.c`      | `neorv32_smp.h`        | HAL for the SMP <<_dual_core_configuration>>
+| `neorv32_spi.c`      | `neorv32_spi.h`        | <<_serial_peripheral_interface_controller_spi>> HAL
+|                      | `neorv32_sysinfo.h`    | <<_system_configuration_information_memory_sysinfo>> HAL
+| `neorv32_tracebuf.c` | `neorv32_tracebuf.h`   | <<_execution_trace_buffer_tracebuf>> HAL
+| `neorv32_trng.c`     | `neorv32_trng.h`       | <<_true_random_number_generator_trng>> HAL
+| `neorv32_twd.c`      | `neorv32_twd.h`        | <<_two_wire_serial_device_controller_twd>> HAL
+| `neorv32_twi.c`      | `neorv32_twi.h`        | <<_two_wire_serial_interface_controller_twi>> HAL
+| `neorv32_uart.c`     | `neorv32_uart.h`       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>> and UART1 HAL
+| `neorv32_wdt.c`      | `neorv32_wdt.h`        | <<_watchdog_timer_wdt>> HAL
+| `neorv32_newlib.c`   | -                      | Platform-specific system calls for _newlib_
 |=======================
 
 .Doxygen API Documentation
@@ -286,7 +287,7 @@ depending of the GCC/GDB version
 === Linker Script
 
 The NEORV32-specific linker script (`sw/common/neorv32.ld`) is used to link the compiled sources according to the
-processor's <<_address_space>>). For the final executable, only two memory segments are required:
+processor's <<_address_space>>. For the final executable, only two memory segments are required:
 
 .Linker script - Memory Segments
 [cols="<2,<8"]
@@ -298,7 +299,7 @@ processor's <<_address_space>>). For the final executable, only two memory segme
 |=======================
 
 These two sections are configured by several variables defined in the linker script and exposed to the build
-framework (aka the makefile). Those variable allow to customized the RAM/ROM sizes and base addresses. Additionally,
+framework (aka the makefile). Those variable allow to customize the RAM/ROM sizes and base addresses. Additionally,
 a certain amount of the RAM can be reserved for the software-managed heap (see <<_ram_layout>>).
 
 .Linker script - Configuration
@@ -402,7 +403,7 @@ an executable layout. Note that depending on the application some sections might
 [start=1]
 . **Program code (`.text`)**: This section contains the actual instructions of the program.
 . **Read-only data (`.rodata`)**: Read-only data, for example for constants and strings.
-. **Heap (`.heap`)**: Initialization data that is copied at runtime to the RAM's `data` section by by the <<_start_up_code_crt0>>.
+. **Data (`.data`)**: Initialization data that is copied at runtime to the RAM's `data` section by by the <<_start_up_code_crt0>>.
 
 .Binary Executable Image
 [NOTE]
@@ -430,7 +431,7 @@ to <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1, UART1>>.
 .Constructors and Destructors
 [NOTE]
 Constructors and destructors for plain C code or for C++ applications are supported by the software framework.
-See `sw/example/hello_cpp` for a minimal example. Note that constructor and destructors are only executed
+See `sw/example/hello_cpp` for a minimal example. Note that constructors and destructors are only executed
 by core 0 (primary core) in the SMP <<_dual_core_configuration>>.
 
 .Newlib Test/Demo Program
@@ -485,7 +486,7 @@ The `crt0.S` start-up performs the following operations:
 :sectnums:
 === Executable Image Formats
 
-The <<_application_makefile>> generates a flattened binrary from the final ELF file, which is further processed
+The <<_application_makefile>> generates a flattened binary from the final ELF file, which is further processed
 by the NEORV32 executable image generator (`sw/image_gen`). This utility tool can generate various types of standalone
 and portable executable file formats, which are used, for example, for uploading via the <<_bootloader>> or for
 initializing SoC ROM modules.
@@ -517,19 +518,19 @@ Image formats (using little-Endian byte ordering):
 ----
 
 The image generator can be used as a stand-alone program, but it is also integrated into the application makefile.
-This provides corresponding <<_makefile_targets>>) for the different image types:
+This provides corresponding <<_makefile_targets>> for the different image types:
 
 .Image Generation Targets
 [cols="<1,<10"]
 [grid="none"]
 |=======================
-| `exe` | Generates an executable binary file (including a header; see <<_bootloader_image_format>>) for upload via the <<_bootloader>>.
-| `vhd` | Generates a raw VHDL memory image (package file, package name is the same as the output file name).
-| `bin` | Generates a raw binary file for custom purpose.
-| `hex` | Generates a raw HEX file for custom purpose (like memory initialization via `$readmemh()` / `hread()`).
-| `coe` | Generates a raw COE file for FPGA memory initialization.
-| `mem` | Generates a raw MEM file for FPGA memory initialization.
-| `mif` | Generates a raw MIF file for FPGA memory initialization.
+| `exe`   | Generates an executable binary file (including a header; see <<_bootloader_image_format>>) for upload via the <<_bootloader>>.
+| `image` | Generates a raw VHDL memory image (package file, package name is the same as the output file name).
+| `bin`   | Generates a raw binary file for custom purpose.
+| `hex`   | Generates a raw HEX file for custom purpose (like memory initialization via `$readmemh()` / `hread()`).
+| `coe`   | Generates a raw COE file for FPGA memory initialization.
+| `mem`   | Generates a raw MEM file for FPGA memory initialization.
+| `mif`   | Generates a raw MIF file for FPGA memory initialization.
 |=======================
 
 .Image Generator Compilation

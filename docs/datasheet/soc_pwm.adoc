@@ -79,7 +79,7 @@ load/store operation. This allows to update `TOP` and `CMP` independent of each 
 **Fast-PWM Mode**
 
 When in fast-PWM mode (`MODE[i] = 0`) the channel's PWM counter generates a sawtooth-like waveform. The counter
-automatically wraps to all-zero when reaching the programmed `TOP[i]` value. Whenever the counter value is less
+automatically wraps to all-zero when reaching the programmed `TOP[i]` value. Whenever the counter value is
 equal to or greater than the `CMP[i]` value the PWM output is set to the programmed polarity (`POLARITY[i]`)
 value; otherwise it is set to the inverse polarity.
 
@@ -178,10 +178,10 @@ T~dead~ = 0.5 * T * (`CMP[i]` - `CMP[i+1]`)
 | `0xfff00008` | `CLKPRSC`            | `2:0`  | r/w | Global clock prescaler select
 | `0xfff0000c` | `MODE`               | `31:0` | r/w | Channel operation mode (0 = fast-PWM, 1 = phase-correct PWM), one bit per channel
 | `0xfff00080` | `CHANNEL[0].TOPCMP`  | `31:0` | r/w | Channel 0 full word access alias (`TOP` and `CMP` together at 32-bit value)
-| `0xfff00080` | `CHANNEL[0].CMP`     | `15:0` | r/w | Channel 0 top/wrap value register
-| `0xfff00082` | `CHANNEL[0].TOP`     | `15:0` | r/w | Channel 0 compare value register
+| `0xfff00080` | `CHANNEL[0].CMP`     | `15:0` | r/w | Channel 0 compare value register
+| `0xfff00082` | `CHANNEL[0].TOP`     | `15:0` | r/w | Channel 0 top/wrap value register
 | ...          | ...                  |  ...   | r/w | ...
 | `0xfff000fc` | `CHANNEL[31].TOPCMP` | `31:0` | r/w | Channel 31 full word access alias (`TOP` and `CMP` together at 32-bit value)
-| `0xfff000fc` | `CHANNEL[31].CMP`    | `15:0` | r/w | Channel 31 top/wrap value register
-| `0xfff000fe` | `CHANNEL[31].TOP`    | `15:0` | r/w | Channel 31 compare value register
+| `0xfff000fc` | `CHANNEL[31].CMP`    | `15:0` | r/w | Channel 31 compare value register
+| `0xfff000fe` | `CHANNEL[31].TOP`    | `15:0` | r/w | Channel 31 top/wrap value register
 |=======================

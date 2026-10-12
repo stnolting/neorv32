@@ -72,7 +72,7 @@ Each link/channel consists of the following signals:
 [NOTE]
 The interface names (except for `src` and `dst`) and the underlying protocol is compatible to the AXI4-Stream
 protocol standard. A processor top entity with AXI4-Stream-compatible interfaces can be found in
-`rtl/system_inegration`. More information can be found in the user guide:
+`rtl/system_integration`. More information can be found in the user guide:
 https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block
 
 

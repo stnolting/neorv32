@@ -17,7 +17,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_neoled is
   generic (
-    FIFO_DEPTH : natural range 1 to 2**15 -- FIFO depth, has to be a power of two, min 1
+    FIFO_DEPTH : natural range 1 to 32768 -- FIFO depth, has to be a power of two, min 1
   );
   port (
     clk_i     : in  std_ulogic;                    -- global clock line
@@ -93,12 +93,9 @@ begin
 
   -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_handshake: process(rstn_i, clk_i)
+  bus_handshake: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      bus_ack  <= '0';
-      bus_rden <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       bus_ack  <= bus_req_i.stb;
       bus_rden <= bus_req_i.stb and (not bus_req_i.rw);
     end if;
