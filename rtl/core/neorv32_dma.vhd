@@ -342,6 +342,7 @@ begin
   -- Input Data Alignment -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   src_align: process(rstn_i, clk_i)
+    variable byte_v : std_ulogic_vector(7 downto 0);
   begin
     if (rstn_i = '0') then
       data_buf <= (others => '0');
@@ -349,11 +350,17 @@ begin
       if (engine.state = S_READ_RSP) then
         if (engine.src_type(0) = '0') then -- byte
           case engine.src_addr(1 downto 0) is
-            when "00"   => data_buf <= rep4_f(dma_rsp_i.data( 7 downto  0));
-            when "01"   => data_buf <= rep4_f(dma_rsp_i.data(15 downto  8));
-            when "10"   => data_buf <= rep4_f(dma_rsp_i.data(23 downto 16));
-            when others => data_buf <= rep4_f(dma_rsp_i.data(31 downto 24));
+            when "00"   => byte_v := dma_rsp_i.data( 7 downto  0);
+            when "01"   => byte_v := dma_rsp_i.data(15 downto  8);
+            when "10"   => byte_v := dma_rsp_i.data(23 downto 16);
+            when others => byte_v := dma_rsp_i.data(31 downto 24);
           end case;
+
+          if (engine.dst_type(0) = '1') then -- to word
+            data_buf <= x"000000" & byte_v;
+          else -- to byte
+            data_buf <= rep4_f(byte_v);
+          end if;
         else -- word
           data_buf <= dma_rsp_i.data;
         end if;
