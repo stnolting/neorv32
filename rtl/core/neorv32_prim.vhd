@@ -28,6 +28,7 @@ entity neorv32_prim_fifo is
     clk_i   : in  std_ulogic;                           -- clock, rising edge
     rstn_i  : in  std_ulogic;                           -- async reset, low-active
     clear_i : in  std_ulogic;                           -- sync reset, high-active
+    level_o : out std_ulogic_vector(AWIDTH downto 0);   -- fill level
     -- write port --
     wdata_i : in  std_ulogic_vector(DWIDTH-1 downto 0); -- write data
     we_i    : in  std_ulogic;                           -- write enable
@@ -72,6 +73,9 @@ begin
   -- pointer update --
   w_nxt <= (others => '0') when (clear_i = '1') else std_ulogic_vector(unsigned(w_pnt) + 1) when (we = '1') else w_pnt;
   r_nxt <= (others => '0') when (clear_i = '1') else std_ulogic_vector(unsigned(r_pnt) + 1) when (re = '1') else r_pnt;
+
+  -- fill level --
+  level_o <= std_ulogic_vector(unsigned(w_pnt) - unsigned(r_pnt));
 
   -- Status ---------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
