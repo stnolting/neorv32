@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 21.10.2026 | 1.13.6.7 | :bug: fix DMA zero-extension for byte-to-word transfers | [#1666](https://github.com/stnolting/neorv32/pull/1666) |
 | 12.10.2026 | 1.13.6.6 | :bug: `Zalrsc` ISA extension: keep store-conditional bus request stable until the response (bug introduced with v1.13.1.1) | [#1661](https://github.com/stnolting/neorv32/pull/1661) |
 | 12.10.2026 | 1.13.6.5 | :bug: TWD: fix I2C-spec compliant ACK/NACK handling | [#1656](https://github.com/stnolting/neorv32/pull/1656) |
 | 03.10.2026 | 1.13.6.4 | minor rtl cleanups and optimizations | [#1660](https://github.com/stnolting/neorv32/pull/1660) |
