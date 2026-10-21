@@ -56,12 +56,6 @@ architecture neorv32_dma_rtl of neorv32_dma is
   constant ctrl_done_c   : natural := 30; -- r/-: transfer has completed
   constant ctrl_busy_c   : natural := 31; -- r/-: DMA transfer in progress
 
-  -- replicate byte 4 times --
-  function rep4_f(b : std_ulogic_vector(7 downto 0)) return std_ulogic_vector is
-  begin
-    return b & b & b & b;
-  end function;
-
   -- one-hot encoding --
   function onehot_f(sel : std_ulogic_vector(1 downto 0)) return std_ulogic_vector is
     variable res_v : std_ulogic_vector(3 downto 0);
@@ -355,11 +349,10 @@ begin
             when "10"   => byte_v := dma_rsp_i.data(23 downto 16);
             when others => byte_v := dma_rsp_i.data(31 downto 24);
           end case;
-
           if (engine.dst_type(0) = '1') then -- to word
             data_buf <= x"000000" & byte_v;
           else -- to byte
-            data_buf <= rep4_f(byte_v);
+            data_buf <= byte_v & byte_v & byte_v & byte_v;
           end if;
         else -- word
           data_buf <= dma_rsp_i.data;
