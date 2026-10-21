@@ -7,7 +7,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) Stephan Nolting. All rights reserved.                              --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -237,14 +237,14 @@ entity neorv32_top is
     gpio_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L');  -- parallel input; interrupt-capable
 
     -- Primary UART0 (available if IO_UART0_EN = true) --
-    uart0_txd_o    : out std_ulogic;                                         -- UART0 send data
-    uart0_rxd_i    : in  std_ulogic := 'L';                                  -- UART0 receive data
+    uart0_txd_o    : out std_ulogic;                                         -- send data
+    uart0_rxd_i    : in  std_ulogic := 'L';                                  -- receive data
     uart0_rtsn_o   : out std_ulogic;                                         -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
     uart0_ctsn_i   : in  std_ulogic := 'L';                                  -- HW flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- Secondary UART1 (available if IO_UART1_EN = true) --
-    uart1_txd_o    : out std_ulogic;                                         -- UART1 send data
-    uart1_rxd_i    : in  std_ulogic := 'L';                                  -- UART1 receive data
+    uart1_txd_o    : out std_ulogic;                                         -- send data
+    uart1_rxd_i    : in  std_ulogic := 'L';                                  -- receive data
     uart1_rtsn_o   : out std_ulogic;                                         -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
     uart1_ctsn_i   : in  std_ulogic := 'L';                                  -- HW flow control: UART1.TX allowed to transmit, low-active, optional
 
