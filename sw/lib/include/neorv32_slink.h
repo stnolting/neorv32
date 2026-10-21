@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -34,7 +34,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 
 /** SLINK control register bits */
 enum NEORV32_SLINK_CTRL_enum {
-  SLINK_CTRL_EN            =  0, /**< SLINK control register(0)  (r/w): SLINK unit enable */
+  SLINK_CTRL_EN            =  0, /**< SLINK control register(0)  (r/w): SLINK enable */
 
   SLINK_CTRL_RX_EMPTY      =  8, /**< SLINK control register(8)  (r/-): RX FIFO empty */
   SLINK_CTRL_RX_FULL       =  9, /**< SLINK control register(9)  (r/-): RX FIFO full */
@@ -54,7 +54,6 @@ enum NEORV32_SLINK_CTRL_enum {
 };
 /**@}*/
 
-
 /**********************************************************************//**
  * @name Prototypes
  **************************************************************************/
@@ -68,7 +67,6 @@ int  neorv32_slink_rx_full(void);
 int  neorv32_slink_tx_empty(void);
 int  neorv32_slink_tx_full(void);
 /**@}*/
-
 
 /**********************************************************************//**
  * Read data from RX link (non-blocking).
