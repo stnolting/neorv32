@@ -88,7 +88,7 @@ begin
       avail_reg: process(clk_i)
       begin
         if rising_edge(clk_i) then
-          avail <= not empty;
+          avail <= (not empty) and (not clear_i);
         end if;
       end process;
     end generate;
