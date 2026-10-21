@@ -575,6 +575,7 @@ begin
     clk_i                 => clk_gen,
     rstn_i                => rst_gen,
     clear_i               => '0',
+    level_o               => open,
     -- write port --
     wdata_i(31 downto  0) => slink_tx.data,
     wdata_i(35 downto 32) => slink_tx.addr,

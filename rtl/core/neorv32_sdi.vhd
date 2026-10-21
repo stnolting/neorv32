@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) Stephan Nolting. All rights reserved.                              --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -172,6 +172,7 @@ begin
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => tx_fifo.clr,
+    level_o => open,
     -- write port --
     wdata_i => tx_fifo.wdata,
     we_i    => tx_fifo.we,
@@ -201,6 +202,7 @@ begin
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => rx_fifo.clr,
+    level_o => open,
     -- write port --
     wdata_i => rx_fifo.wdata,
     we_i    => rx_fifo.we,
