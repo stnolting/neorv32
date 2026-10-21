@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 21.10.2026 | 1.13.6.9 | :bug: fix SLINK IRQ configuration bit positions | [#1669](https://github.com/stnolting/neorv32/pull/1669) |
 | 21.10.2026 | 1.13.6.8 | minor rtl edits and updates | [#1668](https://github.com/stnolting/neorv32/pull/1668) |
 | 21.10.2026 | 1.13.6.7 | :bug: fix DMA zero-extension for byte-to-word transfers | [#1666](https://github.com/stnolting/neorv32/pull/1666) |
 | 12.10.2026 | 1.13.6.6 | :bug: `Zalrsc` ISA extension: keep store-conditional bus request stable until the response (bug introduced with v1.13.1.1) | [#1661](https://github.com/stnolting/neorv32/pull/1661) |
