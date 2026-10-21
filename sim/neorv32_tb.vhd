@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) Stephan Nolting. All rights reserved.                              --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -341,10 +341,10 @@ begin
     IO_GPIO_DIR_EN      => true,
     -- RISC-V Core-Local Interruptor (CLINT) --
     IO_CLINT_EN         => true,
-    IO_UART0_EN         => true,
     -- Universal Asynchronous Receiver/Transmitter (UART0/UART1) --
-    IO_UART0_RX_FIFO    => 32,
-    IO_UART0_TX_FIFO    => 32,
+    IO_UART0_EN         => true,
+    IO_UART0_RX_FIFO    => 16,
+    IO_UART0_TX_FIFO    => 16,
     IO_UART1_EN         => true,
     IO_UART1_RX_FIFO    => 1,
     IO_UART1_TX_FIFO    => 1,
@@ -355,7 +355,7 @@ begin
     IO_SDI_FIFO         => 4,
     -- Two-Wire Interface (TWI Host, TWD Device) --
     IO_TWI_EN           => true,
-    IO_TWI_FIFO         => 4,
+    IO_TWI_FIFO         => 8,
     IO_TWD_EN           => true,
     IO_TWD_RX_FIFO      => 4,
     IO_TWD_TX_FIFO      => 4,
