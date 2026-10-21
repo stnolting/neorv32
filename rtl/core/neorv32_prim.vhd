@@ -7,7 +7,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) Stephan Nolting. All rights reserved.                              --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -28,6 +28,7 @@ entity neorv32_prim_fifo is
     clk_i   : in  std_ulogic;                           -- clock, rising edge
     rstn_i  : in  std_ulogic;                           -- async reset, low-active
     clear_i : in  std_ulogic;                           -- sync reset, high-active
+    level_o : out std_ulogic_vector(AWIDTH downto 0);   -- fill level
     -- write port --
     wdata_i : in  std_ulogic_vector(DWIDTH-1 downto 0); -- write data
     we_i    : in  std_ulogic;                           -- write enable
@@ -73,6 +74,9 @@ begin
   w_nxt <= (others => '0') when (clear_i = '1') else std_ulogic_vector(unsigned(w_pnt) + 1) when (we = '1') else w_pnt;
   r_nxt <= (others => '0') when (clear_i = '1') else std_ulogic_vector(unsigned(r_pnt) + 1) when (re = '1') else r_pnt;
 
+  -- fill level --
+  level_o <= std_ulogic_vector(unsigned(w_pnt) - unsigned(r_pnt));
+
   -- Status ---------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- more than 1 FIFO entry --
@@ -88,7 +92,7 @@ begin
       avail_reg: process(clk_i)
       begin
         if rising_edge(clk_i) then
-          avail <= not empty;
+          avail <= (not empty) and (not clear_i);
         end if;
       end process;
     end generate;
@@ -185,7 +189,7 @@ end architecture;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) Stephan Nolting. All rights reserved.                              --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -284,7 +288,7 @@ end architecture;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) Stephan Nolting. All rights reserved.                              --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -417,7 +421,7 @@ end architecture;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) Stephan Nolting. All rights reserved.                              --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
