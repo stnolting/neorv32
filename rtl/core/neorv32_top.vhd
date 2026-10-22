@@ -28,7 +28,7 @@ entity neorv32_top is
 
     -- Boot Configuration --
     BOOT_MODE_SELECT    : natural range 0 to 2           := 0;             -- boot configuration select (default = 0 = bootloader)
-    BOOT_ADDR_CUSTOM    : std_ulogic_vector(31 downto 0) := x"00000000";   -- custom CPU boot address (if boot_config = 1)
+    BOOT_ADDR_CUSTOM    : std_ulogic_vector(31 downto 0) := x"00000000";   -- custom CPU boot address (if BOOT_MODE_SELECT = 1)
 
     -- On-Chip Debugger (OCD) --
     OCD_EN              : boolean                        := false;         -- implement on-chip debugger
@@ -247,23 +247,23 @@ entity neorv32_top is
     -- Primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_ulogic;                                         -- send data
     uart0_rxd_i    : in  std_ulogic := 'L';                                  -- receive data
-    uart0_rtsn_o   : out std_ulogic;                                         -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_ctsn_i   : in  std_ulogic := 'L';                                  -- HW flow control: UART0.TX allowed to transmit, low-active, optional
+    uart0_rtsn_o   : out std_ulogic;                                         -- HW flow control: RX ready to receive, low-active
+    uart0_ctsn_i   : in  std_ulogic := 'L';                                  -- HW flow control: TX allowed to transmit, low-active
 
     -- Secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    : out std_ulogic;                                         -- send data
     uart1_rxd_i    : in  std_ulogic := 'L';                                  -- receive data
-    uart1_rtsn_o   : out std_ulogic;                                         -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-    uart1_ctsn_i   : in  std_ulogic := 'L';                                  -- HW flow control: UART1.TX allowed to transmit, low-active, optional
+    uart1_rtsn_o   : out std_ulogic;                                         -- HW flow control: RX ready to receive, low-active
+    uart1_ctsn_i   : in  std_ulogic := 'L';                                  -- HW flow control: TX allowed to transmit, low-active
 
     -- SPI (available if IO_SPI_EN = true) --
-    spi_clk_o      : out std_ulogic;                                         -- SPI serial clock
+    spi_clk_o      : out std_ulogic;                                         -- serial clock
     spi_dat_o      : out std_ulogic;                                         -- controller data out, peripheral data in
     spi_dat_i      : in  std_ulogic := 'L';                                  -- controller data in, peripheral data out
     spi_csn_o      : out std_ulogic_vector(7 downto 0);                      -- chip-select, low-active
 
     -- SDI (available if IO_SDI_EN = true) --
-    sdi_clk_i      : in  std_ulogic := 'L';                                  -- SDI serial clock
+    sdi_clk_i      : in  std_ulogic := 'L';                                  -- serial clock
     sdi_dat_o      : out std_ulogic;                                         -- controller data out, peripheral data in
     sdi_dat_i      : in  std_ulogic := 'L';                                  -- controller data in, peripheral data out
     sdi_csn_i      : in  std_ulogic := 'H';                                  -- chip-select, low-active
@@ -279,18 +279,18 @@ entity neorv32_top is
     twd_sda_o      : out std_ulogic;                                         -- serial data line output (pull low only)
     twd_scl_i      : in  std_ulogic := 'H';                                  -- serial clock line sense input
 
-    -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
+    -- 1-Wire interface (available if IO_ONEWIRE_EN = true) --
     onewire_i      : in  std_ulogic := 'H';                                  -- 1-wire bus sense input
     onewire_o      : out std_ulogic;                                         -- 1-wire bus output (pull low only)
 
     -- PWM (available if IO_PWM_NUM > 0) --
     pwm_o          : out std_ulogic_vector(31 downto 0);                     -- PWM channels
 
-    -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
+    -- Custom functions subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i       : in  std_ulogic_vector(255 downto 0) := (others => 'L'); -- custom CFS inputs conduit
     cfs_out_o      : out std_ulogic_vector(255 downto 0);                    -- custom CFS outputs conduit
 
-    -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
+    -- Smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o       : out std_ulogic;                                         -- async serial data line
 
     -- Machine timer system time (available if IO_CLINT_EN = true) --
