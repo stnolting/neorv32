@@ -120,29 +120,30 @@ proc setup_ip_gui {} {
   # **************************************************************
   # Interfaces: Configuration Dependencies
   # **************************************************************
-  set_property enablement_dependency {$OCD_EN}         [ipx::get_ports jtag_*           -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$OCD_EN}         [ipx::get_ports ocd_resetn       -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_WDT_EN}      [ipx::get_ports wdt_resetn       -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_SLINK_EN}    [ipx::get_bus_interfaces s0_axis -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_SLINK_EN}    [ipx::get_bus_interfaces s1_axis -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$XBUS_EN}        [ipx::get_bus_interfaces m_axi   -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_GPIO_EN}     [ipx::get_ports gpio_i           -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_GPIO_EN}     [ipx::get_ports gpio_o           -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_GPIO_DIR_EN} [ipx::get_ports gpio_dir_o       -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_UART0_EN}    [ipx::get_ports uart0_*          -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_UART1_EN}    [ipx::get_ports uart1_*          -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_SPI_EN}      [ipx::get_ports spi_*            -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_SDI_EN}      [ipx::get_ports sdi_*            -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_TWI_EN}      [ipx::get_ports twi_*            -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_TWD_EN}      [ipx::get_ports twd_*            -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_ONEWIRE_EN}  [ipx::get_ports onewire_*        -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_PWM_EN}      [ipx::get_ports pwm_o            -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_CFS_EN}      [ipx::get_ports cfs_*            -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_NEOLED_EN}   [ipx::get_ports neoled_o         -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_CLINT_EN}    [ipx::get_ports mtime_time_o     -of_objects [ipx::current_core]]
-  set_property enablement_dependency {!$IO_CLINT_EN}   [ipx::get_ports irq_mti_i        -of_objects [ipx::current_core]]
-  set_property enablement_dependency {!$IO_CLINT_EN}   [ipx::get_ports irq_msi_i        -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$SMC_EN}         [ipx::get_ports smc_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$OCD_EN && !$OCD_EXT_DTM}       [ipx::get_ports jtag_*           -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$OCD_EN &&  $OCD_EXT_DTM}       [ipx::get_ports dmi_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$OCD_EN}                        [ipx::get_ports ocd_resetn       -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_WDT_EN}                     [ipx::get_ports wdt_resetn       -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_SLINK_EN}                   [ipx::get_bus_interfaces s0_axis -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_SLINK_EN}                   [ipx::get_bus_interfaces s1_axis -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$XBUS_EN}                       [ipx::get_bus_interfaces m_axi   -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_GPIO_EN}                    [ipx::get_ports gpio_i           -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_GPIO_EN}                    [ipx::get_ports gpio_o           -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_GPIO_EN && $IO_GPIO_DIR_EN} [ipx::get_ports gpio_dir_o       -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_UART0_EN}                   [ipx::get_ports uart0_*          -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_UART1_EN}                   [ipx::get_ports uart1_*          -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_SPI_EN}                     [ipx::get_ports spi_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_SDI_EN}                     [ipx::get_ports sdi_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_TWI_EN}                     [ipx::get_ports twi_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_TWD_EN}                     [ipx::get_ports twd_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_ONEWIRE_EN}                 [ipx::get_ports onewire_*        -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_PWM_EN}                     [ipx::get_ports pwm_o            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_CFS_EN}                     [ipx::get_ports cfs_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_NEOLED_EN}                  [ipx::get_ports neoled_o         -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_CLINT_EN}                   [ipx::get_ports mtime_time_o     -of_objects [ipx::current_core]]
+  set_property enablement_dependency {!$IO_CLINT_EN}                  [ipx::get_ports irq_mti_i        -of_objects [ipx::current_core]]
+  set_property enablement_dependency {!$IO_CLINT_EN}                  [ipx::get_ports irq_msi_i        -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$SMC_EN}                        [ipx::get_ports smc_*            -of_objects [ipx::current_core]]
 
 
   # **************************************************************
@@ -192,6 +193,7 @@ proc setup_ip_gui {} {
   set group [add_group $page {On-Chip Debugger (OCD)}]
   add_params $group {
     { OCD_EN              {Enable OCD}         {Implement JTAG-based on-chip debugger} }
+    { OCD_EXT_DTM         {External DTM}       {Export DMI for external JTAG tap}      {$OCD_EN} {$OCD_EN ? $OCD_EXT_DTM : false} }
     { OCD_AUTHENTICATION  {OCD authentication} {Implement debug authentication module} {$OCD_EN} {$OCD_EN ? $OCD_AUTHENTICATION : false} }
     { OCD_NUM_HW_TRIGGERS {Hardware triggers}  {Number of hardware break-/watchpoints} {$OCD_EN} {$OCD_EN ? $OCD_NUM_HW_TRIGGERS : 0} }
     { OCD_JEDEC_ID        {JEDEC ID}           {JTAG tap identification}               {$OCD_EN}}
