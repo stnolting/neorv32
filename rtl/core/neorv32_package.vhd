@@ -156,9 +156,9 @@ package neorv32_package is
   );
 
   -- request operation --
-  constant dmi_req_nop_c : std_ulogic_vector(1 downto 0) := "00"; -- no operation
-  constant dmi_req_rd_c  : std_ulogic_vector(1 downto 0) := "01"; -- read access
-  constant dmi_req_wr_c  : std_ulogic_vector(1 downto 0) := "10"; -- write access
+  constant dmi_op_nop_c : std_ulogic_vector(1 downto 0) := "00"; -- no operation
+  constant dmi_op_rd_c  : std_ulogic_vector(1 downto 0) := "01"; -- read access
+  constant dmi_op_wr_c  : std_ulogic_vector(1 downto 0) := "10"; -- write access
 
   -- response --
   type dmi_rsp_t is record

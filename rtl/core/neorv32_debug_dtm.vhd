@@ -184,7 +184,7 @@ begin
         err <= '1';
       end if;
       -- interface arbiter --
-      dmi.op <= dmi_req_nop_c; -- default
+      dmi.op <= dmi_op_nop_c; -- default
       if (busy = '0') then -- idle: waiting for new request
         if (update = '1') and (ireg = addr_dmi_c) then
           dmi.addr <= dreg(40 downto 34);
