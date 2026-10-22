@@ -21,6 +21,7 @@ of the User Guide.
 * <<_openocd>>
 * <<_semihosting>>
 * <<_debug_transport_module_dtm>>
+* <<_external_dtm>>
 * <<_debug_module_dm>>
 * <<_debug_authentication>>
 * <<_cpu_debug_mode>>
@@ -45,6 +46,7 @@ of the User Guide.
 |=======================
 | Name | Type | Default | Description
 | `OCD_EN`              | boolean   | false         | Implement the on-chip debugger and the CPU debug mode.
+| `OCD_EXT_DTM`         | boolean   | false         | Disable the internal debug transport module (DTM) / JTAG tap and expose an interface to attach a custom <<_external_dtm>>.
 | `OCD_NUM_HW_TRIGGERS` | natural   | 0             | Number of implemented HW triggers (<<_trigger_module>> / <<_sdtrig_isa_extension>>) for hardware break-/watchpoints (0..16).
 | `OCD_AUTHENTICATION`  | boolean   | false         | Implement optional <<_debug_authentication>> module.
 | `OCD_JEDEC_ID`        | suv(10:0) | "00000000000" | JEDEC ID; continuation codes plus vendor ID (passed to the JTAG <<_debug_transport_module_dtm>>).
@@ -290,6 +292,46 @@ shows all available data registers and their addresses:
 .2+^| 1:0 .2+^| `op` | r/- | Read access - status: `00` = idle, `11` = access while DMI is busy (sticky)
                      | -/w <| Write access - operation: `00` = NOP, `01` = read, `10` = write
 |=======================
+
+
+:sectnums:
+==== External DTM
+
+By default, the on-chip debugger uses the processor-internal <<_debug_transport_module_dtm>> to provide a standard
+4-wire JTAG interface. However, advanced users might want to use a custom, processor-external DTM instead - for
+example to implement a different physical transport (e.g., SWD bridges or FPGA-specific "JTAG tunnels") bridges) or
+to implement additional JTAG features like scan chains or boundary scans.
+
+Setting the <<_processor_top_entity_generics, `OCD_EXT_DTM`>> generic to `true` disables the processor-internal
+DTM and instead exports the raw RISC-V-compliant _debug module interface (DMI)_ as additional processor top ports.
+
+.JTAG Pins
+[NOTE]
+When `OCD_EXT_DTM` is enabled, the processor's JTAG top ports (`jtag_*`) are no longer connected to any internal logic.
+However, `jtag_tdi_i` is directly forwarded to `jtag_tdo_o` in order to maintain an existing JTAG daisy-chain.
+
+The debug module interface (DMI) uses a simple request-response protocol. The `dmi_req_op_i` signal specifies the actual
+operation (`00` = NOP, `01` = read, `10` = write). This signal is non-zero for exactly one clock cycle triggering a read
+or write operation. The `dmi_req_addr_i` signal defines the address of the accessed <<_debug_module_dm>> register.
+For write operations, `dmi_req_data_i` provides the 32-bit write data. The DM will acknowledge any operation in the
+following cycle by single-shot ACK (`dmi_rsp_ack_o`). For read operations, `dmi_rsp_data_o` returns the read 32-bit data.
+
+Note that all interface signals are synchronous to the processor clock. Hence, any external DTM must be clocked by the
+same clock domain.
+
+.External Debug Module Interface (DMI) Timing
+[wavedrom, format="png", align="center"]
+----
+{signal: [
+  {name: 'clk',            wave: 'p...|....'},
+  {name: 'dmi_req_op_i',   wave: '232.|.42.', data: ['00', '01', '00', '10', '00']},
+  {name: 'dmi_req_addr_i', wave: 'x3.x|.4.x', data: ['raddr', 'waddr']},
+  {name: 'dmi_req_data_i', wave: 'x..x|.4.x', data: ['wdata']},
+  {},
+  {name: 'dmi_rsp_data_o', wave: 'x.3x|...x', data: ['rdata']},
+  {name: 'dmi_rsp_ack_o',  wave: '0.10|..10'},
+]}
+----
 
 
 <<<
