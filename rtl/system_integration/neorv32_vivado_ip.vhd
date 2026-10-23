@@ -34,6 +34,7 @@ entity neorv32_vivado_ip is
     BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := x"00000000";
     -- On-Chip Debugger (OCD) --
     OCD_EN                : boolean                        := false;
+    OCD_EXT_DTM           : boolean                        := false;
     OCD_NUM_HW_TRIGGERS   : natural range 0 to 16          := 0;
     OCD_AUTHENTICATION    : boolean                        := false;
     OCD_JEDEC_ID          : std_logic_vector(10 downto 0)  := "00000000000";
@@ -229,6 +230,14 @@ entity neorv32_vivado_ip is
     s1_axis_tdata  : in  std_logic_vector(31 downto 0) := x"00000000";
     s1_axis_tlast  : in  std_logic := '0';
     -- ------------------------------------------------------------
+    -- External debug module interface
+    -- ------------------------------------------------------------
+    dmi_req_op_i   : in  std_logic_vector(1 downto 0)  := "00";
+    dmi_req_addr_i : in  std_logic_vector(6 downto 0)  := "0000000";
+    dmi_req_data_i : in  std_logic_vector(31 downto 0) := x"00000000";
+    dmi_rsp_data_o : out std_logic_vector(31 downto 0);
+    dmi_rsp_ack_o  : out std_logic;
+    -- ------------------------------------------------------------
     -- JTAG on-chip debugger interface (available if OCD_EN = true)
     -- ------------------------------------------------------------
     jtag_tck_i     : in  std_logic := '0';
@@ -325,6 +334,8 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal mtime_time_aux : std_ulogic_vector(63 downto 0);
   signal smc_ioen_aux, smc_sck_aux, smc_sdo_aux : std_ulogic;
   signal smc_csn_aux : std_ulogic_vector(1 downto 0);
+  signal dmi_rsp_data_aux : std_ulogic_vector(31 downto 0);
+  signal dmi_rsp_ack_aux : std_ulogic;
 
   -- constrained-size ports --
   signal gpio_dir_o_aux, gpio_o_aux, gpio_i_aux, pwm_o_aux : std_ulogic_vector(31 downto 0);
@@ -349,6 +360,7 @@ begin
     BOOT_ADDR_CUSTOM    => BOOT_ADDR_CUSTOM,
     -- On-Chip Debugger --
     OCD_EN              => OCD_EN,
+    OCD_EXT_DTM         => OCD_EXT_DTM,
     OCD_NUM_HW_TRIGGERS => OCD_NUM_HW_TRIGGERS,
     OCD_AUTHENTICATION  => OCD_AUTHENTICATION,
     OCD_JEDEC_ID        => std_ulogic_vector(OCD_JEDEC_ID),
@@ -479,6 +491,12 @@ begin
     rstn_i         => std_ulogic(resetn),
     rstn_ocd_o     => rstn_ocd,
     rstn_wdt_o     => rstn_wdt,
+    -- External debug module interface (available if OCD_EXT_DTM = true) --
+    dmi_req_op_i   => std_ulogic_vector(dmi_req_op_i),
+    dmi_req_addr_i => std_ulogic_vector(dmi_req_addr_i),
+    dmi_req_data_i => std_ulogic_vector(dmi_req_data_i),
+    dmi_rsp_data_o => dmi_rsp_data_aux,
+    dmi_rsp_ack_o  => dmi_rsp_ack_aux,
     -- JTAG on-chip debugger interface (available if OCD_EN = true) --
     jtag_tck_i     => std_ulogic(jtag_tck_i),
     jtag_tdi_i     => std_ulogic(jtag_tdi_i),
@@ -593,6 +611,8 @@ begin
   smc_sck_o      <= std_logic(smc_sck_aux);
   smc_csn_o      <= std_logic_vector(smc_csn_aux);
   smc_sdo_o      <= std_logic(smc_sdo_aux);
+  dmi_rsp_data_o <= std_logic_vector(dmi_rsp_data_aux);
+  dmi_rsp_ack_o  <= std_logic(dmi_rsp_ack_aux);
 
   -- Mapping for Constrained-Size Ports -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------

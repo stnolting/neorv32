@@ -56,7 +56,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant addr_dmcontrol_c    : std_ulogic_vector(6 downto 0) := "0010000";
   constant addr_dmstatus_c     : std_ulogic_vector(6 downto 0) := "0010001";
   constant addr_hartinfo_c     : std_ulogic_vector(6 downto 0) := "0010010";
-  constant addr_abstractcs_c   : std_ulogic_vector(6 downto 0) := "0010110";
+  constant addr_abstracts_c    : std_ulogic_vector(6 downto 0) := "0010110";
   constant addr_command_c      : std_ulogic_vector(6 downto 0) := "0010111";
   constant addr_abstractauto_c : std_ulogic_vector(6 downto 0) := "0011000";
   constant addr_progbuf0_c     : std_ulogic_vector(6 downto 0) := "0100000";
@@ -169,8 +169,8 @@ begin
 
   -- DMI Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  dmi_wren <= '1' when (dmi_req_i.op = dmi_req_wr_c) and (auth_valid = '1') and (dm_reg.dmactive = '1') else '0';
-  dmi_rden <= '1' when (dmi_req_i.op = dmi_req_rd_c) and (auth_valid = '1') and (dm_reg.dmactive = '1') else '0';
+  dmi_wren <= '1' when (dmi_req_i.op = dmi_op_wr_c) and (auth_valid = '1') and (dm_reg.dmactive = '1') else '0';
+  dmi_rden <= '1' when (dmi_req_i.op = dmi_op_rd_c) and (auth_valid = '1') and (dm_reg.dmactive = '1') else '0';
 
 
   -- Debug Module Interface - Write Access --------------------------------------------------
@@ -233,7 +233,7 @@ begin
             end if;
 
           -- acknowledge command error --
-          when addr_abstractcs_c =>
+          when addr_abstracts_c =>
             if (dmi_req_i.data(10 downto 8) = "111") then
               dm_reg.clr_acc_err <= '1';
             end if;
@@ -258,7 +258,7 @@ begin
       end if;
 
       -- dmactive can always be written --
-      if (dmi_req_i.op = dmi_req_wr_c) and (dmi_req_i.addr = addr_dmcontrol_c) then
+      if (dmi_req_i.op = dmi_op_wr_c) and (dmi_req_i.addr = addr_dmcontrol_c) then
         dm_reg.dmactive <= dmi_req_i.data(0);
       end if;
 
@@ -279,7 +279,7 @@ begin
       -- invalid access while command is executing --
       if (cmd_busy = '0') then
         dm_reg.set_acc_err <= '0'; -- reset error trigger when command arbiter is in idle state again
-      elsif ((dmi_req_i.addr = addr_abstractcs_c)   and (dmi_wren = '1')) or
+      elsif ((dmi_req_i.addr = addr_abstracts_c)    and (dmi_wren = '1')) or
             ((dmi_req_i.addr = addr_command_c)      and (dmi_wren = '1')) or
             ((dmi_req_i.addr = addr_abstractauto_c) and (dmi_wren = '1')) or
             ((dmi_req_i.addr = addr_data0_c)        and ((dmi_wren or dmi_rden) = '1')) or
@@ -362,7 +362,7 @@ begin
           end if;
 
         -- abstract control and status --
-        when addr_abstractcs_c =>
+        when addr_abstracts_c =>
           if (dmi_rden = '1') then
             dmi_rsp_o.data(28 downto 24) <= "00010";  -- progbufsize
             dmi_rsp_o.data(12)           <= cmd_busy; -- busy
@@ -633,7 +633,7 @@ begin
   end generate;
 
   -- authenticator access (always accessible) --
-  auth_we <= '1' when (dmi_req_i.op = dmi_req_wr_c) and (dmi_req_i.addr = addr_authdata_c) else '0';
-  auth_re <= '1' when (dmi_req_i.op = dmi_req_rd_c) and (dmi_req_i.addr = addr_authdata_c) else '0';
+  auth_we <= '1' when (dmi_req_i.op = dmi_op_wr_c) and (dmi_req_i.addr = addr_authdata_c) else '0';
+  auth_re <= '1' when (dmi_req_i.op = dmi_op_rd_c) and (dmi_req_i.addr = addr_authdata_c) else '0';
 
 end architecture;

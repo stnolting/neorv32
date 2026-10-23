@@ -28,10 +28,11 @@ entity neorv32_top is
 
     -- Boot Configuration --
     BOOT_MODE_SELECT    : natural range 0 to 2           := 0;             -- boot configuration select (default = 0 = bootloader)
-    BOOT_ADDR_CUSTOM    : std_ulogic_vector(31 downto 0) := x"00000000";   -- custom CPU boot address (if boot_config = 1)
+    BOOT_ADDR_CUSTOM    : std_ulogic_vector(31 downto 0) := x"00000000";   -- custom CPU boot address (if BOOT_MODE_SELECT = 1)
 
     -- On-Chip Debugger (OCD) --
     OCD_EN              : boolean                        := false;         -- implement on-chip debugger
+    OCD_EXT_DTM         : boolean                        := false;         -- use external debug transfer module (export DMI)
     OCD_NUM_HW_TRIGGERS : natural range 0 to 16          := 0;             -- number of hardware break-/watchpoints
     OCD_AUTHENTICATION  : boolean                        := false;         -- implement on-chip debugger authentication
     OCD_JEDEC_ID        : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
@@ -190,8 +191,15 @@ entity neorv32_top is
     rstn_wdt_o     : out std_ulogic;                                         -- watchdog reset output, low-active, sync
 
     -- Execution trace (available if TRACE_PORT_EN = true) --
-    trace_cpu0_o   : out trace_port_t;                                       -- CPU 0 trace port
-    trace_cpu1_o   : out trace_port_t;                                       -- CPU 1 trace port
+    trace_cpu0_o   : out trace_port_t;                                       -- CPU 0 trace port, RVFI-compatible
+    trace_cpu1_o   : out trace_port_t;                                       -- CPU 1 trace port, RVFI-compatible
+
+    -- External debug module interface (available if OCD_EXT_DTM = true) --
+    dmi_req_op_i   : in  std_ulogic_vector(1 downto 0)  := (others => 'L');  -- operation trigger, single-shot
+    dmi_req_addr_i : in  std_ulogic_vector(6 downto 0)  := (others => 'L');  -- access address
+    dmi_req_data_i : in  std_ulogic_vector(31 downto 0) := (others => 'L');  -- write data
+    dmi_rsp_data_o : out std_ulogic_vector(31 downto 0);                     -- read data
+    dmi_rsp_ack_o  : out std_ulogic;                                         -- operation acknowledge, single-shot
 
     -- JTAG on-chip debugger interface (available if OCD_EN = true) --
     jtag_tck_i     : in  std_ulogic := 'L';                                  -- serial clock
@@ -239,23 +247,23 @@ entity neorv32_top is
     -- Primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_ulogic;                                         -- send data
     uart0_rxd_i    : in  std_ulogic := 'L';                                  -- receive data
-    uart0_rtsn_o   : out std_ulogic;                                         -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_ctsn_i   : in  std_ulogic := 'L';                                  -- HW flow control: UART0.TX allowed to transmit, low-active, optional
+    uart0_rtsn_o   : out std_ulogic;                                         -- HW flow control: RX ready to receive, low-active
+    uart0_ctsn_i   : in  std_ulogic := 'L';                                  -- HW flow control: TX allowed to transmit, low-active
 
     -- Secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    : out std_ulogic;                                         -- send data
     uart1_rxd_i    : in  std_ulogic := 'L';                                  -- receive data
-    uart1_rtsn_o   : out std_ulogic;                                         -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-    uart1_ctsn_i   : in  std_ulogic := 'L';                                  -- HW flow control: UART1.TX allowed to transmit, low-active, optional
+    uart1_rtsn_o   : out std_ulogic;                                         -- HW flow control: RX ready to receive, low-active
+    uart1_ctsn_i   : in  std_ulogic := 'L';                                  -- HW flow control: TX allowed to transmit, low-active
 
     -- SPI (available if IO_SPI_EN = true) --
-    spi_clk_o      : out std_ulogic;                                         -- SPI serial clock
+    spi_clk_o      : out std_ulogic;                                         -- serial clock
     spi_dat_o      : out std_ulogic;                                         -- controller data out, peripheral data in
     spi_dat_i      : in  std_ulogic := 'L';                                  -- controller data in, peripheral data out
     spi_csn_o      : out std_ulogic_vector(7 downto 0);                      -- chip-select, low-active
 
     -- SDI (available if IO_SDI_EN = true) --
-    sdi_clk_i      : in  std_ulogic := 'L';                                  -- SDI serial clock
+    sdi_clk_i      : in  std_ulogic := 'L';                                  -- serial clock
     sdi_dat_o      : out std_ulogic;                                         -- controller data out, peripheral data in
     sdi_dat_i      : in  std_ulogic := 'L';                                  -- controller data in, peripheral data out
     sdi_csn_i      : in  std_ulogic := 'H';                                  -- chip-select, low-active
@@ -271,14 +279,14 @@ entity neorv32_top is
     twd_sda_o      : out std_ulogic;                                         -- serial data line output (pull low only)
     twd_scl_i      : in  std_ulogic := 'H';                                  -- serial clock line sense input
 
-    -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
+    -- 1-Wire interface (available if IO_ONEWIRE_EN = true) --
     onewire_i      : in  std_ulogic := 'H';                                  -- 1-wire bus sense input
     onewire_o      : out std_ulogic;                                         -- 1-wire bus output (pull low only)
 
     -- PWM (available if IO_PWM_NUM > 0) --
     pwm_o          : out std_ulogic_vector(31 downto 0);                     -- PWM channels
 
-    -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
+    -- Custom functions subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i       : in  std_ulogic_vector(255 downto 0) := (others => 'L'); -- custom CFS inputs conduit
     cfs_out_o      : out std_ulogic_vector(255 downto 0);                    -- custom CFS outputs conduit
 
@@ -1602,32 +1610,48 @@ begin
   end generate;
 
   -- **************************************************************************************************************************
-  -- On-Chip Debugger Complex
+  -- On-Chip Debugger
   -- **************************************************************************************************************************
 
   ocd_enabled:
   if OCD_EN generate
 
-    -- On-Chip Debugger - Debug Transport Module (DTM) ----------------------------------------
+    -- Debug Transport Module (DTM) -----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    debug_dtm_inst: entity neorv32.neorv32_debug_dtm
-    generic map (
-      IDCODE_VERSION => (others => '0'), -- yet unused
-      IDCODE_PARTID  => (others => '0'), -- yet unused
-      IDCODE_MANID   => OCD_JEDEC_ID
-    )
-    port map (
-      clk_i      => clk_i,
-      rstn_i     => rstn_ext,
-      jtag_tck_i => jtag_tck_i,
-      jtag_tdi_i => jtag_tdi_i,
-      jtag_tdo_o => jtag_tdo_o,
-      jtag_tms_i => jtag_tms_i,
-      dmi_req_o  => dmi_req,
-      dmi_rsp_i  => dmi_rsp
-    );
+    ocd_dtm_internal: -- internal DTM
+    if not OCD_EXT_DTM generate
+      ocd_dtm_inst: entity neorv32.neorv32_debug_dtm
+      generic map (
+        IDCODE_VERSION => (others => '0'), -- yet unused
+        IDCODE_PARTID  => (others => '0'), -- yet unused
+        IDCODE_MANID   => OCD_JEDEC_ID
+      )
+      port map (
+        clk_i      => clk_i,
+        rstn_i     => rstn_ext,
+        jtag_tck_i => jtag_tck_i,
+        jtag_tdi_i => jtag_tdi_i,
+        jtag_tdo_o => jtag_tdo_o,
+        jtag_tms_i => jtag_tms_i,
+        dmi_req_o  => dmi_req,
+        dmi_rsp_i  => dmi_rsp
+      );
+      dmi_rsp_data_o <= (others => '0');
+      dmi_rsp_ack_o  <= '0';
+    end generate;
 
-    -- On-Chip Debugger - Debug Module (DM) ---------------------------------------------------
+    -- external DTM --
+    ocd_dtm_external:
+    if OCD_EXT_DTM generate
+      jtag_tdo_o     <= jtag_tdi_i; -- JTAG pass-through
+      dmi_req.op     <= dmi_req_op_i;
+      dmi_req.addr   <= dmi_req_addr_i;
+      dmi_req.data   <= dmi_req_data_i;
+      dmi_rsp_data_o <= dmi_rsp.data;
+      dmi_rsp_ack_o  <= dmi_rsp.ack;
+    end generate;
+
+    -- Debug Module (DM) ----------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     debug_dm_inst: entity neorv32.neorv32_debug_dm
     generic map (
@@ -1645,7 +1669,7 @@ begin
       halt_req_o => dci_haltreq
     );
 
-  end generate; -- /neorv32_ocd_enabled
+  end generate;
 
   ocd_disabled:
   if not OCD_EN generate
@@ -1653,6 +1677,8 @@ begin
     dmi_req              <= dmi_req_terminate_c;
     dmi_rsp              <= dmi_rsp_terminate_c;
     jtag_tdo_o           <= jtag_tdi_i; -- JTAG pass-through
+    dmi_rsp_data_o       <= (others => '0');
+    dmi_rsp_ack_o        <= '0';
     dci_ndmrstn          <= '1';
     dci_haltreq          <= (others => '0');
   end generate;

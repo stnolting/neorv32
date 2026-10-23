@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130700"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130701"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -156,9 +156,9 @@ package neorv32_package is
   );
 
   -- request operation --
-  constant dmi_req_nop_c : std_ulogic_vector(1 downto 0) := "00"; -- no operation
-  constant dmi_req_rd_c  : std_ulogic_vector(1 downto 0) := "01"; -- read access
-  constant dmi_req_wr_c  : std_ulogic_vector(1 downto 0) := "10"; -- write access
+  constant dmi_op_nop_c : std_ulogic_vector(1 downto 0) := "00"; -- no operation
+  constant dmi_op_rd_c  : std_ulogic_vector(1 downto 0) := "01"; -- read access
+  constant dmi_op_wr_c  : std_ulogic_vector(1 downto 0) := "10"; -- write access
 
   -- response --
   type dmi_rsp_t is record
@@ -901,6 +901,7 @@ package neorv32_package is
     BOOT_ADDR_CUSTOM    : std_ulogic_vector(31 downto 0) := x"00000000";
     -- On-Chip Debugger (OCD) --
     OCD_EN              : boolean                        := false;
+    OCD_EXT_DTM         : boolean                        := false;
     OCD_NUM_HW_TRIGGERS : natural range 0 to 16          := 0;
     OCD_AUTHENTICATION  : boolean                        := false;
     OCD_JEDEC_ID        : std_ulogic_vector(10 downto 0) := "00000000000";
@@ -1036,6 +1037,12 @@ package neorv32_package is
     -- Execution trace (available if TRACE_PORT_EN = true) --
     trace_cpu0_o   : out trace_port_t;
     trace_cpu1_o   : out trace_port_t;
+    -- External debug module interface (available if OCD_EXT_DTM = true) --
+    dmi_req_op_i   : in  std_ulogic_vector(1 downto 0)  := (others => 'L');
+    dmi_req_addr_i : in  std_ulogic_vector(6 downto 0)  := (others => 'L');
+    dmi_req_data_i : in  std_ulogic_vector(31 downto 0) := (others => 'L');
+    dmi_rsp_data_o : out std_ulogic_vector(31 downto 0);
+    dmi_rsp_ack_o  : out std_ulogic;
     -- JTAG on-chip debugger interface (available if OCD_EN = true) --
     jtag_tck_i     : in  std_ulogic := 'L';
     jtag_tdi_i     : in  std_ulogic := 'L';
