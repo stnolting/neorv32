@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+<!-- ================================================================================ -->
+<!-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              -->
+<!-- Copyright (c) NEORV32 contributors.                                              -->
+<!-- Copyright (c) Stephan Nolting. All rights reserved.                              -->
+<!-- Licensed under the BSD-3-Clause license, see LICENSE for details.                -->
+<!-- SPDX-License-Identifier: BSD-3-Clause                                            -->
+<!-- ================================================================================ -->
+
 <device schemaVersion="1.1" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD.xsd" >
   <vendor>github.com/stnolting/neorv32</vendor>
   <name>neorv32</name>
@@ -990,7 +998,7 @@
             <field>
               <name>TWI_CTRL_EN</name>
               <bitRange>[0:0]</bitRange>
-              <description>TWI enable flag</description>
+              <description>TWI enable</description>
             </field>
             <field>
               <name>TWI_CTRL_PRSC</name>
@@ -1000,12 +1008,7 @@
             <field>
               <name>TWI_CTRL_CDIV</name>
               <bitRange>[7:4]</bitRange>
-              <description>TWI clock divider</description>
-            </field>
-            <field>
-              <name>TWI_CTRL_CLKSTR</name>
-              <bitRange>[8:8]</bitRange>
-              <description>Enable (allow) clock stretching</description>
+              <description>Clock divider</description>
             </field>
             <field>
               <name>TWI_CTRL_FIFO</name>
@@ -1014,22 +1017,46 @@
               <description>log2(TWI FIFO size)</description>
             </field>
             <field>
-              <name>TWI_CTRL_TX_FULL</name>
-              <bitRange>[29:29]</bitRange>
+              <name>TWI_CTRL_NACK</name>
+              <bitRange>[23:23]</bitRange>
               <access>read-only</access>
-              <description>TX FIFO full</description>
+              <description>Set if any TX transmission returned a NACK, sticky until cleared</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_NACK_CLR</name>
+              <bitRange>[24:24]</bitRange>
+              <access>write-only</access>
+              <description>Clear NACK flag TWI_CTRL_NACK</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_IRQ_CLR</name>
+              <bitRange>[25:25]</bitRange>
+              <access>write-only</access>
+              <description>Clear interrupt request</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_CLAIMED</name>
+              <bitRange>[26:26]</bitRange>
+              <access>read-only</access>
+              <description>Bus is claimed by controller</description>
             </field>
             <field>
               <name>TWI_CTRL_SENSE_SCL</name>
               <bitRange>[27:27]</bitRange>
               <access>read-only</access>
-              <description>current state of the SCL bus line</description>
+              <description>Current state of the SCL bus line</description>
             </field>
             <field>
               <name>TWI_CTRL_SENSE_SDA</name>
               <bitRange>[28:28]</bitRange>
               <access>read-only</access>
-              <description>current state of the SDA bus line</description>
+              <description>Current state of the SDA bus line</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_TX_FULL</name>
+              <bitRange>[29:29]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO full</description>
             </field>
             <field>
               <name>TWI_CTRL_RX_AVAIL</name>
@@ -1041,32 +1068,15 @@
               <name>TWI_CTRL_BUSY</name>
               <bitRange>[31:31]</bitRange>
               <access>read-only</access>
-              <description>Bus engine busy of TX FIFO not empty</description>
+              <description>Bus engine busy or TX FIFO not empty</description>
             </field>
           </fields>
         </register>
         <register>
           <name>DCMD</name>
-          <description>RX/TX data/command register</description>
+          <description>RX/TX data and command register</description>
           <addressOffset>0x04</addressOffset>
           <readAction>modify</readAction>
-          <fields>
-            <field>
-              <name>TWI_DCMD</name>
-              <bitRange>[7:0]</bitRange>
-              <description>RX/TX data</description>
-            </field>
-            <field>
-              <name>TWI_DCMD_ACK</name>
-              <bitRange>[8:8]</bitRange>
-              <description>RX = ACK/NACK, TX = MACK</description>
-            </field>
-            <field>
-              <name>TWI_DCMD_CMD</name>
-              <bitRange>[10:9]</bitRange>
-              <description>Operation command</description>
-            </field>
-          </fields>
         </register>
       </registers>
     </peripheral>
