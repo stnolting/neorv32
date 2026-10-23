@@ -19,7 +19,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_twi is
   generic (
-    IO_TWI_FIFO : natural range 1 to 32768 -- TWI RTX FIFO depth, has to be a power of two, min 1
+    FIFO_DEPTH : natural range 1 to 32768 -- data/command FIFO depth, has to be a power of two, min 1
   );
   port (
     clk_i     : in  std_ulogic;                    -- global clock line
@@ -37,32 +37,28 @@ end entity;
 
 architecture neorv32_twi_rtl of neorv32_twi is
 
-  -- control register --
-  constant ctrl_en_c        : natural :=  0; -- r/w: module enable (reset when zero)
-  constant ctrl_prsc0_c     : natural :=  1; -- r/w: clock prescaler bit 0
-  constant ctrl_prsc2_c     : natural :=  3; -- r/w: clock prescaler bit 2
-  constant ctrl_cdiv0_c     : natural :=  4; -- r/w: clock divider bit 0
-  constant ctrl_cdiv3_c     : natural :=  7; -- r/w: clock divider bit 3
-  constant ctrl_clkstr_en_c : natural :=  8; -- r/w: enable clock stretching
+  -- control register layout --
+  constant ctrl_en_c        : natural :=  0; -- r/w: Module enable (reset when zero)
+  constant ctrl_prsc0_c     : natural :=  1; -- r/w: Clock prescaler bit 0
+  constant ctrl_prsc2_c     : natural :=  3; -- r/w: Clock prescaler bit 2
+  constant ctrl_cdiv0_c     : natural :=  4; -- r/w: Clock divider bit 0
+  constant ctrl_cdiv3_c     : natural :=  7; -- r/w: Clock divider bit 3
   --
   constant ctrl_fifo0_c     : natural := 15; -- r/-: log2(FIFO size), bit 0 (LSB)
   constant ctrl_fifo3_c     : natural := 18; -- r/-: log2(FIFO size), bit 3 (MSB)
   --
-  constant ctrl_sense_scl_c : natural := 27; -- r/-: current state of the SCL bus line
-  constant ctrl_sense_sda_c : natural := 28; -- r/-: current state of the SDA bus line
+  constant ctrl_nack_c      : natural := 23; -- r/-: TX-NACK received
+  constant ctrl_nack_clr_c  : natural := 24; -- -/w: Clear NACK flag
+  constant ctrl_irq_clr_c   : natural := 25; -- -/w: Clear interrupt request
+  constant ctrl_claimed_c   : natural := 26; -- r/-: Bus is claimed by TWI controller
+  constant ctrl_sense_scl_c : natural := 27; -- r/-: Current state of the SCL bus line
+  constant ctrl_sense_sda_c : natural := 28; -- r/-: Current state of the SDA bus line
   constant ctrl_tx_full_c   : natural := 29; -- r/-: TX FIFO full
   constant ctrl_rx_avail_c  : natural := 30; -- r/-: RX FIFO data available
   constant ctrl_busy_c      : natural := 31; -- r/-: Set if TWI unit is busy
 
-  -- data/command register --
-  constant dcmd_lsb_c    : natural :=  0; -- r/w: data byte LSB
-  constant dcmd_msb_c    : natural :=  7; -- r/w: data byte MSB
-  constant dcmd_ack_c    : natural :=  8; -- r/w: ACK/NACK/MACK
-  constant dcmd_cmd_lo_c : natural :=  9; -- -/w: operation command; 00=NOP, 01=START
-  constant dcmd_cmd_hi_c : natural := 10; -- -/w: operation command; 10=STOP, 11=DATA
-
   -- helpers --
-  constant log2_fifo_size_c : natural := index_size_f(IO_TWI_FIFO);
+  constant log2_fifo_size_c : natural := index_size_f(FIFO_DEPTH);
 
   -- bus interface --
   signal bus_ack, bus_rden : std_ulogic;
@@ -73,44 +69,56 @@ architecture neorv32_twi_rtl of neorv32_twi is
     enable : std_ulogic;
     prsc   : std_ulogic_vector(2 downto 0);
     cdiv   : std_ulogic_vector(3 downto 0);
-    clkstr : std_ulogic;
   end record;
   signal ctrl : ctrl_t; -- register set
+  signal ctrl_nack_clr, ctrl_irq_clr : std_ulogic; -- write-only control register bits
 
-  -- FIFO interface --
-  type fifo_t is record
-    rx_clear, tx_clear : std_ulogic; -- sync reset, high-active
-    rx_we,    tx_we    : std_ulogic; -- write enable
-    rx_re,    tx_re    : std_ulogic; -- read enable
-    rx_wdata, rx_rdata : std_ulogic_vector(8 downto 0); -- RX read/write data
-    tx_wdata, tx_rdata : std_ulogic_vector(10 downto 0); -- TX read/write data
-    rx_avail, tx_avail : std_ulogic; -- data available?
-    rx_free,  tx_free  : std_ulogic; -- free entry available?
+  -- TX FIFO interface --
+  type tx_fifo_t is record
+    clr   : std_ulogic; -- sync reset, high-active
+    we    : std_ulogic; -- write enable
+    rdata : std_ulogic_vector(8 downto 0); -- transmit data/command
+    avail : std_ulogic; -- data available
+    free  : std_ulogic; -- free entry available
   end record;
-  signal fifo : fifo_t;
+  signal tx_fifo : tx_fifo_t;
 
-  -- clock generator --
-  signal clkgen_cnt          : std_ulogic_vector(3 downto 0); -- clock divider
-  signal clkgen_tick         : std_ulogic; -- actual TWI clock tick
-  signal clkgen_halt         : std_ulogic; -- halt clock during clock stretching
-  signal clkgen_phase_gen    : std_ulogic_vector(3 downto 0); -- clock phase generator
-  signal clkgen_phase_gen_ff : std_ulogic_vector(3 downto 0);
-  signal clkgen_phase        : std_ulogic_vector(3 downto 0);
+  -- RX FIFO interface --
+  type rx_fifo_t is record
+    clr   : std_ulogic; -- sync reset, high-active
+    re    : std_ulogic; -- read enable
+    rdata : std_ulogic_vector(7 downto 0); -- received data
+    avail : std_ulogic; -- data available
+  end record;
+  signal rx_fifo : rx_fifo_t;
 
-  -- bus engine --
+  -- timing generator --
+  signal clkgen_cnt  : std_ulogic_vector(3 downto 0); -- clock divider
+  signal clkgen_tick : std_ulogic; -- actual TWI clock tick
+  signal clkgen_halt : std_ulogic; -- halt clock during clock stretching
+  signal phase_sreg  : std_ulogic_vector(3 downto 0); -- clock phase generator
+  signal phase       : std_ulogic_vector(3 downto 0);
+
+  -- serial engine --
+  type state_t is (S_OFFLINE, S_IDLE, S_START, S_STOP, S_DATA);
   type engine_t is record
-    state  : std_ulogic_vector(2 downto 0); -- FSM state
-    bitcnt : std_ulogic_vector(3 downto 0); -- bit counter
-    sreg   : std_ulogic_vector(8 downto 0); -- shift register
-    tx_re  : std_ulogic; -- pop from TX FIFO
-    rx_we  : std_ulogic; -- push to RX FIFO
+    state : state_t; -- FSM state
+    bcnt  : std_ulogic_vector(3 downto 0); -- bit counter
+    sreg  : std_ulogic_vector(8 downto 0); -- shift register
+    rw    : std_ulogic; -- 0 = RX, 1 = TX
+    pop   : std_ulogic; -- pop TX data from FIFO
+    push  : std_ulogic; -- push RX data to FIFO
+    nack  : std_ulogic; -- NACK received
+    claim : std_ulogic; -- bus is claimed by TWI controller
+    scl   : std_ulogic; -- SCL driver
+    sda   : std_ulogic; -- SDA driver
   end record;
   signal engine : engine_t;
-  signal busy : std_ulogic; -- bus operation in progress
+  signal fsm_state : state_t; -- state override
+  signal busy, busy_ff : std_ulogic; -- operation in progress
 
-  -- I/O control --
-  signal sda_sync, scl_sync : std_ulogic_vector(1 downto 0); -- input synchronizer
-  signal sda_out,  scl_out  : std_ulogic;
+  -- input synchronizer --
+  signal sda_sync, scl_sync : std_ulogic_vector(1 downto 0);
 
 begin
 
@@ -131,21 +139,28 @@ begin
       ctrl.enable <= '0';
       ctrl.prsc   <= (others => '0');
       ctrl.cdiv   <= (others => '0');
-      ctrl.clkstr <= '0';
     elsif rising_edge(clk_i) then
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-        if (bus_req_i.addr(2) = '0') then -- control register
-          ctrl.enable <= bus_req_i.data(ctrl_en_c);
-          ctrl.prsc   <= bus_req_i.data(ctrl_prsc2_c downto ctrl_prsc0_c);
-          ctrl.cdiv   <= bus_req_i.data(ctrl_cdiv3_c downto ctrl_cdiv0_c);
-          ctrl.clkstr <= bus_req_i.data(ctrl_clkstr_en_c);
-        end if;
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '0') then
+        ctrl.enable <= bus_req_i.data(ctrl_en_c);
+        ctrl.prsc   <= bus_req_i.data(ctrl_prsc2_c downto ctrl_prsc0_c);
+        ctrl.cdiv   <= bus_req_i.data(ctrl_cdiv3_c downto ctrl_cdiv0_c);
       end if;
     end if;
   end process;
 
+  -- write-only flags --
+  wo_flags: process(bus_req_i)
+  begin
+    ctrl_nack_clr <= '0';
+    ctrl_irq_clr  <= '0';
+    if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '0') then
+      ctrl_nack_clr <= bus_req_i.data(ctrl_nack_clr_c);
+      ctrl_irq_clr  <= bus_req_i.data(ctrl_irq_clr_c);
+    end if;
+  end process;
+
   -- read access (asynchronous) --
-  bus_read: process(bus_rden, bus_req_i.addr, ctrl, scl_sync, sda_sync, fifo, busy)
+  bus_read: process(bus_rden, bus_req_i, ctrl, engine, scl_sync, sda_sync, tx_fifo, rx_fifo, busy)
   begin
     bus_rdata <= (others => '0');
     if (bus_rden = '1') then -- output gating
@@ -153,15 +168,16 @@ begin
         bus_rdata(ctrl_en_c)                        <= ctrl.enable;
         bus_rdata(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl.prsc;
         bus_rdata(ctrl_cdiv3_c downto ctrl_cdiv0_c) <= ctrl.cdiv;
-        bus_rdata(ctrl_clkstr_en_c)                 <= ctrl.clkstr;
         bus_rdata(ctrl_fifo3_c downto ctrl_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
+        bus_rdata(ctrl_nack_c)                      <= engine.nack;
+        bus_rdata(ctrl_claimed_c)                   <= engine.claim;
         bus_rdata(ctrl_sense_scl_c)                 <= scl_sync(1);
         bus_rdata(ctrl_sense_sda_c)                 <= sda_sync(1);
-        bus_rdata(ctrl_tx_full_c)                   <= not fifo.tx_free;
-        bus_rdata(ctrl_rx_avail_c)                  <= fifo.rx_avail;
-        bus_rdata(ctrl_busy_c)                      <= busy or fifo.tx_avail;
+        bus_rdata(ctrl_tx_full_c)                   <= not tx_fifo.free;
+        bus_rdata(ctrl_rx_avail_c)                  <= rx_fifo.avail;
+        bus_rdata(ctrl_busy_c)                      <= busy;
       else -- RX data
-        bus_rdata(8 downto 0) <= fifo.rx_rdata; -- ACK + data
+        bus_rdata(7 downto 0) <= rx_fifo.rdata;
       end if;
     end if;
   end process;
@@ -172,14 +188,18 @@ begin
   bus_rsp_o.data <= bus_rdata;
 
 
-  -- Data FIFOs ("Ring Buffer") -------------------------------------------------------------
+  -- Data/Command FIFOs ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  tx_fifo.clr <= (not ctrl.enable) or engine.nack; -- flush on TX-NACK
+  tx_fifo.we  <= bus_req_i.stb and bus_req_i.rw and bus_req_i.addr(2);
+  rx_fifo.clr <= not ctrl.enable;
+  rx_fifo.re  <= bus_rden and bus_req_i.addr(2);
 
-  -- TX FIFO --
+  -- TX-Data/Command --
   tx_fifo_inst: entity neorv32.neorv32_prim_fifo
   generic map (
     AWIDTH  => log2_fifo_size_c,
-    DWIDTH  => 11, -- command, host-ACK, data
+    DWIDTH  => 9,
     OUTGATE => false,
     ASYNCRD => false
   )
@@ -187,28 +207,23 @@ begin
     -- global control --
     clk_i   => clk_i,
     rstn_i  => rstn_i,
-    clear_i => fifo.tx_clear,
+    clear_i => tx_fifo.clr,
+    level_o => open,
     -- write port --
-    wdata_i => fifo.tx_wdata,
-    we_i    => fifo.tx_we,
-    free_o  => fifo.tx_free,
+    wdata_i => bus_req_i.data(8 downto 0),
+    we_i    => tx_fifo.we,
+    free_o  => tx_fifo.free,
     -- read port --
-    re_i    => fifo.tx_re,
-    rdata_o => fifo.tx_rdata,
-    avail_o => fifo.tx_avail
+    re_i    => engine.pop,
+    rdata_o => tx_fifo.rdata,
+    avail_o => tx_fifo.avail
   );
 
-  fifo.tx_clear <= not ctrl.enable;
-  fifo.tx_wdata <= bus_req_i.data(dcmd_cmd_hi_c downto dcmd_lsb_c);
-  fifo.tx_we    <= bus_req_i.stb and bus_req_i.rw and bus_req_i.addr(2);
-  fifo.tx_re    <= engine.tx_re;
-
-
-  -- RX FIFO --
+  -- RX-Data --
   rx_fifo_inst: entity neorv32.neorv32_prim_fifo
   generic map (
     AWIDTH  => log2_fifo_size_c,
-    DWIDTH  => 9, -- ACK + data
+    DWIDTH  => 8,
     OUTGATE => false,
     ASYNCRD => false
   )
@@ -216,178 +231,203 @@ begin
     -- global control --
     clk_i   => clk_i,
     rstn_i  => rstn_i,
-    clear_i => fifo.rx_clear,
+    clear_i => rx_fifo.clr,
+    level_o => open,
     -- write port --
-    wdata_i => fifo.rx_wdata,
-    we_i    => fifo.rx_we,
-    free_o  => fifo.rx_free,
+    wdata_i => engine.sreg(8 downto 1),
+    we_i    => engine.push,
+    free_o  => open,
     -- read port --
-    re_i    => fifo.rx_re,
-    rdata_o => fifo.rx_rdata,
-    avail_o => fifo.rx_avail
+    re_i    => rx_fifo.re,
+    rdata_o => rx_fifo.rdata,
+    avail_o => rx_fifo.avail
   );
 
-  fifo.rx_clear <= not ctrl.enable;
-  fifo.rx_wdata <= engine.sreg(0) & engine.sreg(8 downto 1); -- ACK + data
-  fifo.rx_we    <= engine.rx_we;
-  fifo.rx_re    <= bus_rden and bus_req_i.addr(2);
 
-
-  -- IRQ if enabled and TX FIFO is empty and bus engine is idle --
-  irq_generator: process(clk_i)
+  -- IRQ Generator --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  irq_gen: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      irq_o <= ctrl.enable and (not fifo.tx_avail) and (not busy);
+      busy_ff <= busy and ctrl.enable;
+      if (ctrl.enable = '0') then
+        irq_o <= '0';
+      elsif (busy_ff = '1') and (busy = '0') then
+        irq_o <= '1'; -- set if unit goes idle
+      elsif (ctrl_irq_clr = '1') then
+        irq_o <= '0'; -- clear on ACK
+      end if;
     end if;
   end process;
 
 
-  -- TWI Clock Generator --------------------------------------------------------------------
+  -- Timing Generator -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  clock_generator: process(clk_i)
+  timing_generator: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (ctrl.enable = '0') then -- reset/disabled
+      if (ctrl.enable = '0') or (engine.state = S_IDLE) then -- stop clock when disabled or idle
         clkgen_tick <= '0';
         clkgen_cnt  <= (others => '0');
+        phase_sreg  <= "0001"; -- start with new phase cycle
       else
+        -- clock generator --
         clkgen_tick <= '0'; -- default
-        if (clkgen_i(to_integer(unsigned(ctrl.prsc))) = '1') then -- pre-scaled clock
-          if (clkgen_cnt = ctrl.cdiv) then -- clock divider for fine-tuning
-            clkgen_tick <= '1';
-            clkgen_cnt  <= (others => '0');
-          else
-            clkgen_cnt <= std_ulogic_vector(unsigned(clkgen_cnt) + 1);
+        if (clkgen_halt = '0') then -- not halted by clock stretching
+          if (clkgen_i(to_integer(unsigned(ctrl.prsc))) = '1') then -- pre-scaled clock tick
+            if (clkgen_cnt = ctrl.cdiv) then -- clock divider for fine-tuning
+              clkgen_tick <= '1';
+              clkgen_cnt  <= (others => '0');
+            else
+              clkgen_cnt <= std_ulogic_vector(unsigned(clkgen_cnt) + 1);
+            end if;
           end if;
+        end if;
+        -- phase generator --
+        if (clkgen_tick = '1') then -- clock tick
+          phase_sreg <= phase_sreg(2 downto 0) & phase_sreg(3); -- rotate left
         end if;
       end if;
     end if;
   end process;
 
-  -- generate four non-overlapping clock phases --
-  phase_generator: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      clkgen_phase_gen_ff <= clkgen_phase_gen;
-      if (ctrl.enable = '0') or (busy = '0') then -- disabled or idle
-        clkgen_phase_gen <= "0001"; -- start with a new phase
-      elsif (clkgen_tick = '1') and (clkgen_halt = '0') then -- clock tick and no clock stretching
-        clkgen_phase_gen <= clkgen_phase_gen(2 downto 0) & clkgen_phase_gen(3); -- rotate left
-      end if;
-    end if;
-  end process;
+  -- TWI signals are set/sampled using 4 non-overlapping clock phase ticks --
+  phase(0) <= clkgen_tick and phase_sreg(0); -- first step
+  phase(1) <= clkgen_tick and phase_sreg(1);
+  phase(2) <= clkgen_tick and phase_sreg(2);
+  phase(3) <= clkgen_tick and phase_sreg(3); -- last step
 
-  -- TWI bus signals are set/sampled using 4 clock phase ticks --
-  clkgen_phase(0) <= clkgen_phase_gen_ff(0) and (not clkgen_phase_gen(0)); -- first step
-  clkgen_phase(1) <= clkgen_phase_gen_ff(1) and (not clkgen_phase_gen(1));
-  clkgen_phase(2) <= clkgen_phase_gen_ff(2) and (not clkgen_phase_gen(2));
-  clkgen_phase(3) <= clkgen_phase_gen_ff(3) and (not clkgen_phase_gen(3)); -- last step
-
-  -- clock stretching detector --
-  -- controller wants to drive SCL high, but SCL is still pulled low by peripheral --
-  clkgen_halt <= '1' when (scl_out = '1') and (scl_sync(1) = '0') and (ctrl.clkstr = '1') else '0';
+  -- clock stretching: controller wants to drive SCL high, but SCL is still pulled low by peripheral --
+  clkgen_halt <= '1' when (engine.scl = '1') and (scl_sync(1) = '0') else '0';
 
 
-  -- TWI Bus Engine -------------------------------------------------------------------------
+  -- Serial Engine --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  twi_engine: process(rstn_i, clk_i)
+  serial_engine: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      engine.state  <= (others => '0');
-      engine.bitcnt <= (others => '0');
-      engine.sreg   <= (others => '0');
-      engine.tx_re  <= '0';
-      engine.rx_we  <= '0';
-      sda_out       <= '1';
-      scl_out       <= '1';
+      engine.state <= S_OFFLINE;
+      engine.bcnt  <= (others => '0');
+      engine.sreg  <= (others => '0');
+      engine.rw    <= '0';
+      engine.pop   <= '0';
+      engine.push  <= '0';
+      engine.nack  <= '0';
+      engine.claim <= '0';
+      engine.scl   <= '1';
+      engine.sda   <= '1';
     elsif rising_edge(clk_i) then
-      engine.tx_re    <= '0';
-      engine.rx_we    <= '0';
-      engine.state(2) <= ctrl.enable; -- module enabled?
-      case engine.state is
+      engine.pop  <= '0'; -- default
+      engine.push <= '0'; -- default
+      case fsm_state is
 
-        when "100" => -- IDLE: waiting for operation requests
+        when S_IDLE => -- idle, check for new command
         -- ------------------------------------------------------------
-          engine.bitcnt <= (others => '0');
-          engine.sreg   <= fifo.tx_rdata(dcmd_msb_c downto dcmd_lsb_c) & (not fifo.tx_rdata(dcmd_ack_c)); -- data + HOST ACK
-          if (fifo.tx_avail = '1') and (clkgen_tick = '1') then -- trigger new operation on next TWI clock pulse
-            engine.tx_re             <= '1'; -- pop from TX FIFO
-            engine.state(1 downto 0) <= fifo.tx_rdata(dcmd_cmd_hi_c downto dcmd_cmd_lo_c);
+          engine.bcnt <= (others => '0');
+          -- process next command --
+          if (tx_fifo.avail = '1') then -- command available
+            engine.pop <= '1'; -- consume command
+            engine.rw  <= not tx_fifo.rdata(8); -- RX/TX data
+            if (tx_fifo.rdata(8) = '0') then -- transmit data and check ACK/NACK
+              engine.sreg  <= tx_fifo.rdata(7 downto 0) & '1';
+              engine.state <= S_DATA;
+            elsif (tx_fifo.rdata(1) = '1') then -- receive data and send ACK/NACK
+              engine.sreg  <= x"ff" & tx_fifo.rdata(0);
+              engine.state <= S_DATA;
+            elsif (tx_fifo.rdata(0) = '0') then -- generate START
+              engine.state <= S_START;
+            elsif (engine.claim = '1') then -- generate STOP only if bus is claimed
+              engine.state <= S_STOP;
+            end if;
           end if;
-
-        when "101" => -- START: generate (repeated) START condition
-        -- ------------------------------------------------------------
-          if (clkgen_phase(0) = '1') then
-            sda_out <= '1';
-          elsif (clkgen_phase(2) = '1') then
-            sda_out <= '0';
-          end if;
-          if (clkgen_phase(0) = '1') then
-            scl_out <= '1';
-          elsif (clkgen_phase(3) = '1') then
-            scl_out <= '0';
-            engine.state(1 downto 0) <= "00"; -- go back to IDLE
-          end if;
-
-        when "110" => -- STOP: generate STOP condition
-        -- ------------------------------------------------------------
-          if (clkgen_phase(0) = '1') then
-            sda_out <= '0';
-          elsif (clkgen_phase(3) = '1') then
-            sda_out                  <= '1';
-            engine.state(1 downto 0) <= "00"; -- go back to IDLE
-          end if;
-          if (clkgen_phase(0) = '1') then
-            scl_out <= '0';
-          elsif (clkgen_phase(1) = '1') then
-            scl_out <= '1';
+          -- clear NACK flag --
+          if (ctrl_nack_clr = '1') then
+            engine.nack <= '0';
           end if;
 
-        when "111" => -- TRANSMISSION: send/receive byte + ACK/NACK/MACK
+        when S_START => -- generate (repeated)START condition
         -- ------------------------------------------------------------
-          -- SCL clocking --
-          if (clkgen_phase(0) = '1') or (clkgen_phase(3) = '1') then
-            scl_out <= '0'; -- set SCL low after transmission to keep bus claimed
-          elsif (clkgen_phase(1) = '1') then -- first half + second half of valid data strobe
-            scl_out <= '1';
+          engine.claim <= '1';
+          if (phase(0) = '1') then
+            engine.sda <= '1';
+          elsif (phase(2) = '1') then
+            engine.sda <= '0';
           end if;
-          -- SDA output --
-          if (engine.bitcnt = "1001") and (clkgen_phase(0) = '1') then
-            sda_out <= '0'; -- set SDA low after transmission to keep bus claimed
-          elsif (clkgen_phase(0) = '1') then
-            sda_out <= engine.sreg(8); -- MSB first
+          if (phase(1) = '1') then
+            engine.scl <= '1';
+          elsif (phase(3) = '1') then
+            engine.scl <= '0';
           end if;
-          -- SDA input --
-          if (clkgen_phase(2) = '1') then
-            engine.sreg <= engine.sreg(7 downto 0) & sda_sync(1); -- sample SDA input and shift left
-          end if;
-          -- bit counter --
-          if (clkgen_phase(3) = '1') then
-            engine.bitcnt <= std_ulogic_vector(unsigned(engine.bitcnt) + 1);
-          end if;
-          -- transmission done --
-          if (engine.bitcnt = "1001") and (clkgen_phase(0) = '1') then
-            engine.rx_we             <= '1';
-            engine.state(1 downto 0) <= "00"; -- go back to IDLE
+          if (phase(3) = '1') then -- operation done
+            engine.state <= S_IDLE;
           end if;
 
-        when others => -- "0--" OFFLINE: TWI deactivated, bus unclaimed
+        when S_STOP => -- generate STOP condition
         -- ------------------------------------------------------------
-          scl_out                  <= '1';  -- bus idle, SCL driven by pull-up resistor
-          sda_out                  <= '1';  -- bus idle, SDA driven by pull-up resistor
-          engine.state(1 downto 0) <= "00"; -- stay here, go to IDLE when activated
+          if (phase(1) = '1') then
+            engine.scl <= '1';
+          end if;
+          if (phase(0) = '1') then
+            engine.sda <= '0';
+          elsif (phase(2) = '1') then
+            engine.sda <= '1';
+          end if;
+          if (phase(3) = '1') then -- operation done
+            engine.claim <= '0';
+            engine.state <= S_IDLE;
+          end if;
+
+        when S_DATA => -- transmit/receive data
+        -- ------------------------------------------------------------
+          if (phase(3) = '1') and (engine.bcnt = "1001") then -- operation done
+            if (engine.rw = '1') then -- transmitting
+              if (engine.sreg(0) = '1') then -- NACK
+                engine.nack  <= '1';
+                engine.state <= S_STOP; -- terminate: generate STOP condition
+              else -- ACK
+                engine.state <= S_IDLE;
+              end if;
+            else -- receiving
+              engine.push  <= '1'; -- push RX data to FIFO
+              engine.state <= S_IDLE;
+            end if;
+          end if;
+          -- SDA update --
+          if (phase(0) = '1') then
+            engine.sda <= engine.sreg(8);
+          end if;
+          -- sample --
+          if (phase(2) = '1') then
+            engine.sreg <= engine.sreg(7 downto 0) & sda_sync(1);
+            engine.bcnt <= std_ulogic_vector(unsigned(engine.bcnt) + 1);
+          end if;
+          -- SCL drive --
+          if (phase(1) = '1') then
+            engine.scl <= '1';
+          elsif (phase(3) = '1') then
+            engine.scl <= '0'; -- [NOTE] SCL remains low after transmission to keep bus claimed
+          end if;
+
+        when others => -- S_OFFLINE: module deactivated, bus released
+        -- ------------------------------------------------------------
+          engine.scl   <= '1';
+          engine.sda   <= '1';
+          engine.nack  <= '0';
+          engine.claim <= '0';
+          engine.state <= S_IDLE;
 
       end case;
     end if;
   end process;
 
-  -- bus operation in progress --
-  busy <= '1' when (engine.state(2) = '1') and (engine.state(1 downto 0) /= "00") else '0';
+  -- FSM state override --
+  fsm_state <= engine.state when (ctrl.enable = '1') else S_OFFLINE;
 
+  -- operation in progress --
+  busy <= '0' when (engine.state = S_OFFLINE) or ((engine.state = S_IDLE) and (tx_fifo.avail = '0')) else '1';
 
-  -- IO Control -----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  input_synchronizer: process(clk_i)
+  -- input synchronizer --
+  input_sync: process(clk_i)
   begin
     if rising_edge(clk_i) then
       sda_sync <= sda_sync(0) & to_stdulogic(to_bit(twi_sda_i)); -- "to_bit" to avoid HW-vs-sim mismatch
@@ -396,7 +436,7 @@ begin
   end process;
 
   -- tri-state control: 0 = drive GND, 1 = tri-state / driven by pull-up --
-  twi_sda_o <= sda_out;
-  twi_scl_o <= scl_out;
+  twi_sda_o <= engine.sda;
+  twi_scl_o <= engine.scl;
 
 end architecture;
