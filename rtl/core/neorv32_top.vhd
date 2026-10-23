@@ -290,7 +290,7 @@ entity neorv32_top is
     cfs_in_i       : in  std_ulogic_vector(255 downto 0) := (others => 'L'); -- custom CFS inputs conduit
     cfs_out_o      : out std_ulogic_vector(255 downto 0);                    -- custom CFS outputs conduit
 
-    -- Smart LED interface (available if IO_NEOLED_EN = true) --
+    -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o       : out std_ulogic;                                         -- async serial data line
 
     -- Machine timer system time (available if IO_CLINT_EN = true) --
