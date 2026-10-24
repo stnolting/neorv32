@@ -3,7 +3,7 @@
 /* -------------------------------------------------------------------------------- */
 /* The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              */
 /* Copyright (c) NEORV32 contributors.                                              */
-/* Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  */
+/* Copyright (c) Stephan Nolting. All rights reserved.                              */
 /* Licensed under the BSD-3-Clause license, see LICENSE for details.                */
 /* SPDX-License-Identifier: BSD-3-Clause                                            */
 /* ================================================================================ */
@@ -65,7 +65,7 @@ int main(void) {
   // try booting from TWI flash
 #if (TWI_FLASH_EN == 1)
   uart_putc('\n');
-  uart_puts("Loading from TWI flash "xstr(TWI_FLASH_ID)" @"xstr(TWI_FLASH_BASE_ADDR)"... ");
+  uart_puts("Loading from TWI flash ID="xstr(TWI_FLASH_ID)" @"xstr(TWI_FLASH_BASE_ADDR)"... ");
   if (system_app_load(twi_flash_setup, twi_flash_stream_get) == 0) {
     system_app_boot();
   }
@@ -74,7 +74,7 @@ int main(void) {
   // try booting from SPI flash
 #if (SPI_FLASH_EN == 1)
   uart_putc('\n');
-  uart_puts("Loading from SPI flash @"xstr(SPI_FLASH_BASE_ADDR)"... ");
+  uart_puts("Loading from SPI flash CS="xstr(SPI_FLASH_CS)" @"xstr(SPI_FLASH_BASE_ADDR)"... ");
   if (system_app_load(spi_flash_setup, spi_flash_stream_get) == 0) {
     system_app_boot();
   }
@@ -91,8 +91,7 @@ int main(void) {
 
   // directly execute from memory address
 #if (DIRECT_BOOT_EN == 1)
-  uart_putc('\n');
-  uart_puts("Direct boot...\n");
+  uart_puts("\nDirect boot...\n");
   system_direct_boot((uint32_t)DIRECT_BOOT_ADDR);
 #endif
 
@@ -189,7 +188,7 @@ skip_auto_boot:
     }
 #endif
     if (cmd == 't') { // get executable from TWI flash
-      uart_puts("Loading from TWI flash "xstr(TWI_FLASH_ID)" @"xstr(TWI_FLASH_BASE_ADDR)"... ");
+      uart_puts("Loading from TWI flash ID="xstr(TWI_FLASH_ID)" @"xstr(TWI_FLASH_BASE_ADDR)"... ");
       system_app_load(twi_flash_setup, twi_flash_stream_get);
     }
 #endif
@@ -202,7 +201,7 @@ skip_auto_boot:
     }
 #endif
     if (cmd == 'l') { // get executable from SPI flash
-      uart_puts("Loading from SPI flash @"xstr(SPI_FLASH_BASE_ADDR)"... ");
+      uart_puts("Loading from SPI flash CS="xstr(SPI_FLASH_CS)" @"xstr(SPI_FLASH_BASE_ADDR)"... ");
       system_app_load(spi_flash_setup, spi_flash_stream_get);
     }
 #endif
