@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -26,75 +26,77 @@ extern uint32_t g_flash_addr;
  **************************************************************************/
 static int twi_transfer_byte(int write, uint8_t* data) {
 
-  int rc;
-  uint8_t tmp;
-  subwords32_t addr;
-
-  // start condition
-  neorv32_twi_generate_start();
+  // generate start condition
+  neorv32_twi_start();
 
   // send device ID
-  tmp = (uint8_t)TWI_FLASH_ID | 0;
-  if (neorv32_twi_transfer(&tmp, 0)) { // abort if NACK
+  neorv32_twi_tx((uint8_t)TWI_FLASH_ID | 0);
+  while (neorv32_twi_busy());
+  if (neorv32_twi_check_nack()) { // abort if NACK
     return 1;
   }
 
-  // send address
-  rc = 0;
+  // send memory address
+  subwords32_t addr;
   addr.uint32 = g_flash_addr;
-#if (TWI_FLASH_ADDR_BYTES == 1)
-  rc |= neorv32_twi_transfer(&addr.uint8[0], 0);
-#elif (TWI_FLASH_ADDR_BYTES == 2)
-  rc |= neorv32_twi_transfer(&addr.uint8[1], 0);
-  rc |= neorv32_twi_transfer(&addr.uint8[0], 0);
-#elif (TWI_FLASH_ADDR_BYTES == 3)
-  rc |= neorv32_twi_transfer(&addr.uint8[2], 0);
-  rc |= neorv32_twi_transfer(&addr.uint8[1], 0);
-  rc |= neorv32_twi_transfer(&addr.uint8[0], 0);
-#elif (TWI_FLASH_ADDR_BYTES == 4)
-  rc |= neorv32_twi_transfer(&addr.uint8[3], 0);
-  rc |= neorv32_twi_transfer(&addr.uint8[2], 0);
-  rc |= neorv32_twi_transfer(&addr.uint8[1], 0);
-  rc |= neorv32_twi_transfer(&addr.uint8[0], 0);
-#else
-  #error "Invalid TWI_FLASH_ADDR_BYTES configuration!"
-#endif
-  if (rc) { // abort if NACK
-    return 1;
-  }
+  #if (TWI_FLASH_ADDR_BYTES == 1)
+    neorv32_twi_tx(addr.uint8[0]);
+  #elif (TWI_FLASH_ADDR_BYTES == 2)
+    neorv32_twi_tx(addr.uint8[1]);
+    neorv32_twi_tx(addr.uint8[0]);
+  #elif (TWI_FLASH_ADDR_BYTES == 3)
+    neorv32_twi_tx(addr.uint8[2]);
+    neorv32_twi_tx(addr.uint8[1]);
+    neorv32_twi_tx(addr.uint8[0]);
+  #elif (TWI_FLASH_ADDR_BYTES == 4)
+    neorv32_twi_tx(addr.uint8[3]);
+    neorv32_twi_tx(addr.uint8[2]);
+    neorv32_twi_tx(addr.uint8[1]);
+    neorv32_twi_tx(addr.uint8[0]);
+  #else
+    #error "Invalid TWI_FLASH_ADDR_BYTES configuration!"
+  #endif
+    while (neorv32_twi_busy());
+    if (neorv32_twi_check_nack()) { // abort if NACK
+      return 1;
+    }
 
   // repeated start + ID if read
   if (write == 0) {
-    neorv32_twi_generate_start();
-    tmp = (uint8_t)TWI_FLASH_ID | 1U;
-    if (neorv32_twi_transfer(&tmp, 0)) { // abort if NACK
+    neorv32_twi_start();
+    neorv32_twi_tx((uint8_t)TWI_FLASH_ID | 1);
+    while (neorv32_twi_busy());
+    if (neorv32_twi_check_nack()) { // abort if NACK
       return 1;
     }
   }
 
   // transfer data byte
-  if (write) {
-    if (neorv32_twi_transfer(data, 0)) { // abort if NACK
+  if (write) { // write byte
+    neorv32_twi_tx(*data);
+    while (neorv32_twi_busy());
+    if (neorv32_twi_check_nack()) { // abort if NACK
       return 1;
     }
   }
-  else {
-    tmp = 0xffU;
-    neorv32_twi_transfer(&tmp, 0);
-    *data = tmp;
+  else { // read byte and send NACK (last byte to read)
+    neorv32_twi_rx_nack();
+    while (neorv32_twi_rx_avail() == 0);
+    *data = neorv32_twi_rx_get();
   }
 
   // generate stop condition
-  neorv32_twi_generate_stop();
+  neorv32_twi_stop();
+  while (neorv32_twi_busy());
 
-  // wait for write completion
+  // wait for write completion (no ACK while busy flashing)
   if (write) {
-    while(1) {
-      neorv32_twi_generate_start();
-      tmp = (uint8_t)TWI_FLASH_ID | 0;
-      rc = neorv32_twi_transfer(&tmp, 0);
-      neorv32_twi_generate_stop();
-      if (rc == 0) {
+    while (1) {
+      neorv32_twi_start();
+      neorv32_twi_tx((uint8_t)TWI_FLASH_ID | 0);
+      neorv32_twi_stop();
+      while (neorv32_twi_busy());
+      if (neorv32_twi_check_nack() == 0) { // break if ACK
         break;
       }
     }
@@ -117,19 +119,21 @@ int twi_flash_setup(void) {
   // (re)set base address
   g_flash_addr = (uint32_t)TWI_FLASH_BASE_ADDR;
 
-  // setup TWI, no clock-stretching
-  neorv32_twi_setup(TWI_FLASH_CLK_PRSC, TWI_FLASH_CLK_DIV, 0);
+  // setup TWI
+  neorv32_twi_setup(TWI_FLASH_CLK_PRSC, TWI_FLASH_CLK_DIV);
 
   // try to access flash
-  neorv32_twi_generate_start();
-  uint8_t tmp = (uint8_t)TWI_FLASH_ID | 0;
-  int rc = neorv32_twi_transfer(&tmp, 0);
-  neorv32_twi_generate_stop();
-  if (rc) {
+  neorv32_twi_start();
+  neorv32_twi_tx((uint8_t)TWI_FLASH_ID | 0);
+  neorv32_twi_stop();
+  while (neorv32_twi_busy());
+
+  if (neorv32_twi_check_nack()) {
     return 1; // abort if NACK
   }
-
-  return 0;
+  else {
+    return 0; // ACK = success
+  }
 }
 
 /**********************************************************************//**
