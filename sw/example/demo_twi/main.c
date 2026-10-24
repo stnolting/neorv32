@@ -29,7 +29,6 @@ void put_twi(void);
 void get_twi(void);
 void print_hex_byte(uint8_t data);
 
-
 /**********************************************************************//**
  * This program provides an interactive console to communicate with TWI devices.
  * @note This program requires the UART to be synthesized.
@@ -98,9 +97,14 @@ int main() {
       while (neorv32_twi_busy());
     }
     else if (!strcmp(buffer, "stop")) {
-      neorv32_uart0_printf(" Generating STOP condition\n");
-      neorv32_twi_stop();
-      while (neorv32_twi_busy());
+      if (neorv32_twi_claimed() != 0) { // bus claimed by TWI module?
+        neorv32_uart0_printf(" Generating STOP condition\n");
+        neorv32_twi_stop();
+        while (neorv32_twi_busy());
+      }
+      else {
+        neorv32_uart0_printf(" ERROR! Bus not claimed!\n");
+      }
     }
     else if (!strcmp(buffer, "scan")) {
       scan_twi();
@@ -131,7 +135,6 @@ int main() {
 
   return 0;
 }
-
 
 /**********************************************************************//**
  * TWI clock setup
@@ -176,7 +179,6 @@ void set_clock(void) {
   }
 }
 
-
 /**********************************************************************//**
  * Scan 7-bit TWI address space and print results
  **************************************************************************/
@@ -209,7 +211,6 @@ void scan_twi(void) {
   }
 }
 
-
 /**********************************************************************//**
  * Transmit to bus
  **************************************************************************/
@@ -235,7 +236,6 @@ void put_twi(void) {
     neorv32_uart0_printf("\n ACK\n");
   }
 }
-
 
 /**********************************************************************//**
  * Receive from bus
@@ -269,7 +269,6 @@ void get_twi(void) {
   print_hex_byte(neorv32_twi_rx_get());
   neorv32_uart0_printf("\n");
 }
-
 
 /**********************************************************************//**
  * Print byte as hex chars via UART0.
