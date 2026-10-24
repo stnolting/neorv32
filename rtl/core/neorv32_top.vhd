@@ -1310,7 +1310,7 @@ begin
     if IO_TWI_EN generate
       twi_inst: entity neorv32.neorv32_twi
       generic map (
-        IO_TWI_FIFO => IO_TWI_FIFO
+        FIFO_DEPTH => IO_TWI_FIFO
       )
       port map (
         clk_i     => clk_i,

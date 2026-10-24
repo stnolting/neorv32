@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -1399,35 +1399,33 @@ int main() {
     neorv32_twd_put(0xAB);
 
     // configure TWI
-    neorv32_twi_setup(CLK_PRSC_8, 0, 0);
+    neorv32_twi_setup(CLK_PRSC_8, 0);
 
     // send I2C sequence and wait for 3 interrupts
-    neorv32_twi_generate_start_nonblocking();
-    neorv32_twi_send_nonblocking(0b11010010, 0); // write-address
-    neorv32_cpu_sleep(); // wait for communication-begin IRQ
-    //
-    neorv32_twi_send_nonblocking(0x47, 0);
-    neorv32_cpu_sleep(); // wait for RX-data-available IRQ
-    //
-    neorv32_twi_generate_start_nonblocking(); // repeated-start
-    neorv32_twi_send_nonblocking(0b11010011, 0); // read-address
-    neorv32_cpu_sleep(); // wait for communication-begin IRQ
-    //
-    neorv32_twi_send_nonblocking(0xFF, 1);
-    neorv32_twi_generate_stop_nonblocking();
-    neorv32_cpu_sleep(); // wait for communication-end IRQ
+    neorv32_twi_start();        // start condition
+    neorv32_twi_tx(0b11010010); // transmit write-address
+    neorv32_cpu_sleep();        // wait for TWD communication-begin IRQ
 
+    neorv32_twi_tx(0x47);       // transmit data
+    neorv32_cpu_sleep();        // wait for TWD RX-data-available IRQ
+
+    neorv32_twi_start();        // repeated-start condition
+    neorv32_twi_tx(0b11010011); // transmit read-address
+    neorv32_cpu_sleep();        // wait for TWD communication-begin IRQ
+
+    neorv32_twi_rx_nack();      // receive data and send NACK
+    neorv32_twi_stop();         // stop condition
+    neorv32_cpu_sleep();        // wait for TWD communication-end IRQ
+
+    // disable TWD interrupt
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    neorv32_twi_get_discard(); // discard write-address
-    neorv32_twi_get_discard(); // discard write-data
-    neorv32_twi_get_discard(); // discard read-data
-    uint8_t twd_rdata;
-    tmp_a = (uint32_t)neorv32_twi_get(&twd_rdata);
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TWD_TRAP_CODE) && // interrupt triggered
         (twd_irq == 0x00010102) && // all interrupt causes correct?
         (neorv32_twd_rx_available() == 0) && // no more data received by TWD
-        (twd_rdata == 0xAB) && (tmp_a == 0)) { // correct read data + ACK
+        (neorv32_twd_com_state() == 0) && // no active communication
+        (neorv32_twi_rx_get() == 0xAB) && // correct read data
+        (neorv32_twi_check_nack() == 0)) { // no NACK received
       test_ok();
     }
     else {
@@ -1530,36 +1528,32 @@ int main() {
     neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
     cnt_test++;
 
-    // configure TWI with third-fastest clock, no clock stretching
-    neorv32_twi_setup(CLK_PRSC_8, 1, 0);
+    // configure TWI with third-fastest clock
+    neorv32_twi_setup(CLK_PRSC_8, 1);
 
     // configure TWD, no interrupts
     neorv32_twd_setup(0b0010110, 0, 0);
     neorv32_twd_put(0x8e);
 
     // program sequence: read data via TWI
-    neorv32_twi_generate_start_nonblocking();
-    neorv32_twi_send_nonblocking(0b00101101, 0); // read-address
-    neorv32_twi_send_nonblocking(0xff, 1);
-    neorv32_twi_generate_stop_nonblocking();
+    neorv32_twi_start_nonblocking();        // start condition
+    neorv32_twi_tx_nonblocking(0b00101101); // read-address
+    neorv32_twi_rx_nack_nonblocking();      // receive data and send NACK
+    neorv32_twi_stop_nonblocking();         // stop condition
 
     // enable TWI FIRQ
     neorv32_cpu_csr_write(CSR_MIE, 1 << TWI_FIRQ_ENABLE);
 
-    // wait for interrupt
+    // wait for TWI done interrupt
     neorv32_cpu_sleep();
 
+    // disable TWI interrupt
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    // get TWI response
-    uint8_t twi_data_y;
-    int twi_ack_x = neorv32_twi_get(&twi_data_y);
-    neorv32_twi_get(&twi_data_y);
-
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TWI_TRAP_CODE) && // interrupt triggered
-        (twi_ack_x == 0x00) && // device acknowledged access
-        (twi_data_y == 0x8e) && // correct read data
-        (neorv32_twd_tx_empty())) { // no TX data left in TWD
+        (neorv32_twi_check_nack() == 0) && // no NACK received
+        (neorv32_twi_claimed() == 0) && // bus is released
+        (neorv32_twi_rx_get() == 0x8e)) { // correct read data
       test_ok();
     }
     else {
