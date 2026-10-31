@@ -1873,15 +1873,17 @@ int main() {
     neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
     cnt_test++;
 
-    // fire RX interrupt when RX data is available
-    neorv32_slink_setup(1 << SLINK_CTRL_IRQ_RX_NEMPTY);
+    // fire RX interrupt when RX data is available, not TX interrupt
+    neorv32_slink_setup(SLINK_RX_IRQ_AVAIL, SLINK_TX_IRQ_NONE);
+    NEORV32_SLINK->CTRL &= ~(uint32_t)(1U << SLINK_CTRL_RX_EN); // disable receiver
 
-    // enable SLINK RX FIRQ
+    // enable SLINK FIRQ channel
     neorv32_cpu_csr_write(CSR_MIE, 1 << SLINK_FIRQ_ENABLE);
 
     // send data word
-    neorv32_slink_set_dst(0b1010);
-    neorv32_slink_put_last(0xAABBCCDD); // mark as end-of-stream
+    neorv32_slink_tx_put(0x12345678);
+    neorv32_slink_tx_put_last(0xAABBCCDD); // mark as end-of-stream
+    NEORV32_SLINK->CTRL |= (uint32_t)(1U << SLINK_CTRL_RX_EN); // enable receiver
 
     // wait for interrupt
     asm volatile ("nop");
@@ -1890,12 +1892,18 @@ int main() {
     // disable SLINK interrupt
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) ==SLINK_TRAP_CODE) && // correct trap code
-        (neorv32_slink_get() == 0xAABBCCDD) && // correct RX data
-        (neorv32_slink_get_src() == 0b1010) && // correct routing information
-        (neorv32_slink_rx_empty()) && // RX FIFO empty
-        (neorv32_slink_tx_empty()) && // TX FIFO empty
-        (neorv32_slink_check_last())) { // is marked as "end of stream"
+    // check
+    tmp_a = 0;
+    tmp_a |= (neorv32_cpu_csr_read(CSR_MCAUSE) == SLINK_TRAP_CODE) ? 0x01U : 0U; // correct trap code
+    tmp_a |= (neorv32_slink_rx_irq_pending()   != 0)               ? 0x02U : 0U; // pending RX interrupt
+    tmp_a |= (neorv32_slink_rx_last()          == 0)               ? 0x04U : 0U; // first word not end of stream
+    tmp_a |= (neorv32_slink_rx_get()           == 0x12345678)      ? 0x08U : 0U; // first RX correct
+    tmp_a |= (neorv32_slink_rx_last()          != 0)               ? 0x10U : 0U; // second word is end of stream
+    tmp_a |= (neorv32_slink_rx_get()           == 0xAABBCCDD)      ? 0x20U : 0U; // second RX correct
+    tmp_a |= (neorv32_slink_rx_empty()         != 0)               ? 0x40U : 0U; // RX FIFO empty
+    tmp_a |= (neorv32_slink_tx_empty()         != 0)               ? 0x80U : 0U; // TX FIFO empty
+
+    if (tmp_a == 0xffU) {
       test_ok();
     }
     else {
