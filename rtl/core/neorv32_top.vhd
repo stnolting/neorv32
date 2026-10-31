@@ -229,12 +229,10 @@ entity neorv32_top is
 
     -- Stream link interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'L');  -- RX input data
-    slink_rx_src_i : in  std_ulogic_vector(3 downto 0)  := (others => 'L');  -- RX source routing information
     slink_rx_val_i : in  std_ulogic := 'L';                                  -- RX valid input
     slink_rx_lst_i : in  std_ulogic := 'L';                                  -- RX last element of stream
     slink_rx_rdy_o : out std_ulogic;                                         -- RX ready to receive
     slink_tx_dat_o : out std_ulogic_vector(31 downto 0);                     -- TX output data
-    slink_tx_dst_o : out std_ulogic_vector(3 downto 0);                      -- TX destination routing information
     slink_tx_val_o : out std_ulogic;                                         -- TX valid output
     slink_tx_lst_o : out std_ulogic;                                         -- TX last element of stream
     slink_tx_rdy_i : in  std_ulogic := 'L';                                  -- TX ready to send
@@ -1496,8 +1494,8 @@ begin
     if IO_SLINK_EN generate
       slink_inst: entity neorv32.neorv32_slink
       generic map (
-        SLINK_RX_FIFO => IO_SLINK_RX_FIFO,
-        SLINK_TX_FIFO => IO_SLINK_TX_FIFO
+        RX_FIFO_DEPTH => IO_SLINK_RX_FIFO,
+        TX_FIFO_DEPTH => IO_SLINK_TX_FIFO
       )
       port map (
         clk_i            => clk_i,
@@ -1506,12 +1504,10 @@ begin
         bus_rsp_o        => iodev_rsp(IODEV_SLINK),
         irq_o            => firq(FIRQ_SLINK),
         slink_rx_data_i  => slink_rx_dat_i,
-        slink_rx_src_i   => slink_rx_src_i,
         slink_rx_valid_i => slink_rx_val_i,
         slink_rx_last_i  => slink_rx_lst_i,
         slink_rx_ready_o => slink_rx_rdy_o,
         slink_tx_data_o  => slink_tx_dat_o,
-        slink_tx_dst_o   => slink_tx_dst_o,
         slink_tx_valid_o => slink_tx_val_o,
         slink_tx_last_o  => slink_tx_lst_o,
         slink_tx_ready_i => slink_tx_rdy_i
@@ -1524,7 +1520,6 @@ begin
       firq(FIRQ_SLINK)       <= '0';
       slink_rx_rdy_o         <= '0';
       slink_tx_dat_o         <= (others => '0');
-      slink_tx_dst_o         <= (others => '0');
       slink_tx_val_o         <= '0';
       slink_tx_lst_o         <= '0';
     end generate;

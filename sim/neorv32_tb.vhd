@@ -116,7 +116,6 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- slink --
   type slink_t is record
     data  : std_ulogic_vector(31 downto 0); -- data
-    addr  : std_ulogic_vector(3 downto 0); -- source/destination ID
     valid : std_ulogic; -- source valid
     last  : std_ulogic; -- last element of packet
     ready : std_ulogic; -- sink ready
@@ -424,12 +423,10 @@ begin
     xbus_err_i     => xbus_core_rsp.err,
     -- Stream Link Interface --
     slink_rx_dat_i => slink_rx.data,
-    slink_rx_src_i => slink_rx.addr,
     slink_rx_val_i => slink_rx.valid,
     slink_rx_lst_i => slink_rx.last,
     slink_rx_rdy_o => slink_rx.ready,
     slink_tx_dat_o => slink_tx.data,
-    slink_tx_dst_o => slink_tx.addr,
     slink_tx_val_o => slink_tx.valid,
     slink_tx_lst_o => slink_tx.last,
     slink_tx_rdy_i => slink_tx.ready,
@@ -566,9 +563,9 @@ begin
   slink_buffer: entity neorv32.neorv32_prim_fifo
   generic map (
     AWIDTH  => 0,
-    DWIDTH  => 32+4+1,
+    DWIDTH  => 33,
     OUTGATE => true,
-    ASYNCRD => false
+    ASYNCRD => true
   )
   port map (
     -- global control --
@@ -578,15 +575,13 @@ begin
     level_o               => open,
     -- write port --
     wdata_i(31 downto  0) => slink_tx.data,
-    wdata_i(35 downto 32) => slink_tx.addr,
-    wdata_i(36)           => slink_tx.last,
+    wdata_i(32)           => slink_tx.last,
     we_i                  => slink_tx.valid,
     free_o                => slink_tx.ready,
     -- read port --
     re_i                  => slink_rx.ready,
     rdata_o(31 downto  0) => slink_rx.data,
-    rdata_o(35 downto 32) => slink_rx.addr,
-    rdata_o(36)           => slink_rx.last,
+    rdata_o(32)           => slink_rx.last,
     avail_o               => slink_rx.valid
   );
 
