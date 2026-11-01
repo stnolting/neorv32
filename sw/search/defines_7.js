@@ -1,0 +1,20 @@
+var searchData=
+[
+  ['tracebuf_5ffirq_5fenable_0',['TRACEBUF_FIRQ_ENABLE',['../neorv32_8h.html#ab81c8c4a09cca821888dd78e806a8022',1,'neorv32.h']]],
+  ['tracebuf_5ffirq_5fpending_1',['TRACEBUF_FIRQ_PENDING',['../neorv32_8h.html#a39480dbf2d10a835046ca7dee05b49ae',1,'neorv32.h']]],
+  ['tracebuf_5ftrap_5fcode_2',['TRACEBUF_TRAP_CODE',['../neorv32_8h.html#a06ffa8e24b3dcd06a8fa66a6dc22e1fb',1,'neorv32.h']]],
+  ['trng_5ffirq_5fenable_3',['TRNG_FIRQ_ENABLE',['../neorv32_8h.html#a2896d832852c016eb85210b523642f11',1,'neorv32.h']]],
+  ['trng_5ffirq_5fpending_4',['TRNG_FIRQ_PENDING',['../neorv32_8h.html#a9c387ca4e2736a27056c11819947c84a',1,'neorv32.h']]],
+  ['trng_5ftrap_5fcode_5',['TRNG_TRAP_CODE',['../neorv32_8h.html#a11e34802c61a01fd6cba46e3f92d5ac1',1,'neorv32.h']]],
+  ['twd_5ffirq_5fenable_6',['TWD_FIRQ_ENABLE',['../neorv32_8h.html#a7cd6e1c5a9213256b277d8ef74bfb564',1,'neorv32.h']]],
+  ['twd_5ffirq_5fpending_7',['TWD_FIRQ_PENDING',['../neorv32_8h.html#ab61a869973c8d027360f9c1f47fb5b01',1,'neorv32.h']]],
+  ['twd_5ftrap_5fcode_8',['TWD_TRAP_CODE',['../neorv32_8h.html#a3dc1579e0bd1718b8f24cda6b54ae43a',1,'neorv32.h']]],
+  ['twi_5fdcmd_5frxack_9',['TWI_DCMD_RXACK',['../neorv32__twi_8h.html#ab1aaff77d7329430e3f8e86fd5db5177',1,'neorv32_twi.h']]],
+  ['twi_5fdcmd_5frxnack_10',['TWI_DCMD_RXNACK',['../neorv32__twi_8h.html#a551a16fb03c310b30d5ad7f480e2aeb3',1,'neorv32_twi.h']]],
+  ['twi_5fdcmd_5fstart_11',['TWI_DCMD_START',['../neorv32__twi_8h.html#ada2cf7578ddde379eb2aebcb68a88fb6',1,'neorv32_twi.h']]],
+  ['twi_5fdcmd_5fstop_12',['TWI_DCMD_STOP',['../neorv32__twi_8h.html#af167b3b14930eb7d65ef0b6d1033dcbb',1,'neorv32_twi.h']]],
+  ['twi_5fdcmd_5ftx_13',['TWI_DCMD_TX',['../neorv32__twi_8h.html#a1004b30ea0247f012a99df1f3678e3bd',1,'neorv32_twi.h']]],
+  ['twi_5ffirq_5fenable_14',['TWI_FIRQ_ENABLE',['../neorv32_8h.html#a0913144fce247e24ccd0f178b9ac32b7',1,'neorv32.h']]],
+  ['twi_5ffirq_5fpending_15',['TWI_FIRQ_PENDING',['../neorv32_8h.html#a48b80113ca718fbdc50d75e1ec96a1ff',1,'neorv32.h']]],
+  ['twi_5ftrap_5fcode_16',['TWI_TRAP_CODE',['../neorv32_8h.html#a0afc1a759116d4d73a199ef769bced47',1,'neorv32.h']]]
+];
