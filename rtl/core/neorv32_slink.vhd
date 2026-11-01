@@ -166,7 +166,12 @@ begin
   bus_rsp_o.data <= bus_rdata;
 
   -- CPU interrupt --
-  irq_o <= rx_irq or tx_irq;
+  irq_gen: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      irq_o <= (ctrl.rx_enable and rx_irq) or (ctrl.tx_enable and tx_irq);
+    end if;
+  end process;
 
 
   -- Receiver (RX) --------------------------------------------------------------------------
@@ -211,16 +216,14 @@ begin
   end generate;
 
   -- interrupt generator --
-  rx_irq_trigger: process(clk_i)
+  rx_irq_trigger: process(ctrl.rx_enable, rx_fifo)
   begin
-    if rising_edge(clk_i) then
-      case ctrl.rx_irq_sel is
-        when "01"   => rx_irq <= ctrl.rx_enable and      rx_fifo.avail; -- FIFO not empty (data available)
-        when "10"   => rx_irq <= ctrl.rx_enable and      rx_fifo.half;  -- FIFO at least half full
-        when "11"   => rx_irq <= ctrl.rx_enable and (not rx_fifo.free); -- FIFO full
-        when others => rx_irq <= '0'; -- disabled
-      end case;
-    end if;
+    case ctrl.rx_irq_sel is
+      when "01"   => rx_irq <= ctrl.rx_enable and      rx_fifo.avail; -- FIFO not empty (data available)
+      when "10"   => rx_irq <= ctrl.rx_enable and      rx_fifo.half;  -- FIFO at least half full
+      when "11"   => rx_irq <= ctrl.rx_enable and (not rx_fifo.free); -- FIFO full
+      when others => rx_irq <= '0'; -- disabled
+    end case;
   end process;
 
 
@@ -268,16 +271,14 @@ begin
   end generate;
 
   -- interrupt generator --
-  tx_irq_trigger: process(clk_i)
+  tx_irq_trigger: process(ctrl.tx_enable, tx_fifo)
   begin
-    if rising_edge(clk_i) then
-      case ctrl.tx_irq_sel is
-        when "01"   => tx_irq <= ctrl.tx_enable and (not tx_fifo.avail); -- FIFO empty
-        when "10"   => tx_irq <= ctrl.tx_enable and (not tx_fifo.half);  -- FIFO less than half full
-        when "11"   => tx_irq <= ctrl.tx_enable and      tx_fifo.free;   -- FIFO not full (free space available)
-        when others => tx_irq <= '0'; -- disabled
-      end case;
-    end if;
+    case ctrl.tx_irq_sel is
+      when "01"   => tx_irq <= ctrl.tx_enable and (not tx_fifo.avail); -- FIFO empty
+      when "10"   => tx_irq <= ctrl.tx_enable and (not tx_fifo.half);  -- FIFO less than half full
+      when "11"   => tx_irq <= ctrl.tx_enable and      tx_fifo.free;   -- FIFO not full (free space available)
+      when others => tx_irq <= '0'; -- disabled
+    end case;
   end process;
 
 end architecture;
