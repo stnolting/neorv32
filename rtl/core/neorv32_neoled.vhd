@@ -112,7 +112,7 @@ begin
       ctrl.t1_high  <= (others => '0');
     elsif rising_edge(clk_i) then
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-        if (bus_req_i.addr(2) = '0') then
+        if (bus_req_i.addr(3 downto 2) = "00") then
           ctrl.enable   <= bus_req_i.data(ctrl_en_c);
           ctrl.clk_prsc <= bus_req_i.data(ctrl_clksel2_c downto ctrl_clksel0_c);
           ctrl.t_total  <= bus_req_i.data(ctrl_t_tot4_c downto ctrl_t_tot0_c);
