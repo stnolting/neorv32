@@ -217,14 +217,12 @@ entity neorv32_vivado_ip is
     -- ------------------------------------------------------------
     -- Source --
 --  s0_axis_aclk   : in  std_logic := '0'; -- just to satisfy Vivado
-    s0_axis_tdest  : out std_logic_vector(3 downto 0);
     s0_axis_tvalid : out std_logic;
     s0_axis_tready : in  std_logic := '0';
     s0_axis_tdata  : out std_logic_vector(31 downto 0);
     s0_axis_tlast  : out std_logic;
     -- Sink --
 --  s1_axis_aclk   : in  std_logic := '0'; -- just to satisfy Vivado
-    s1_axis_tid    : in  std_logic_vector(3 downto 0) := x"0";
     s1_axis_tvalid : in  std_logic := '0';
     s1_axis_tready : out std_logic;
     s1_axis_tdata  : in  std_logic_vector(31 downto 0) := x"00000000";
@@ -320,7 +318,6 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal rstn_ocd, rstn_wdt : std_ulogic;
   signal jtag_tdo_aux : std_ulogic;
   signal s0_axis_tdata_aux : std_ulogic_vector(31 downto 0);
-  signal s0_axis_tdest_aux : std_ulogic_vector(3 downto 0);
   signal s1_axis_tready_aux, s0_axis_tvalid_aux, s0_axis_tlast_aux : std_ulogic;
   signal uart0_txd_aux, uart0_rtsn_aux, uart1_txd_aux, uart1_rtsn_aux : std_ulogic;
   signal spi_clk_aux, spi_do_aux : std_ulogic;
@@ -522,12 +519,10 @@ begin
     xbus_err_i     => xbus_rsp.err,
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i => std_ulogic_vector(s1_axis_tdata),
-    slink_rx_src_i => std_ulogic_vector(s1_axis_tid),
     slink_rx_val_i => std_ulogic(s1_axis_tvalid),
     slink_rx_lst_i => std_ulogic(s1_axis_tlast),
     slink_rx_rdy_o => s1_axis_tready_aux,
     slink_tx_dat_o => s0_axis_tdata_aux,
-    slink_tx_dst_o => s0_axis_tdest_aux,
     slink_tx_val_o => s0_axis_tvalid_aux,
     slink_tx_lst_o => s0_axis_tlast_aux,
     slink_tx_rdy_i => std_ulogic(s0_axis_tready),
@@ -589,7 +584,6 @@ begin
   jtag_tdo_o     <= std_logic(jtag_tdo_aux);
   s1_axis_tready <= std_logic(s1_axis_tready_aux);
   s0_axis_tdata  <= std_logic_vector(s0_axis_tdata_aux);
-  s0_axis_tdest  <= std_logic_vector(s0_axis_tdest_aux);
   s0_axis_tvalid <= std_logic(s0_axis_tvalid_aux);
   s0_axis_tlast  <= std_logic(s0_axis_tlast_aux);
   uart0_txd_o    <= std_logic(uart0_txd_aux);

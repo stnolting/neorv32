@@ -17,8 +17,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_slink is
   generic (
-    SLINK_RX_FIFO : natural range 1 to 32768; -- RX FIFO depth, has to be a power of two, min 1
-    SLINK_TX_FIFO : natural range 1 to 32768  -- TX FIFO depth, has to be a power of two, min 1
+    RX_FIFO_DEPTH : natural range 1 to 32768; -- RX FIFO depth, has to be a power of two, min 1
+    TX_FIFO_DEPTH : natural range 1 to 32768  -- TX FIFO depth, has to be a power of two, min 1
   );
   port (
     -- Host access --
@@ -29,13 +29,11 @@ entity neorv32_slink is
     irq_o            : out std_ulogic;                     -- interrupt
     -- RX stream interface --
     slink_rx_data_i  : in  std_ulogic_vector(31 downto 0); -- input data
-    slink_rx_src_i   : in  std_ulogic_vector(3 downto 0);  -- routing information
     slink_rx_valid_i : in  std_ulogic;                     -- valid input
     slink_rx_last_i  : in  std_ulogic;                     -- end of stream
     slink_rx_ready_o : out std_ulogic;                     -- ready to receive
     -- TX stream interface --
     slink_tx_data_o  : out std_ulogic_vector(31 downto 0); -- output data
-    slink_tx_dst_o   : out std_ulogic_vector(3 downto 0);  -- routing destination
     slink_tx_valid_o : out std_ulogic;                     -- valid output
     slink_tx_last_o  : out std_ulogic;                     -- end of stream
     slink_tx_ready_i : in  std_ulogic                      -- ready to send
@@ -45,51 +43,59 @@ end entity;
 architecture neorv32_slink_rtl of neorv32_slink is
 
   -- control register --
-  constant ctrl_en_c            : natural :=  0; -- r/w: Global module enable
+  constant ctrl_rx_en_c       : natural :=  0; -- r/w: enable receiver
+  constant ctrl_tx_en_c       : natural :=  1; -- r/w: enable transmitter
   --
-  constant ctrl_rx_empty_c      : natural :=  8; -- r/-: RX FIFO empty
-  constant ctrl_rx_full_c       : natural :=  9; -- r/-: RX FIFO full
-  constant ctrl_tx_empty_c      : natural := 10; -- r/-: TX FIFO empty
-  constant ctrl_tx_full_c       : natural := 11; -- r/-: TX FIFO full
-  constant ctrl_rx_last_c       : natural := 12; -- r/-: RX end-of-stream (according to previous read RX data)
+  constant ctrl_rx_last_c     : natural :=  4; -- r/-: RX TOP word is last word of package
   --
-  constant ctrl_irq_rx_nempty_c : natural := 16; -- r/w: interrupt if RX FIFO not empty
-  constant ctrl_irq_rx_full_c   : natural := 17; -- r/w: interrupt if RX FIFO full
-  constant ctrl_irq_tx_empty_c  : natural := 18; -- r/w: interrupt if TX FIFO empty
-  constant ctrl_irq_tx_nfull_c  : natural := 19; -- r/w: interrupt if TX FIFO not full
+  constant ctrl_rx_empty_c    : natural :=  8; -- r/-: RX FIFO empty
+  constant ctrl_rx_half_c     : natural :=  9; -- r/-: RX FIFO at least half full
+  constant ctrl_rx_full_c     : natural := 10; -- r/-: RX FIFO full
+  constant ctrl_tx_empty_c    : natural := 11; -- r/-: TX FIFO empty
+  constant ctrl_tx_half_c     : natural := 12; -- r/-: TX FIFO at least half full
+  constant ctrl_tx_full_c     : natural := 13; -- r/-: TX FIFO full
   --
-  constant ctrl_rx_fifo0_c      : natural := 24; -- r/-: log2(RX FIFO size), bit 0 (LSB)
-  constant ctrl_rx_fifo3_c      : natural := 27; -- r/-: log2(RX FIFO size), bit 3 (MSB)
-  constant ctrl_tx_fifo0_c      : natural := 28; -- r/-: log2(TX FIFO size), bit 0 (LSB)
-  constant ctrl_tx_fifo3_c      : natural := 31; -- r/-: log2(TX FIFO size), bit 3 (MSB)
+  constant ctrl_rx_irq_sel0_c : natural := 16; -- r/w: RX interrupt select, bit 0 (LSB)
+  constant ctrl_rx_irq_sel1_c : natural := 17; -- r/w: RX interrupt select, bit 1 (MSB)
+  constant ctrl_tx_irq_sel0_c : natural := 18; -- r/w: TX interrupt select, bit 0 (LSB)
+  constant ctrl_tx_irq_sel1_c : natural := 19; -- r/w: TX interrupt select, bit 1 (MSB)
+  constant ctrl_rx_irq_pend_c : natural := 20; -- r/-: pending RX interrupt
+  constant ctrl_tx_irq_pend_c : natural := 21; -- r/-: pending TX interrupt
+  --
+  constant ctrl_rx_fifo0_c    : natural := 24; -- r/-: log2(RX FIFO size), bit 0 (LSB)
+  constant ctrl_rx_fifo3_c    : natural := 27; -- r/-: log2(RX FIFO size), bit 3 (MSB)
+  constant ctrl_tx_fifo0_c    : natural := 28; -- r/-: log2(TX FIFO size), bit 0 (LSB)
+  constant ctrl_tx_fifo3_c    : natural := 31; -- r/-: log2(TX FIFO size), bit 3 (MSB)
 
   -- helpers --
-  constant log2_rx_fifo_c : natural := index_size_f(SLINK_RX_FIFO);
-  constant log2_tx_fifo_c : natural := index_size_f(SLINK_TX_FIFO);
+  constant rx_awidth_c : natural := index_size_f(RX_FIFO_DEPTH);
+  constant tx_awidth_c : natural := index_size_f(TX_FIFO_DEPTH);
 
   -- bus interface --
   signal bus_ack, bus_rden : std_ulogic;
   signal bus_rdata : std_ulogic_vector(31 downto 0);
 
-  -- control register --
+  -- control register set --
   type ctrl_t is record
-    enable, irq_rx_nempty, irq_rx_full, irq_tx_empty, irq_tx_nfull : std_ulogic;
+    rx_enable  : std_ulogic;
+    tx_enable  : std_ulogic;
+    rx_irq_sel : std_ulogic_vector(1 downto 0);
+    tx_irq_sel : std_ulogic_vector(1 downto 0);
   end record;
-  signal ctrl : ctrl_t; -- register set
+  signal ctrl : ctrl_t;
 
-  -- routing information --
-  signal tx_route, rx_route : std_ulogic_vector(3 downto 0);
-
-  -- stream attributes --
-  signal rx_last : std_ulogic; -- RX end-of-stream indicator
-
-  -- FIFO interface --
+  -- FIFO interfaces --
   type fifo_t is record
-    we, re, clr  : std_ulogic;
-    wdata, rdata : std_ulogic_vector((1+4+32)-1 downto 0);
-    avail, free  : std_ulogic;
+    clear, we, re     : std_ulogic;
+    wdata, rdata      : std_ulogic_vector(32 downto 0);
+    avail, free, half : std_ulogic;
   end record;
   signal tx_fifo, rx_fifo : fifo_t;
+  signal rx_level : std_ulogic_vector(rx_awidth_c downto 0);
+  signal tx_level : std_ulogic_vector(tx_awidth_c downto 0);
+
+  -- interrupts --
+  signal rx_irq, tx_irq : std_ulogic;
 
 begin
 
@@ -107,54 +113,50 @@ begin
   bus_write: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl.enable        <= '0';
-      ctrl.irq_rx_nempty <= '0';
-      ctrl.irq_rx_full   <= '0';
-      ctrl.irq_tx_empty  <= '0';
-      ctrl.irq_tx_nfull  <= '0';
-      tx_route           <= (others => '0');
+      ctrl.rx_enable  <= '0';
+      ctrl.tx_enable  <= '0';
+      ctrl.rx_irq_sel <= (others => '0');
+      ctrl.tx_irq_sel <= (others => '0');
     elsif rising_edge(clk_i) then
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-        -- control register --
-        if (bus_req_i.addr(3 downto 2) = "00") then
-          ctrl.enable        <= bus_req_i.data(ctrl_en_c);
-          ctrl.irq_rx_nempty <= bus_req_i.data(ctrl_irq_rx_nempty_c);
-          ctrl.irq_rx_full   <= bus_req_i.data(ctrl_irq_rx_full_c);
-          ctrl.irq_tx_empty  <= bus_req_i.data(ctrl_irq_tx_empty_c);
-          ctrl.irq_tx_nfull  <= bus_req_i.data(ctrl_irq_tx_nfull_c);
-        end if;
-        -- routing information --
-        if (bus_req_i.addr(3 downto 2) = "01") then
-          tx_route <= bus_req_i.data(3 downto 0);
+        if (bus_req_i.addr(3 downto 2) = "00") then -- control register
+          ctrl.rx_enable  <= bus_req_i.data(ctrl_rx_en_c);
+          ctrl.tx_enable  <= bus_req_i.data(ctrl_tx_en_c);
+          ctrl.rx_irq_sel <= bus_req_i.data(ctrl_rx_irq_sel1_c downto ctrl_rx_irq_sel0_c);
+          ctrl.tx_irq_sel <= bus_req_i.data(ctrl_tx_irq_sel1_c downto ctrl_tx_irq_sel0_c);
         end if;
       end if;
     end if;
   end process;
 
   -- read access (asynchronous) --
-  bus_read: process(bus_rden, bus_req_i.addr, ctrl, rx_fifo, tx_fifo, rx_last, rx_route)
+  bus_read: process(bus_rden, bus_req_i.addr, ctrl, rx_fifo, tx_fifo, rx_irq, tx_irq)
   begin
     bus_rdata <= (others => '0');
     if (bus_rden = '1') then -- output gating
-      case bus_req_i.addr(3 downto 2) is
-        when "00" => -- control register
-          bus_rdata(ctrl_en_c)                              <= ctrl.enable;
-          bus_rdata(ctrl_rx_empty_c)                        <= not rx_fifo.avail;
-          bus_rdata(ctrl_rx_full_c)                         <= not rx_fifo.free;
-          bus_rdata(ctrl_tx_empty_c)                        <= not tx_fifo.avail;
-          bus_rdata(ctrl_tx_full_c)                         <= not tx_fifo.free;
-          bus_rdata(ctrl_rx_last_c)                         <= rx_last;
-          bus_rdata(ctrl_irq_rx_nempty_c)                   <= ctrl.irq_rx_nempty;
-          bus_rdata(ctrl_irq_rx_full_c)                     <= ctrl.irq_rx_full;
-          bus_rdata(ctrl_irq_tx_empty_c)                    <= ctrl.irq_tx_empty;
-          bus_rdata(ctrl_irq_tx_nfull_c)                    <= ctrl.irq_tx_nfull;
-          bus_rdata(ctrl_rx_fifo3_c downto ctrl_rx_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_rx_fifo_c, 4));
-          bus_rdata(ctrl_tx_fifo3_c downto ctrl_tx_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_tx_fifo_c, 4));
-        when "01" => -- routing information
-          bus_rdata(3 downto 0) <= rx_route;
-        when others => -- RX data
-          bus_rdata <= rx_fifo.rdata(31 downto 0);
-      end case;
+      if (bus_req_i.addr(3 downto 2) = "00") then -- control register
+        bus_rdata(ctrl_rx_en_c) <= ctrl.rx_enable;
+        bus_rdata(ctrl_tx_en_c) <= ctrl.tx_enable;
+        --
+        bus_rdata(ctrl_rx_last_c) <= rx_fifo.rdata(32);
+        --
+        bus_rdata(ctrl_rx_empty_c) <= not rx_fifo.avail;
+        bus_rdata(ctrl_rx_half_c)  <= rx_fifo.half;
+        bus_rdata(ctrl_rx_full_c)  <= not rx_fifo.free;
+        bus_rdata(ctrl_tx_empty_c) <= not tx_fifo.avail;
+        bus_rdata(ctrl_tx_half_c)  <= tx_fifo.half;
+        bus_rdata(ctrl_tx_full_c)  <= not tx_fifo.free;
+        --
+        bus_rdata(ctrl_rx_irq_sel1_c downto ctrl_rx_irq_sel0_c) <= ctrl.rx_irq_sel;
+        bus_rdata(ctrl_tx_irq_sel1_c downto ctrl_tx_irq_sel0_c) <= ctrl.tx_irq_sel;
+        bus_rdata(ctrl_rx_irq_pend_c)                           <= rx_irq;
+        bus_rdata(ctrl_tx_irq_pend_c)                           <= tx_irq;
+        --
+        bus_rdata(ctrl_rx_fifo3_c downto ctrl_rx_fifo0_c) <= std_ulogic_vector(to_unsigned(rx_awidth_c, 4));
+        bus_rdata(ctrl_tx_fifo3_c downto ctrl_tx_fifo0_c) <= std_ulogic_vector(to_unsigned(tx_awidth_c, 4));
+      else -- RX data
+        bus_rdata <= rx_fifo.rdata(31 downto 0);
+      end if;
     end if;
   end process;
 
@@ -163,22 +165,30 @@ begin
   bus_rsp_o.err  <= '0'; -- no access errors supported
   bus_rsp_o.data <= bus_rdata;
 
+  -- CPU interrupt --
+  irq_gen: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      irq_o <= (ctrl.rx_enable and rx_irq) or (ctrl.tx_enable and tx_irq);
+    end if;
+  end process;
 
-  -- RX Data FIFO ---------------------------------------------------------------------------
+
+  -- Receiver (RX) --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   rx_fifo_inst: entity neorv32.neorv32_prim_fifo
   generic map (
-    AWIDTH  => log2_rx_fifo_c,
-    DWIDTH  => 1+4+32, -- last + routing + data
-    OUTGATE => false,  -- no output gate required
+    AWIDTH  => rx_awidth_c,
+    DWIDTH  => 1+32, -- last + data
+    OUTGATE => true, -- to prevent getting X in simulation
     ASYNCRD => false
   )
   port map (
     -- global control --
     clk_i   => clk_i,
     rstn_i  => rstn_i,
-    clear_i => rx_fifo.clr,
-    level_o => open,
+    clear_i => rx_fifo.clear,
+    level_o => rx_level,
     -- write port --
     wdata_i => rx_fifo.wdata,
     we_i    => rx_fifo.we,
@@ -189,42 +199,49 @@ begin
     avail_o => rx_fifo.avail
   );
 
-  rx_fifo.clr      <= not ctrl.enable;
+  rx_fifo.clear    <= not ctrl.rx_enable;
   rx_fifo.re       <= bus_rden and bus_req_i.addr(3);
   rx_fifo.we       <= slink_rx_valid_i;
-  rx_fifo.wdata    <= slink_rx_last_i & slink_rx_src_i & slink_rx_data_i;
-  slink_rx_ready_o <= rx_fifo.free and ctrl.enable;
+  rx_fifo.wdata    <= slink_rx_last_i & slink_rx_data_i;
+  slink_rx_ready_o <= rx_fifo.free and ctrl.rx_enable;
 
-  -- backup RX attributes for current access --
-  rx_attributes: process(rstn_i, clk_i)
+  rx_fifo_small:
+  if (rx_awidth_c = 0) generate
+    rx_fifo.half <= rx_fifo.avail;
+  end generate;
+
+  rx_fifo_large:
+  if (rx_awidth_c > 0) generate
+    rx_fifo.half <= rx_level(rx_awidth_c) or rx_level(rx_awidth_c-1);
+  end generate;
+
+  -- interrupt generator --
+  rx_irq_trigger: process(ctrl.rx_enable, rx_fifo)
   begin
-    if (rstn_i = '0') then
-      rx_last  <= '0';
-      rx_route <= (others => '0');
-    elsif rising_edge(clk_i) then
-      if (rx_fifo.re = '1') then
-        rx_last  <= rx_fifo.rdata(36);
-        rx_route <= rx_fifo.rdata(35 downto 32);
-      end if;
-    end if;
+    case ctrl.rx_irq_sel is
+      when "01"   => rx_irq <= ctrl.rx_enable and      rx_fifo.avail; -- FIFO not empty (data available)
+      when "10"   => rx_irq <= ctrl.rx_enable and      rx_fifo.half;  -- FIFO at least half full
+      when "11"   => rx_irq <= ctrl.rx_enable and (not rx_fifo.free); -- FIFO full
+      when others => rx_irq <= '0'; -- disabled
+    end case;
   end process;
 
 
-  -- TX Data FIFO ---------------------------------------------------------------------------
+  -- Transmitter (TX) -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   tx_fifo_inst: entity neorv32.neorv32_prim_fifo
   generic map (
-    AWIDTH  => log2_tx_fifo_c,
-    DWIDTH  => 1+4+32, -- last + routing + data
-    OUTGATE => false, -- no output gate required
+    AWIDTH  => tx_awidth_c,
+    DWIDTH  => 1+32, -- last + data
+    OUTGATE => false,
     ASYNCRD => false
   )
   port map (
     -- global control --
     clk_i   => clk_i,
     rstn_i  => rstn_i,
-    clear_i => tx_fifo.clr,
-    level_o => open,
+    clear_i => tx_fifo.clear,
+    level_o => tx_level,
     -- write port --
     wdata_i => tx_fifo.wdata,
     we_i    => tx_fifo.we,
@@ -235,27 +252,33 @@ begin
     avail_o => tx_fifo.avail
   );
 
-  tx_fifo.clr      <= not ctrl.enable;
+  tx_fifo.clear    <= not ctrl.tx_enable;
   tx_fifo.we       <= bus_req_i.stb and bus_req_i.rw and bus_req_i.addr(3);
-  tx_fifo.wdata    <= bus_req_i.addr(2) & tx_route & bus_req_i.data; -- last-flag is set implicitly via access address
+  tx_fifo.wdata    <= bus_req_i.addr(2) & bus_req_i.data; -- last-flag is set via access address
   tx_fifo.re       <= slink_tx_ready_i;
   slink_tx_data_o  <= tx_fifo.rdata(31 downto 0);
-  slink_tx_dst_o   <= tx_fifo.rdata(35 downto 32);
-  slink_tx_last_o  <= tx_fifo.rdata(36);
+  slink_tx_last_o  <= tx_fifo.rdata(32);
   slink_tx_valid_o <= tx_fifo.avail;
 
+  tx_fifo_small:
+  if (tx_awidth_c = 0) generate
+    tx_fifo.half <= tx_fifo.avail;
+  end generate;
 
-  -- Interrupt Generator --------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  irq_gen: process(clk_i)
+  tx_fifo_large:
+  if (tx_awidth_c > 0) generate
+    tx_fifo.half <= tx_level(tx_awidth_c) or tx_level(tx_awidth_c-1);
+  end generate;
+
+  -- interrupt generator --
+  tx_irq_trigger: process(ctrl.tx_enable, tx_fifo)
   begin
-    if rising_edge(clk_i) then
-      irq_o <= ctrl.enable and (
-               (ctrl.irq_rx_nempty and (    rx_fifo.avail)) or -- RX FIFO not empty
-               (ctrl.irq_rx_full   and (not rx_fifo.free))  or -- RX FIFO full
-               (ctrl.irq_tx_empty  and (not tx_fifo.avail)) or -- TX FIFO empty
-               (ctrl.irq_tx_nfull  and (    tx_fifo.free)));   -- TX FIFO not full
-    end if;
+    case ctrl.tx_irq_sel is
+      when "01"   => tx_irq <= ctrl.tx_enable and (not tx_fifo.avail); -- FIFO empty
+      when "10"   => tx_irq <= ctrl.tx_enable and (not tx_fifo.half);  -- FIFO less than half full
+      when "11"   => tx_irq <= ctrl.tx_enable and      tx_fifo.free;   -- FIFO not full (free space available)
+      when others => tx_irq <= '0'; -- disabled
+    end case;
   end process;
 
 end architecture;

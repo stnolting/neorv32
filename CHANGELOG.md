@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 31.10.2026 | 1.13.7.3 | :warning: rework SLINK module | [#1675](https://github.com/stnolting/neorv32/pull/1675) |
 | 23.10.2026 | 1.13.7.2 | :warning: rework TWI module | [#1672](https://github.com/stnolting/neorv32/pull/1672) |
 | 22.10.2026 | 1.13.7.1 | add option to export DMI to attach a custom external JTAG tap | [#1671](https://github.com/stnolting/neorv32/pull/1671) |
 | 22.10.2026 | [**1.13.7**](https://github.com/stnolting/neorv32/releases/tag/v1.13.7) | :rocket: **New release** | |
