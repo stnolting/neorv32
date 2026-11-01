@@ -100,7 +100,7 @@ static inline uint32_t __attribute__((always_inline)) neorv32_slink_rx_get(void)
  * @return Zero if not end of stream, non-zero if end of stream.
  **************************************************************************/
 static inline int __attribute__((always_inline)) neorv32_slink_rx_last(void) {
-  return (int)(NEORV32_SLINK->CTRL & (1U << SLINK_CTRL_RX_LAST));
+  return (int)((NEORV32_SLINK->CTRL >> SLINK_CTRL_RX_LAST) & 1U);
 }
 
 /**********************************************************************//**
@@ -124,7 +124,7 @@ static inline void __attribute__((always_inline)) neorv32_slink_tx_put_last(uint
  * @return Non-zero if empty, zero if not empty.
  **************************************************************************/
 static inline int __attribute__((always_inline)) neorv32_slink_rx_empty(void) {
-  return (int)(NEORV32_SLINK->CTRL & (1U << SLINK_CTRL_RX_EMPTY));
+  return (int)((NEORV32_SLINK->CTRL >> SLINK_CTRL_RX_EMPTY) & 1U);
 }
 
 /**********************************************************************//**
@@ -132,7 +132,7 @@ static inline int __attribute__((always_inline)) neorv32_slink_rx_empty(void) {
  * @return Non-zero if at least half full, zero if less than half full.
  **************************************************************************/
 static inline int __attribute__((always_inline)) neorv32_slink_rx_half(void) {
-  return (int)(NEORV32_SLINK->CTRL & (1U << SLINK_CTRL_RX_HALF));
+  return (int)((NEORV32_SLINK->CTRL >> SLINK_CTRL_RX_HALF) & 1U);
 }
 
 /**********************************************************************//**
@@ -140,7 +140,7 @@ static inline int __attribute__((always_inline)) neorv32_slink_rx_half(void) {
  * @return Non-zero if full, zero if not full.
  **************************************************************************/
 static inline int __attribute__((always_inline)) neorv32_slink_rx_full(void) {
-  return (int)(NEORV32_SLINK->CTRL & (1U << SLINK_CTRL_RX_FULL));
+  return (int)((NEORV32_SLINK->CTRL >> SLINK_CTRL_RX_FULL) & 1U);
 }
 
 /**********************************************************************//**
@@ -148,7 +148,7 @@ static inline int __attribute__((always_inline)) neorv32_slink_rx_full(void) {
  * @return Non-zero if empty, zero if not empty.
  **************************************************************************/
 static inline int __attribute__((always_inline)) neorv32_slink_tx_empty(void) {
-  return (int)(NEORV32_SLINK->CTRL & (1U << SLINK_CTRL_TX_EMPTY));
+  return (int)((NEORV32_SLINK->CTRL >> SLINK_CTRL_TX_EMPTY) & 1U);
 }
 
 /**********************************************************************//**
@@ -156,7 +156,7 @@ static inline int __attribute__((always_inline)) neorv32_slink_tx_empty(void) {
  * @return Non-zero if at least half full, zero if less than half full.
  **************************************************************************/
 static inline int __attribute__((always_inline)) neorv32_slink_tx_half(void) {
-  return (int)(NEORV32_SLINK->CTRL & (1U << SLINK_CTRL_TX_HALF));
+  return (int)((NEORV32_SLINK->CTRL >> SLINK_CTRL_TX_HALF) & 1U);
 }
 
 /**********************************************************************//**
@@ -164,7 +164,7 @@ static inline int __attribute__((always_inline)) neorv32_slink_tx_half(void) {
  * @return Non-zero if full, zero if not full.
  **************************************************************************/
 static inline int __attribute__((always_inline)) neorv32_slink_tx_full(void) {
-  return (int)(NEORV32_SLINK->CTRL & (1U << SLINK_CTRL_TX_FULL));
+  return (int)((NEORV32_SLINK->CTRL >> SLINK_CTRL_TX_FULL) & 1U);
 }
 
 /**********************************************************************//**
@@ -172,7 +172,7 @@ static inline int __attribute__((always_inline)) neorv32_slink_tx_full(void) {
  * @return Non-zero if interrupt is pending.
  **************************************************************************/
 static inline int __attribute__((always_inline)) neorv32_slink_rx_irq_pending(void) {
-  return (int)(NEORV32_SLINK->CTRL & (1U << SLINK_CTRL_RX_IRQ_PEND));
+  return (int)((NEORV32_SLINK->CTRL >> SLINK_CTRL_RX_IRQ_PEND) & 1U);
 }
 
 /**********************************************************************//**
@@ -180,7 +180,7 @@ static inline int __attribute__((always_inline)) neorv32_slink_rx_irq_pending(vo
  * @return Non-zero if interrupt is pending.
  **************************************************************************/
 static inline int __attribute__((always_inline)) neorv32_slink_tx_irq_pending(void) {
-  return (int)(NEORV32_SLINK->CTRL & (1U << SLINK_CTRL_TX_IRQ_PEND));
+  return (int)((NEORV32_SLINK->CTRL >> SLINK_CTRL_TX_IRQ_PEND) & 1U);
 }
 
 #endif // NEORV32_SLINK_H
