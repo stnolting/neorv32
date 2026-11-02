@@ -117,6 +117,7 @@ begin
       mem8bv_b1_v := (others => (others => '0'));
       mem8bv_b2_v := (others => (others => '0'));
       mem8bv_b3_v := (others => (others => '0'));
+      rdata <= (others => '0');
     elsif rising_edge(clk_i) then
       if (xbus_req_i.cyc = '1') and (xbus_req_i.stb = '1') then
         if (xbus_req_i.we = '1') then

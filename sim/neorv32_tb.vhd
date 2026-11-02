@@ -739,6 +739,7 @@ begin
       msi <= '0';
       mti <= '0';
       mei <= '0';
+      xbus_trig_rsp <= xbus_rsp_terminate_c;
     elsif rising_edge(clk_gen) then
       -- bus response defaults --
       xbus_trig_rsp.data <= (others => '0');
