@@ -13,7 +13,7 @@ Software can determine the version by reading the RISC-V-compatible `mimpid` CSR
 which encodes the version as 8x4-bit BCD digits:
 
 ```
-mimpid (CSR 0xf13) = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
+mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 ```
 
 ### Version History
@@ -28,7 +28,8 @@ mimpid (CSR 0xf13) = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
-| 02.10.2026 | 1.13.7.4 | :bug: NEOLED: fix CTRL register address check | [#1676](https://github.com/stnolting/neorv32/pull/1676) |
+| 03.11.2026 | 1.13.7.5 | minor rtl fixes and cleanups | [#1667](https://github.com/stnolting/neorv32/pull/1677) |
+| 02.11.2026 | 1.13.7.4 | :bug: NEOLED: fix CTRL register address check | [#1676](https://github.com/stnolting/neorv32/pull/1676) |
 | 31.10.2026 | 1.13.7.3 | :warning: rework SLINK module | [#1675](https://github.com/stnolting/neorv32/pull/1675) |
 | 23.10.2026 | 1.13.7.2 | :warning: rework TWI module | [#1672](https://github.com/stnolting/neorv32/pull/1672) |
 | 22.10.2026 | 1.13.7.1 | add option to export DMI to attach a custom external JTAG tap | [#1671](https://github.com/stnolting/neorv32/pull/1671) |
