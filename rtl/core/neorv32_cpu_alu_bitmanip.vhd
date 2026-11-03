@@ -31,8 +31,8 @@ entity neorv32_cpu_alu_bitmanip is
     ZBA        : boolean; -- address-generation instructions
     ZBB        : boolean; -- basic bit-manipulation instructions
     ZBC        : boolean; -- carry-less multiplication instructions
-    ZBKC       : boolean; -- carry-less multiplication instructions for cryptography
     ZBKB       : boolean; -- bit-manipulation instructions for cryptography
+    ZBKC       : boolean; -- carry-less multiplication instructions for cryptography
     ZBKX       : boolean; -- crossbar permutation instructions for cryptography
     ZBS        : boolean  -- single-bit instructions
   );
