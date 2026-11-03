@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130704"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130705"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -1267,7 +1267,7 @@ package body neorv32_package is
   function index_size_f(n : natural) return natural is
   begin
     for i in 0 to 31 loop
-      if (2**i >= n) then
+      if ((2**i) >= n) then
         return i;
       end if;
     end loop;
@@ -1396,7 +1396,7 @@ package body neorv32_package is
     variable v : string(1 to d'length/4);
   begin
     for i in 0 to (d'length/4)-1 loop
-      v(i+1) := to_hexchar_f(d(d'high-i*4 downto (d'high-i*4)-3));
+      v(i+1) := to_hexchar_f(d(d'high-(i*4) downto (d'high-(i*4))-3));
     end loop;
     return v;
   end function;

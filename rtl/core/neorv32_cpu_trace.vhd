@@ -715,7 +715,7 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
   -- decode instruction operands --
   function decode_operands_f(inst : std_ulogic_vector(31 downto 0)) return string is
     variable is_v, ib_v, iu_v, ij_v, ii_v : std_ulogic_vector(31 downto 0);
-    variable rs1_iv, rs2_iv, rd_iv, is_iv, ib_iv, iu_iv, ij_iv, ii_iv : integer;
+    variable rs1_iv, rs2_iv, rd_iv, is_iv, ib_iv, ij_iv, ii_iv : integer;
   begin
     -- registers --
     rs1_iv := to_integer(unsigned(inst(instr_rs1_msb_c downto instr_rs1_lsb_c)));
@@ -729,7 +729,6 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
     ii_v  := replicate_f(inst(31), 21) & inst(30 downto 21) & inst(20);
     is_iv := to_integer(signed(is_v));
     ib_iv := to_integer(signed(ib_v));
-    iu_iv := to_integer(signed(iu_v));
     ij_iv := to_integer(signed(ij_v));
     ii_iv := to_integer(signed(ii_v));
     -- instruction types --
