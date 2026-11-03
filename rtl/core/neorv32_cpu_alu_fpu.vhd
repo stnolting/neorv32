@@ -807,7 +807,8 @@ begin
   -- integer multiplier (unsigned only) --
   multiplier_core_inst: entity neorv32.neorv32_prim_mul
   generic map (
-    DWIDTH => 24
+    DWIDTH   => 24,
+    NUM_REGS => 1
   )
   port map (
     -- global control --
