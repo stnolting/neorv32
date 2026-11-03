@@ -836,9 +836,9 @@ begin
         req_stb_i  => imem_req.stb,
         req_rw_i   => imem_req.rw,
         rsp_data_o => imem_rsp.data,
-        rsp_ack_o  => imem_rsp.ack
+        rsp_ack_o  => imem_rsp.ack,
+        rsp_err_o  => imem_rsp.err
       );
-      imem_rsp.err <= '0';
     end generate;
 
     imem_disabled:
@@ -864,9 +864,9 @@ begin
         req_stb_i  => dmem_req.stb,
         req_rw_i   => dmem_req.rw,
         rsp_data_o => dmem_rsp.data,
-        rsp_ack_o  => dmem_rsp.ack
+        rsp_ack_o  => dmem_rsp.ack,
+        rsp_err_o  => dmem_rsp.err
       );
-      dmem_rsp.err <= '0';
     end generate;
 
     dmem_disabled:
@@ -1049,9 +1049,9 @@ begin
         req_stb_i  => iodev_req(IODEV_BOOTROM).stb,
         req_rw_i   => iodev_req(IODEV_BOOTROM).rw,
         rsp_data_o => iodev_rsp(IODEV_BOOTROM).data,
-        rsp_ack_o  => iodev_rsp(IODEV_BOOTROM).ack
+        rsp_ack_o  => iodev_rsp(IODEV_BOOTROM).ack,
+        rsp_err_o  => iodev_rsp(IODEV_BOOTROM).err
       );
-      iodev_rsp(IODEV_BOOTROM).err <= '0';
     end generate;
 
     boot_rom_disabled:
