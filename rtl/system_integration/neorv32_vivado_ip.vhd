@@ -165,7 +165,7 @@ entity neorv32_vivado_ip is
     IO_TRACEBUF_EN        : boolean                        := false;
     IO_TRACEBUF_DEPTH     : natural range 1 to 32768       := 1
   );
-  port (
+  port ( -- [IMPORTANT] open input ports have no default values! (#1067)
     -- ------------------------------------------------------------
     -- Global Control
     -- ------------------------------------------------------------
@@ -177,8 +177,8 @@ entity neorv32_vivado_ip is
     -- AXI4 Host Interface (available if XBUS_EN = true)
     -- ------------------------------------------------------------
     -- Clock and Reset --
---  m_axi_aclk     : in  std_logic := '0'; -- just to satisfy Vivado
---  m_axi_aresetn  : in  std_logic := '0'; -- just to satisfy Vivado
+--  m_axi_aclk     : in  std_logic; -- just to satisfy Vivado
+--  m_axi_aresetn  : in  std_logic; -- just to satisfy Vivado
     -- Write Address Channel --
     m_axi_awaddr   : out std_logic_vector(31 downto 0);
     m_axi_awlen    : out std_logic_vector(7 downto 0);
@@ -187,13 +187,13 @@ entity neorv32_vivado_ip is
     m_axi_awcache  : out std_logic_vector(3 downto 0);
     m_axi_awprot   : out std_logic_vector(2 downto 0);
     m_axi_awvalid  : out std_logic;
-    m_axi_awready  : in  std_logic := '0';
+    m_axi_awready  : in  std_logic;
     -- Write Data Channel --
     m_axi_wdata    : out std_logic_vector(31 downto 0);
     m_axi_wstrb    : out std_logic_vector(3 downto 0);
     m_axi_wlast    : out std_logic;
     m_axi_wvalid   : out std_logic;
-    m_axi_wready   : in  std_logic := '0';
+    m_axi_wready   : in  std_logic;
     -- Read Address Channel --
     m_axi_araddr   : out std_logic_vector(31 downto 0);
     m_axi_arlen    : out std_logic_vector(7 downto 0);
@@ -202,47 +202,47 @@ entity neorv32_vivado_ip is
     m_axi_arcache  : out std_logic_vector(3 downto 0);
     m_axi_arprot   : out std_logic_vector(2 downto 0);
     m_axi_arvalid  : out std_logic;
-    m_axi_arready  : in  std_logic := '0';
+    m_axi_arready  : in  std_logic;
     -- Read Data Channel --
-    m_axi_rdata    : in  std_logic_vector(31 downto 0) := x"00000000";
-    m_axi_rresp    : in  std_logic_vector(1 downto 0); -- no default here (#1067)
+    m_axi_rdata    : in  std_logic_vector(31 downto 0);
+    m_axi_rresp    : in  std_logic_vector(1 downto 0);
     m_axi_rlast    : in  std_logic;
-    m_axi_rvalid   : in  std_logic := '0';
+    m_axi_rvalid   : in  std_logic;
     m_axi_rready   : out std_logic;
     -- Write Response Channel --
-    m_axi_bresp    : in  std_logic_vector(1 downto 0); -- no default here (#1067)
-    m_axi_bvalid   : in  std_logic := '0';
+    m_axi_bresp    : in  std_logic_vector(1 downto 0);
+    m_axi_bvalid   : in  std_logic;
     m_axi_bready   : out std_logic;
     -- ------------------------------------------------------------
     -- AXI4-Stream Interfaces (available if IO_SLINK_EN = true)
     -- ------------------------------------------------------------
     -- Source --
---  s0_axis_aclk   : in  std_logic := '0'; -- just to satisfy Vivado
+--  s0_axis_aclk   : in  std_logic ; -- just to satisfy Vivado
     s0_axis_tvalid : out std_logic;
-    s0_axis_tready : in  std_logic := '0';
+    s0_axis_tready : in  std_logic;
     s0_axis_tdata  : out std_logic_vector(31 downto 0);
     s0_axis_tlast  : out std_logic;
     -- Sink --
---  s1_axis_aclk   : in  std_logic := '0'; -- just to satisfy Vivado
-    s1_axis_tvalid : in  std_logic := '0';
+--  s1_axis_aclk   : in  std_logic; -- just to satisfy Vivado
+    s1_axis_tvalid : in  std_logic;
     s1_axis_tready : out std_logic;
-    s1_axis_tdata  : in  std_logic_vector(31 downto 0) := x"00000000";
-    s1_axis_tlast  : in  std_logic := '0';
+    s1_axis_tdata  : in  std_logic_vector(31 downto 0);
+    s1_axis_tlast  : in  std_logic;
     -- ------------------------------------------------------------
     -- External debug module interface
     -- ------------------------------------------------------------
-    dmi_req_op_i   : in  std_logic_vector(1 downto 0)  := "00";
-    dmi_req_addr_i : in  std_logic_vector(6 downto 0)  := "0000000";
-    dmi_req_data_i : in  std_logic_vector(31 downto 0) := x"00000000";
+    dmi_req_op_i   : in  std_logic_vector(1 downto 0);
+    dmi_req_addr_i : in  std_logic_vector(6 downto 0);
+    dmi_req_data_i : in  std_logic_vector(31 downto 0);
     dmi_rsp_data_o : out std_logic_vector(31 downto 0);
     dmi_rsp_ack_o  : out std_logic;
     -- ------------------------------------------------------------
     -- JTAG on-chip debugger interface (available if OCD_EN = true)
     -- ------------------------------------------------------------
-    jtag_tck_i     : in  std_logic := '0';
-    jtag_tdi_i     : in  std_logic := '0';
-    jtag_tdo_o     : out std_logic := '0';
-    jtag_tms_i     : in  std_logic := '0';
+    jtag_tck_i     : in  std_logic;
+    jtag_tdi_i     : in  std_logic;
+    jtag_tdo_o     : out std_logic;
+    jtag_tms_i     : in  std_logic;
     -- ------------------------------------------------------------
     -- Serial memory controller interface
     -- ------------------------------------------------------------
@@ -250,59 +250,59 @@ entity neorv32_vivado_ip is
     smc_sck_o      : out std_logic;
     smc_csn_o      : out std_logic_vector(1 downto 0);
     smc_sdo_o      : out std_logic;
-    smc_sdi_i      : in  std_logic := '0';
+    smc_sdi_i      : in  std_logic;
     -- ------------------------------------------------------------
     -- Processor IO
     -- ------------------------------------------------------------
     -- GPIO (available if IO_GPIO_IN/OUT_NUM > 0) --
     gpio_dir_o     : out std_logic_vector(IO_GPIO_DIR_NUM-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     gpio_o         : out std_logic_vector(IO_GPIO_OUT_NUM-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
-    gpio_i         : in  std_logic_vector(IO_GPIO_IN_NUM-1 downto 0) := (others => '0'); -- variable-sized ports must be at least 0 downto 0; #974
+    gpio_i         : in  std_logic_vector(IO_GPIO_IN_NUM-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_logic;
-    uart0_rxd_i    : in  std_logic := '0';
+    uart0_rxd_i    : in  std_logic;
     uart0_rtsn_o   : out std_logic;
-    uart0_ctsn_i   : in  std_logic := '0';
+    uart0_ctsn_i   : in  std_logic;
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    : out std_logic;
-    uart1_rxd_i    : in  std_logic := '0';
+    uart1_rxd_i    : in  std_logic;
     uart1_rtsn_o   : out std_logic;
-    uart1_ctsn_i   : in  std_logic := '0';
+    uart1_ctsn_i   : in  std_logic;
     -- SPI (available if IO_SPI_EN = true) --
     spi_clk_o      : out std_logic;
     spi_dat_o      : out std_logic;
-    spi_dat_i      : in  std_logic := '0';
+    spi_dat_i      : in  std_logic;
     spi_csn_o      : out std_logic_vector(7 downto 0); -- SPI CS
     -- SDI (available if IO_SDI_EN = true) --
-    sdi_clk_i      : in  std_logic := '0';
+    sdi_clk_i      : in  std_logic;
     sdi_dat_o      : out std_logic;
-    sdi_dat_i      : in  std_logic := '0';
-    sdi_csn_i      : in  std_logic := '0';
+    sdi_dat_i      : in  std_logic;
+    sdi_csn_i      : in  std_logic;
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_i      : in  std_logic := '0';
+    twi_sda_i      : in  std_logic;
     twi_sda_o      : out std_logic;
-    twi_scl_i      : in  std_logic := '0';
+    twi_scl_i      : in  std_logic;
     twi_scl_o      : out std_logic;
     -- TWD (available if IO_TWD_EN = true) --
-    twd_sda_i      : in  std_logic := '0';
+    twd_sda_i      : in  std_logic;
     twd_sda_o      : out std_logic;
-    twd_scl_i      : in  std_logic := '0';
+    twd_scl_i      : in  std_logic;
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
-    onewire_i      : in  std_logic := '0';
+    onewire_i      : in  std_logic;
     onewire_o      : out std_logic;
     -- PWM (available if IO_PWM_NUM > 0) --
     pwm_o          : out std_logic_vector(IO_PWM_NUM-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
-    cfs_in_i       : in  std_logic_vector(255 downto 0) := (others => '0');
+    cfs_in_i       : in  std_logic_vector(255 downto 0);
     cfs_out_o      : out std_logic_vector(255 downto 0);
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o       : out std_logic;
     -- Machine timer system time (available if IO_CLINT_EN = true) --
     mtime_time_o   : out std_logic_vector(63 downto 0);
     -- CPU Interrupts --
-    irq_msi_i      : in  std_logic := '0';
-    irq_mti_i      : in  std_logic := '0';
-    irq_mei_i      : in  std_logic := '0'
+    irq_msi_i      : in  std_logic;
+    irq_mti_i      : in  std_logic;
+    irq_mei_i      : in  std_logic
   );
 end entity;
 
