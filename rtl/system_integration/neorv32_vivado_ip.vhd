@@ -153,6 +153,7 @@ entity neorv32_vivado_ip is
     IO_GPTMR_NUM          : natural range 1 to 16          := 1;
     -- 1-Wire Interface (ONEWIRE) --
     IO_ONEWIRE_EN         : boolean                        := false;
+    IO_ONEWIRE_FIFO       : natural range 1 to 32768       := 1;
     -- Direct Memory Access Controller (DMA) --
     IO_DMA_EN             : boolean                        := false;
     IO_DMA_DSC_FIFO       : natural range 4 to 512         := 4;
@@ -471,6 +472,7 @@ begin
     IO_GPTMR_NUM        => num_gptmr_c,
     -- 1-Wire Interface --
     IO_ONEWIRE_EN       => IO_ONEWIRE_EN,
+    IO_ONEWIRE_FIFO     => IO_ONEWIRE_FIFO,
     -- Direct Memory Access Controller --
     IO_DMA_EN           => IO_DMA_EN,
     IO_DMA_DSC_FIFO     => IO_DMA_DSC_FIFO,
