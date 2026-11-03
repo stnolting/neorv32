@@ -474,7 +474,8 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {One-Wire Interface Controller (ONEWIRE)}]
   add_params $group {
-    { IO_ONEWIRE_EN {Enable ONEWIRE} }
+    { IO_ONEWIRE_EN   {Enable ONEWIRE} }
+    { IO_ONEWIRE_FIFO {Data FIFO depth} {Number of entries (use a power of two)} {$IO_ONEWIRE_EN} {$IO_ONEWIRE_EN ? $IO_ONEWIRE_FIFO : 1} }
   }
 
   set group [add_group $page {Direct Memory Access Controller (DMA)}]
