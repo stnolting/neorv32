@@ -384,12 +384,12 @@ begin
     RISCV_ISA_Zicond    => RISCV_ISA_Zicond,
     RISCV_ISA_Zihpm     => RISCV_ISA_Zihpm,
     RISCV_ISA_Zimop     => RISCV_ISA_Zimop,
-    RISCV_ISA_Zmmul     => RISCV_ISA_Zmmul,
     RISCV_ISA_Zknd      => RISCV_ISA_Zknd,
     RISCV_ISA_Zkne      => RISCV_ISA_Zkne,
     RISCV_ISA_Zknh      => RISCV_ISA_Zknh,
     RISCV_ISA_Zksed     => RISCV_ISA_Zksed,
     RISCV_ISA_Zksh      => RISCV_ISA_Zksh,
+    RISCV_ISA_Zmmul     => RISCV_ISA_Zmmul,
     RISCV_ISA_Smcntrpmf => RISCV_ISA_Smcntrpmf,
     RISCV_ISA_Xcfu      => RISCV_ISA_Xcfu,
     -- Extension Options --
@@ -491,6 +491,9 @@ begin
     rstn_i         => std_ulogic(resetn),
     rstn_ocd_o     => rstn_ocd,
     rstn_wdt_o     => rstn_wdt,
+    -- Execution trace (available if TRACE_PORT_EN = true) --
+    trace_cpu0_o   => open,
+    trace_cpu1_o   => open,
     -- External debug module interface (available if OCD_EXT_DTM = true) --
     dmi_req_op_i   => std_ulogic_vector(dmi_req_op_i),
     dmi_req_addr_i => std_ulogic_vector(dmi_req_addr_i),
