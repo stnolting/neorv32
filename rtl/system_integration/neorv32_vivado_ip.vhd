@@ -423,6 +423,7 @@ begin
     DCACHE_NUM_BLOCKS   => DCACHE_NUM_BLOCKS,
     CACHE_BLOCK_SIZE    => CACHE_BLOCK_SIZE,
     CACHE_BURSTS_EN     => burst_en_c,
+    CACHE_UC_BASE       => CACHE_UC_BASE,
     -- Serial Memory Controller (SMC) --
     SMC_EN              => SMC_EN,
     SMC_BASE            => SMC_BASE,
