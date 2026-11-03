@@ -216,7 +216,7 @@ begin
   end generate;
 
   -- interrupt generator --
-  rx_irq_trigger: process(ctrl.rx_enable, rx_fifo)
+  rx_irq_trigger: process(ctrl, rx_fifo)
   begin
     case ctrl.rx_irq_sel is
       when "01"   => rx_irq <= ctrl.rx_enable and      rx_fifo.avail; -- FIFO not empty (data available)
@@ -271,7 +271,7 @@ begin
   end generate;
 
   -- interrupt generator --
-  tx_irq_trigger: process(ctrl.tx_enable, tx_fifo)
+  tx_irq_trigger: process(ctrl, tx_fifo)
   begin
     case ctrl.tx_irq_sel is
       when "01"   => tx_irq <= ctrl.tx_enable and (not tx_fifo.avail); -- FIFO empty
