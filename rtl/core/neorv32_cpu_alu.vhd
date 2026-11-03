@@ -239,6 +239,9 @@ begin
   cpu_alu_fpu_enabled:
   if RISCV_ISA_Zfinx generate
     cpu_alu_fpu_inst: entity neorv32.neorv32_cpu_alu_fpu
+    generic map (
+      FPU_SUBNORMAL_SUPPORT => false -- subnormal numbers are not supported (to save LUTs)
+    )
     port map (
       -- global control --
       clk_i       => clk_i,                       -- global clock, rising edge
