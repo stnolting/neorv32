@@ -131,7 +131,7 @@ begin
   end generate;
 
   -- response --
-  bus_response: process(dev_rsp, acc_en)
+  bus_response: process(dev_rsp)
     variable tmp_v : xbus_rsp_t;
   begin
     tmp_v.data := (others => '0');
