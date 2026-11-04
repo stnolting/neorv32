@@ -32,6 +32,7 @@ entity neorv32_cpu is
     RISCV_ISA_C         : boolean                        := false;       -- compressed extension
     RISCV_ISA_E         : boolean                        := false;       -- embedded RF extension
     RISCV_ISA_M         : boolean                        := false;       -- mul/div extension
+    RISCV_ISA_D         : boolean                        := false;       -- 32- and 64-bit floating-point extension
     RISCV_ISA_U         : boolean                        := false;       -- user mode extension
     RISCV_ISA_Zaamo     : boolean                        := false;       -- atomic read-modify-write operations extension
     RISCV_ISA_Zalrsc    : boolean                        := false;       -- atomic reservation-set operations extension
@@ -124,26 +125,39 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal frontend : if_bus_t;   -- front-end to back-end interface
   signal dbus_req : bus_req_t;  -- intermediate data memory request
 
+  type rf_state_t is (RF_INT, RF_D_MEM, RF_D_ALU, RF_D_INT);
+  signal rf_state    : rf_state_t;                     -- FSM to choose between GP and FP register files
+
   -- wiring --
   signal if_pmp_addr : std_ulogic_vector(31 downto 0); -- instruction fetch access address
   signal if_pmp_priv : std_ulogic;                     -- instruction fetch access privilege level
   signal if_pmp_err  : std_ulogic;                     -- instruction fetch PMP access fault
   signal rw_pmp_err  : std_ulogic;                     -- data access PMP access fault
   signal hwtrig      : std_ulogic;                     -- hardware trigger firing
-  signal rf_wdata    : std_ulogic_vector(31 downto 0); -- register file write data
-  signal rs1         : std_ulogic_vector(31 downto 0); -- source register 1
-  signal rs2         : std_ulogic_vector(31 downto 0); -- source register 2
-  signal alu_res     : std_ulogic_vector(31 downto 0); -- ALU result
+  signal rf_we_int   : std_ulogic;                     -- we for GP register file
+  signal rf_we_dbl   : std_ulogic;                     -- we for FP register file
+  signal rf_wd_int   : std_ulogic_vector(63 downto 0); -- input for GP register file
+  signal rf_wd_dbl   : std_ulogic_vector(63 downto 0); -- input for FP register file
+  signal rs1_int     : std_ulogic_vector(63 downto 0); -- rs1 output of GP register file
+  signal rs1_dbl     : std_ulogic_vector(63 downto 0); -- rs1 output of FP register file
+  signal rs2_int     : std_ulogic_vector(63 downto 0); -- rs2 output of GP register file
+  signal rs2_dbl     : std_ulogic_vector(63 downto 0); -- rs3 output of FP register file
+  signal rf_wdata    : std_ulogic_vector(63 downto 0); -- register file write data
+  signal rs1         : std_ulogic_vector(63 downto 0); -- source register 1
+  signal rs2         : std_ulogic_vector(63 downto 0); -- source register 2
+  signal rs3         : std_ulogic_vector(63 downto 0); -- source register 3
+  signal alu_res     : std_ulogic_vector(63 downto 0); -- ALU result
   signal alu_add     : std_ulogic_vector(31 downto 0); -- ALU address result
   signal alu_cmp     : std_ulogic_vector(1 downto 0);  -- comparator result
   signal alu_cp_done : std_ulogic;                     -- ALU co-processor operation done
-  signal lsu_rdata   : std_ulogic_vector(31 downto 0); -- LSU memory read data
+  signal lsu_rdata   : std_ulogic_vector(63 downto 0); -- LSU memory read data
   signal lsu_mar     : std_ulogic_vector(31 downto 0); -- LSU memory address register
   signal lsu_err     : std_ulogic_vector(3 downto 0);  -- LSU alignment/access errors
   signal lsu_wait    : std_ulogic;                     -- wait for current data bus access
-  signal csr_rdata   : std_ulogic_vector(31 downto 0); -- CSR read data
+  signal csr_rdata   : std_ulogic_vector(63 downto 0); -- CSR read data
   signal irq_machine : std_ulogic_vector(2 downto 0);  -- RISC-V standard machine-level interrupts
   signal trace       : trace_port_t;                   -- execution trace port
+  signal pc_buff     : std_ulogic_vector(63 downto 0); -- ctrl.pc_ret buffer
 
   -- external CSR interface read-back --
   signal xcsr_tm, xcsr_cnt, xcsr_pmp, xcsr_alu, xcsr_res : std_ulogic_vector(31 downto 0);
@@ -162,6 +176,7 @@ begin
       sel_string_f(riscv_b_c,           "b",          "" ) &
       sel_string_f(RISCV_ISA_C,         "c",          "" ) &
       sel_string_f(RISCV_ISA_M,         "m",          "" ) &
+      sel_string_f(RISCV_ISA_D,         "fd",         "" ) &
       sel_string_f(RISCV_ISA_U,         "u",          "" ) &
       sel_string_f(true,                "x",          "" ) & -- always enabled
       sel_string_f(RISCV_ISA_Zaamo,     "_zaamo",     "" ) &
@@ -267,6 +282,7 @@ begin
     RISCV_ISA_C         => RISCV_ISA_C,         -- compressed extension
     RISCV_ISA_E         => RISCV_ISA_E,         -- embedded RF extension
     RISCV_ISA_M         => RISCV_ISA_M,         -- mul/div extension
+    RISCV_ISA_D         => RISCV_ISA_D,         -- 32- and 64-bit floating-point extension
     RISCV_ISA_U         => RISCV_ISA_U,         -- user mode extension
     RISCV_ISA_Zaamo     => RISCV_ISA_Zaamo,     -- atomic read-modify-write operations extension
     RISCV_ISA_Zalrsc    => RISCV_ISA_Zalrsc,    -- atomic reservation-set operations extension
@@ -314,8 +330,8 @@ begin
     alu_cp_done_i => alu_cp_done, -- ALU iterative operation done
     alu_cmp_i     => alu_cmp,     -- comparator status
     alu_add_i     => alu_add,     -- ALU address result
-    rf_rs1_i      => rs1,         -- register file source 1
-    csr_rdata_o   => csr_rdata,   -- CSR read data
+    rf_rs1_i      => rs1(31 downto 0),         -- register file source 1
+    csr_rdata_o   => csr_rdata(31 downto 0),   -- CSR read data
     xcsr_rdata_i  => xcsr_res,    -- external CSR read data
     -- interrupts --
     irq_dbg_i     => dbi_i,       -- debug mode (halt) request
@@ -326,6 +342,8 @@ begin
     lsu_mar_i     => lsu_mar,     -- memory address register
     lsu_err_i     => lsu_err      -- alignment/access errors
   );
+
+  csr_rdata(63 downto 32) <= (others => '0');
 
   -- RISC-V machine interrupts --
   irq_machine <= mei_i & mti_i & msi_i;
@@ -415,20 +433,78 @@ begin
     rstn_i     => rstn_i,
     zero_i     => ctrl.rf_zero,
     -- write port (rd) --
-    rd_we_i    => ctrl.rf_wb_en,
+    rd_we_i    => rf_we_int,
     rd_addr_i  => ctrl.rf_rd,
-    rd_data_i  => rf_wdata,
+    rd_data_i  => rf_wdata(31 downto 0),
     -- read port 1 (rs1) --
     rs1_addr_i => ctrl.rf_rs1,
-    rs1_data_o => rs1,
+    rs1_data_o => rs1_int(31 downto 0),
     -- read port 1 (rs2) --
     rs2_addr_i => ctrl.rf_rs2,
-    rs2_data_o => rs2
+    rs2_data_o => rs2_int(31 downto 0)
   );
 
-  -- all buses are zero unless there is an according operation --
-  rf_wdata <= alu_res or lsu_rdata or csr_rdata or ctrl.pc_ret;
+  rs1_int(63 downto 32) <= (others => '0');
+  rs2_int(63 downto 32) <= (others => '0');
 
+  cpu_regfile_fpu_enabled:
+  if RISCV_ISA_D generate
+    cpu_regfile_fpu_inst : neorv32_cpu_regfile_double
+    generic map (
+      AWIDTH     => rf_awidth_c,
+      ARCHSEL    => CPU_RF_ARCH_SEL
+    )
+    port map (
+      -- global control --
+      clk_i      => clk_i,
+      rstn_i     => rstn_i,
+      -- write port (rd) --
+      rd_we_i    => rf_we_dbl,
+      rd_addr_i  => ctrl.rf_rd,
+      rd_data_i  => rf_wdata,
+      -- read port 1 (rs1) --
+      rs1_addr_i => ctrl.rf_rs1,
+      rs1_data_o => rs1_dbl,
+      -- read port 1 (rs2) --
+      rs2_addr_i => ctrl.rf_rs2,
+      rs2_data_o => rs2_dbl,
+      -- read port 1 (rs3) --
+      rs3_addr_i => ctrl.ir_funct12(11 downto 7),
+      rs3_data_o => rs3
+    );
+
+    rf_state  <= RF_INT when ctrl.rf_int = '1' else
+                 RF_D_MEM when ctrl.rf_d_mem = '1' or ctrl.rf_f_mem = '1' or ctrl.rf_d_cvt = '1' else
+                 RF_D_ALU when ctrl.rf_d_alu = '1' else
+                 RF_D_INT when ctrl.rf_d_int = '1' else rf_state;
+
+    rf_we_int <= ctrl.rf_wb_en when rf_state = RF_INT or rf_state = RF_D_INT else '0';
+    rf_we_dbl <= ctrl.rf_wb_en when rf_state = RF_D_MEM or rf_state = RF_D_ALU else '0';
+
+    rs1       <= rs1_dbl when rf_state = RF_D_ALU or
+                              rf_state = RF_D_INT else rs1_int;
+
+    rs2       <= rs2_dbl when rf_state = RF_D_MEM or
+                              rf_state = RF_D_ALU or
+                              rf_state = RF_D_INT else rs2_int;
+
+  end generate;
+
+  cpu_regfile_fpu_disabled:
+  if not RISCV_ISA_D generate
+
+    rf_we_int <= ctrl.rf_wb_en;
+    rs1       <= rs1_int;
+    rs2       <= rs2_int;
+    rs3       <= (others => '0');
+
+  end generate;
+
+  -- all buses are zero unless there is an according operation --
+  rf_wdata <= alu_res or lsu_rdata or csr_rdata or pc_buff;
+
+  pc_buff(31 downto 0)  <= ctrl.pc_ret;
+  pc_buff(63 downto 32) <= (others => '0');
 
   -- Arithmetic/Logic Unit (ALU) and ALU Co-Processors --------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -436,6 +512,7 @@ begin
   generic map (
     -- RISC-V ISA Extensions --
     RISCV_ISA_M      => RISCV_ISA_M,       -- mul/div extension
+    RISCV_ISA_D      => RISCV_ISA_D,
     RISCV_ISA_Zba    => RISCV_ISA_Zba,     -- address-generation instruction
     RISCV_ISA_Zbb    => RISCV_ISA_Zbb,     -- basic bit-manipulation instruction
     RISCV_ISA_Zbc    => RISCV_ISA_Zbc,     -- carry-less multiplication instructions
@@ -466,6 +543,7 @@ begin
     -- data input --
     rs1_i  => rs1,        -- rf source 1
     rs2_i  => rs2,        -- rf source 2
+    rs3_i  => rs3,        -- rf source 3
     -- data output --
     cmp_o  => alu_cmp,    -- comparator status
     res_o  => alu_res,    -- ALU result
@@ -552,9 +630,9 @@ begin
       rstn_i      => rstn_i,        -- global reset, low-active, async
       ctrl_i      => ctrl,          -- main control bus
       -- operands --
-      rs1_rdata_i => rs1,           -- rs1 read data
-      rs2_rdata_i => rs2,           -- rs2 read data
-      rd_wdata_i  => rf_wdata,      -- rd write data
+      rs1_rdata_i => rs1(31 downto 0),           -- rs1 read data
+      rs2_rdata_i => rs2(31 downto 0),           -- rs2 read data
+      rd_wdata_i  => rf_wdata(31 downto 0),      -- rd write data
       mem_ben_i   => dbus_req.ben,  -- memory byte-enable
       mem_addr_i  => dbus_req.addr, -- memory address
       mem_wdata_i => dbus_req.data, -- memory write data

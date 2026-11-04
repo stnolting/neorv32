@@ -19,6 +19,7 @@ entity neorv32_cpu_alu is
   generic (
     -- RISC-V ISA Extensions --
     RISCV_ISA_M      : boolean; -- mul/div extension
+    RISCV_ISA_D      : boolean;
     RISCV_ISA_Zba    : boolean; -- address-generation instruction
     RISCV_ISA_Zbb    : boolean; -- basic bit-manipulation instruction
     RISCV_ISA_Zbc    : boolean; -- carry-less multiplication instructions
@@ -47,11 +48,12 @@ entity neorv32_cpu_alu is
     rstn_i : in  std_ulogic; -- global reset, low-active, async
     ctrl_i : in  ctrl_bus_t; -- main control bus
     -- data input --
-    rs1_i  : in  std_ulogic_vector(31 downto 0); -- register source 1
-    rs2_i  : in  std_ulogic_vector(31 downto 0); -- register source 2
+    rs1_i  : in  std_ulogic_vector(63 downto 0); -- register source 1
+    rs2_i  : in  std_ulogic_vector(63 downto 0); -- register source 2
+    rs3_i  : in  std_ulogic_vector(63 downto 0); -- register source 3
     -- data output --
     cmp_o  : out std_ulogic_vector(1 downto 0);  -- comparator status
-    res_o  : out std_ulogic_vector(31 downto 0); -- ALU result
+    res_o  : out std_ulogic_vector(63 downto 0); -- ALU result
     add_o  : out std_ulogic_vector(31 downto 0); -- address computation result
     csr_o  : out std_ulogic_vector(31 downto 0); -- CSR read data
     -- status --
@@ -78,11 +80,12 @@ architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
   end function;
 
   -- ALU core --
-  signal cmp_rs1, cmp_rs2, opa, opb, slt_opb, addsub, cp_res : std_ulogic_vector(31 downto 0);
+  signal cmp_rs1, cmp_rs2, opa, opb, slt_opb, addsub : std_ulogic_vector(31 downto 0);
+  signal cp_res : std_ulogic_vector(63 downto 0);
   signal cmp_eq, cmp_lt, slt : std_ulogic;
 
   -- co-processor interface --
-  type cp_data_t  is array (6 downto 0) of std_ulogic_vector(31 downto 0);
+  type cp_data_t  is array (6 downto 0) of std_ulogic_vector(63 downto 0);
   signal cp_result : cp_data_t;
   signal cp_valid : std_ulogic_vector(6 downto 0);
   signal cfu_inst : std_ulogic_vector(31 downto 0);
@@ -100,7 +103,7 @@ begin
 
   zibi_enabled:
   if RISCV_ISA_Zibi generate
-    cmp_o(0) <= zibi_cmp_f(ctrl_i.rf_rs2, rs1_i) when (ctrl_i.ir_funct3(2 downto 1) = "01") else cmp_eq;
+    cmp_o(0) <= zibi_cmp_f(ctrl_i.rf_rs2, rs1_i(31 downto 0)) when (ctrl_i.ir_funct3(2 downto 1) = "01") else cmp_eq;
     cmp_o(1) <= cmp_lt;
   end generate;
 
@@ -116,20 +119,21 @@ begin
     res_o <= (others => '0');
     case ctrl_i.alu_op is
       when alu_op_zero_c => res_o <= (others => '0');
-      when alu_op_add_c  => res_o <= addsub;
+      when alu_op_add_c  => res_o(31 downto 0) <= addsub; res_o(63 downto 32) <= (others => '0');
       when alu_op_cp_c   => res_o <= cp_res;
-      when alu_op_slt_c  => res_o <= x"0000000" & "000" & slt;
-      when alu_op_movb_c => res_o <= opb;
-      when alu_op_xor_c  => res_o <= opb xor rs1_i;
-      when alu_op_or_c   => res_o <= opb or  rs1_i;
-      when alu_op_and_c  => res_o <= opb and rs1_i;
+      when alu_op_slt_c  => res_o(31 downto 0) <= x"0000000" & "000" & slt; res_o(63 downto 32) <= (others => '0');
+      when alu_op_movb_c => res_o(31 downto 0) <= opb; res_o(63 downto 32) <= (others => '0');
+      when alu_op_xor_c  => res_o(31 downto 0) <= opb xor rs1_i(31 downto 0); res_o(63 downto 32) <= (others => '0');
+      when alu_op_or_c   => res_o(31 downto 0) <= opb or  rs1_i(31 downto 0); res_o(63 downto 32) <= (others => '0');
+      when alu_op_and_c  => res_o(31 downto 0) <= opb and rs1_i(31 downto 0); res_o(63 downto 32) <= (others => '0');
       when others        => res_o <= (others => 'X'); -- undefined
     end case;
   end process;
 
   -- operands --
-  opa <= ctrl_i.pc_cur  when (ctrl_i.alu_opa_mux = '1') else rs1_i;
-  opb <= ctrl_i.alu_imm when (ctrl_i.alu_opb_mux = '1') else rs2_i;
+  opa <= ctrl_i.pc_cur  when (ctrl_i.alu_opa_mux = '1' and ctrl_i.alu_opad_mux = '0') else
+         x"00000004" when (ctrl_i.alu_opa_mux = '0' and ctrl_i.alu_opad_mux = '1') else rs1_i(31 downto 0);
+  opb <= ctrl_i.alu_imm when (ctrl_i.alu_opb_mux = '1') else rs2_i(31 downto 0);
 
   -- adder/subtractor
   addsub <= std_ulogic_vector(unsigned(opa) - unsigned(opb)) when (ctrl_i.alu_sub = '1') else
@@ -160,12 +164,14 @@ begin
     rstn_i  => rstn_i,          -- global reset, low-active, async
     ctrl_i  => ctrl_i,          -- main control bus
     -- data input --
-    rs1_i   => rs1_i,           -- register source 1
+    rs1_i   => rs1_i(31 downto 0),           -- register source 1
     shamt_i => opb(4 downto 0), -- shift amount
     -- result and status --
-    res_o   => cp_result(0),    -- operation result
+    res_o   => cp_result(0)(31 downto 0),    -- operation result
     valid_o => cp_valid(0)      -- data output valid
   );
+
+  cp_result(0)(63 downto 32)  <= (others => '0');
 
   -- ALU-Opcode Co-Processor: Integer Multiplication/Division Unit (M ISA Extension) --------
   -- -------------------------------------------------------------------------------------------
@@ -183,12 +189,14 @@ begin
       rstn_i  => rstn_i,       -- global reset, low-active, async
       ctrl_i  => ctrl_i,       -- main control bus
       -- data input --
-      rs1_i   => rs1_i,        -- register source 1
-      rs2_i   => rs2_i,        -- register source 2
+      rs1_i   => rs1_i(31 downto 0),        -- register source 1
+      rs2_i   => rs2_i(31 downto 0),        -- register source 2
       -- result and status --
-      res_o   => cp_result(1), -- operation result
+      res_o   => cp_result(1)(31 downto 0), -- operation result
       valid_o => cp_valid(1)   -- data output valid
     );
+
+    cp_result(1)(63 downto 32)  <= (others => '0');
   end generate;
 
   cpu_alu_muldiv_disabled:
@@ -219,13 +227,15 @@ begin
       ctrl_i  => ctrl_i,          -- main control bus
       -- data input --
       less_i  => cmp_lt,          -- compare less
-      rs1_i   => rs1_i,           -- register source 1
-      rs2_i   => rs2_i,           -- register source 2
+      rs1_i   => rs1_i(31 downto 0),           -- register source 1
+      rs2_i   => rs2_i(31 downto 0),           -- register source 2
       shamt_i => opb(4 downto 0), -- shift amount
       -- result and status --
-      res_o   => cp_result(2),    -- operation result
+      res_o   => cp_result(2)(31 downto 0),    -- operation result
       valid_o => cp_valid(2)      -- data output valid
     );
+
+    cp_result(2)(63 downto 32)  <= (others => '0');
   end generate;
 
   cpu_alu_bitmanip_disabled:
@@ -255,8 +265,38 @@ begin
       -- data input --
       equal_i     => cmp_eq,                      -- compare equal
       less_i      => cmp_lt,                      -- compare less
+      rs1_i       => rs1_i(31 downto 0),          -- register source 1
+      rs2_i       => rs2_i(31 downto 0),          -- register source 2
+      -- result and status --
+      res_o       => cp_result(3)(31 downto 0),   -- operation result
+      valid_o     => cp_valid(3)                  -- data output valid
+    );
+
+    -- CSR proxy --
+    fpu_csr_en <= '1' when (ctrl_i.csr_addr(11 downto 2) = csr_fflags_c(11 downto 2)) else '0';
+    fpu_csr_we <= fpu_csr_en and ctrl_i.csr_we;
+    csr_o      <= fpu_csr_rd when (fpu_csr_en = '1') else (others => '0');
+
+    cp_result(3)(63 downto 32)  <= (others => '0');
+  end generate;
+
+  cpu_alu_fpu64_enabled:
+  if RISCV_ISA_D generate
+    cpu_alu_fpu64_inst: entity neorv32.neorv32_cpu_alu_fpu64
+    port map (
+      -- global control --
+      clk_i       => clk_i,                       -- global clock, rising edge
+      rstn_i      => rstn_i,                      -- global reset, low-active, async
+      ctrl_i      => ctrl_i,                      -- main control bus
+      -- CSR interface --
+      csr_we_i    => fpu_csr_we,                  -- write enable
+      csr_addr_i  => ctrl_i.csr_addr(1 downto 0), -- address
+      csr_wdata_i => ctrl_i.csr_wdata,            -- write data
+      csr_rdata_o => fpu_csr_rd,                  -- read data
+      -- data input --
       rs1_i       => rs1_i,                       -- register source 1
       rs2_i       => rs2_i,                       -- register source 2
+      rs3_i       => rs3_i,
       -- result and status --
       res_o       => cp_result(3),                -- operation result
       valid_o     => cp_valid(3)                  -- data output valid
@@ -266,10 +306,11 @@ begin
     fpu_csr_en <= '1' when (ctrl_i.csr_addr(11 downto 2) = csr_fflags_c(11 downto 2)) else '0';
     fpu_csr_we <= fpu_csr_en and ctrl_i.csr_we;
     csr_o      <= fpu_csr_rd when (fpu_csr_en = '1') else (others => '0');
+
   end generate;
 
   cpu_alu_fpu_disabled:
-  if not RISCV_ISA_Zfinx generate
+  if not RISCV_ISA_Zfinx and not RISCV_ISA_D generate
     fpu_csr_en   <= '0';
     fpu_csr_we   <= '0';
     fpu_csr_rd   <= (others => '0');
@@ -291,8 +332,8 @@ begin
       -- request
       start_i  => ctrl_i.alu_cp_cfu, -- start trigger, single-shot
       inst_i   => cfu_inst,          -- instruction word
-      rs1_i    => rs1_i,             -- register source 1
-      rs2_i    => rs2_i,             -- register source 2
+      rs1_i    => rs1_i(31 downto 0),-- register source 1
+      rs2_i    => rs2_i(31 downto 0),-- register source 2
       -- response --
       result_o => cfu_res,           -- operation result
       valid_o  => cfu_done           -- result valid, operation done
@@ -315,7 +356,8 @@ begin
           cfu_busy <= '1';
         end if;
         if (cp_valid(4) = '1') then
-          cp_result(4) <= cfu_res;
+          cp_result(4)(31 downto 0) <= cfu_res;
+          cp_result(4)(63 downto 32)  <= (others => '0');
         else -- output zero if there is no CFU operation
           cp_result(4) <= (others => '0');
         end if;
@@ -344,12 +386,14 @@ begin
       clk_i   => clk_i,        -- global clock, rising edge
       ctrl_i  => ctrl_i,       -- main control bus
       -- data input --
-      rs1_i   => rs1_i,        -- register source 1
-      rs2_i   => rs2_i,        -- register source 2
+      rs1_i   => rs1_i(31 downto 0),        -- register source 1
+      rs2_i   => rs2_i(31 downto 0),        -- register source 2
       -- result and status --
-      res_o   => cp_result(5), -- operation result
+      res_o   => cp_result(5)(31 downto 0), -- operation result
       valid_o => cp_valid(5)   -- data output valid
     );
+
+    cp_result(5)(63 downto 32)  <= (others => '0');
   end generate;
 
   cpu_alu_cond_disabled:
@@ -376,12 +420,14 @@ begin
       rstn_i  => rstn_i,       -- global reset, low-active, async
       ctrl_i  => ctrl_i,       -- main control bus
       -- data input --
-      rs1_i   => rs1_i,        -- register source 1
-      rs2_i   => rs2_i,        -- register source 2
+      rs1_i   => rs1_i(31 downto 0),        -- register source 1
+      rs2_i   => rs2_i(31 downto 0),        -- register source 2
       -- result and status --
-      res_o   => cp_result(6), -- operation result
+      res_o   => cp_result(6)(31 downto 0), -- operation result
       valid_o => cp_valid(6)   -- data output valid
     );
+
+    cp_result(6)(63 downto 32)  <= (others => '0');
   end generate;
 
   cpu_alu_crypto_disabled:
