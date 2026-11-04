@@ -58,17 +58,17 @@ architecture neorv32_trng_rtl of neorv32_trng is
   -- neoTRNG true random number generator --
   component neoTRNG
     generic (
-      NUM_CELLS     : natural range 1 to 99   := 3; -- number of ring-oscillator cells
-      NUM_INV_START : natural range 3 to 99   := 5; -- number of inverters in first ring-oscillator cell, has to be odd
-      NUM_RAW_BITS  : natural range 1 to 4096 := 64; -- number of XOR-ed raw bits per random sample byte (has to be a power of 2)
-      SIM_MODE      : boolean                 := false -- enable simulation mode (no physical random if enabled!)
+      NUM_CELLS     : natural range 1 to 255;
+      NUM_INV_START : natural range 3 to 4095;
+      NUM_RAW_BITS  : natural range 8 to 4096;
+      SIM_MODE      : boolean
     );
     port (
-      clk_i    : in  std_ulogic; -- module clock
-      rstn_i   : in  std_ulogic; -- module reset, low-active, async, optional
-      enable_i : in  std_ulogic; -- module enable (high-active)
-      valid_o  : out std_ulogic; -- data_o is valid when set
-      data_o   : out std_ulogic_vector(7 downto 0) -- random data byte output
+      clk_i    : in  std_ulogic;
+      rstn_i   : in  std_ulogic;
+      enable_i : in  std_ulogic;
+      valid_o  : out std_ulogic;
+      data_o   : out std_ulogic_vector(7 downto 0)
     );
   end component;
 

@@ -332,7 +332,7 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
 
   -- find highest bit index in port_tmo_bit_list_c to determine counter width --
   function max_tmo_bit_f(tmo_bit : port_tmo_bit_list_t) return natural is
-    variable res_v : natural;
+    variable res_v : natural range 0 to 32;
   begin
     res_v := 0;
     for i in tmo_bit'range loop

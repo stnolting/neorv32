@@ -82,9 +82,10 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 | `BOOT_ADDR_CUSTOM`    | suv(31:0) | x"00000000"   | Custom CPU boot address (available if `BOOT_MODE_SELECT` = 1).
 4+^| **<<_on_chip_debugger_ocd>>**
 | `OCD_EN`              | boolean   | false         | Implement the on-chip debugger and the CPU debug mode (<<_sdext_isa_extension>>).
+| `OCD_EXT_DTM`         | boolean   | false         | Disable the internal debug transport module (DTM) / JTAG tap and expose an interface to attach a custom <<_external_dtm>>.
 | `OCD_NUM_HW_TRIGGERS` | natural   | 0             | Number of implemented HW triggers (<<_trigger_module>> / <<_sdtrig_isa_extension>>) for hardware break-/watchpoints (0..16).
 | `OCD_AUTHENTICATION`  | boolean   | false         | Implement <<_debug_authentication>> module.
-| `OCD_JEDEC_ID`        | suv(10:0) | "00000000000" | JEDEC ID: continuation codes plus vendor ID.
+| `OCD_JEDEC_ID`        | suv(10:0) | "00000000000" | JEDEC ID: continuation codes plus vendor ID (for internal JTAG tap / DTM and <<_mvendorid>> CSR).
 4+^| **CPU <<_instruction_sets_and_extensions>>**
 | `RISCV_ISA_C`         | boolean   | false         | Enable <<_c_isa_extension>> (compressed instructions).
 | `RISCV_ISA_E`         | boolean   | false         | Enable <<_e_isa_extension>> (reduced register file size).
@@ -259,6 +260,12 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 5+^| **<<_trace_port>>**
 | `trace_cpu0_o`   |  * | out |   -   | CPU core 0 trace port (type `trace_port_t`).
 | `trace_cpu1_o`   |  * | out |   -   | CPU core 1 trace port (type `trace_port_t`).
+5+^| **<<_external_dtm>> Interface**
+| `dmi_req_op_i`   |  2 |  in |   -   | operation trigger, single-shot
+| `dmi_req_addr_i` |  7 |  in |   -   | access address
+| `dmi_req_data_i` | 32 |  in |   -   | write data
+| `dmi_rsp_data_o` | 32 | out | `'L'` | read data
+| `dmi_rsp_ack_o`  |  1 | out | `'L'` | operation acknowledge, single-shot
 5+^| **JTAG Access Port for <<_on_chip_debugger_ocd>>**
 | `jtag_tck_i`     |  1 |  in | `'L'` | serial clock
 | `jtag_tdi_i`     |  1 |  in | `'L'` | serial data input

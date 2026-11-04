@@ -24,73 +24,36 @@ int neorv32_slink_available(void) {
 
 /**********************************************************************//**
  * Reset, enable and configure SLINK.
- * @param[in] irq_mask Interrupt conditions (#NEORV32_SLINK_CTRL_enum).
+ * @param[in] rx_irq_sel RX interrupt condition (#NEORV32_SLINK_RX_IRQ_enum).
+ * @param[in] tx_irq_sel TX interrupt condition (#NEORV32_SLINK_TX_IRQ_enum).
  **************************************************************************/
-void neorv32_slink_setup(uint32_t irq_mask) {
+void neorv32_slink_setup(int rx_irq_sel, int tx_irq_sel) {
 
   NEORV32_SLINK->CTRL = 0; // reset and disable
-
-  const uint32_t mask = (1U << SLINK_CTRL_IRQ_RX_NEMPTY) |
-                        (1U << SLINK_CTRL_IRQ_RX_FULL)   |
-                        (1U << SLINK_CTRL_IRQ_TX_EMPTY)  |
-                        (1U << SLINK_CTRL_IRQ_TX_NFULL);
-
-  uint32_t tmp = (uint32_t)(1U << SLINK_CTRL_EN);
-  NEORV32_SLINK->CTRL = tmp | (irq_mask & mask);
+  uint32_t tmp = 0;
+  tmp |= (uint32_t)(1U                << SLINK_CTRL_RX_EN);
+  tmp |= (uint32_t)(1U                << SLINK_CTRL_TX_EN);
+  tmp |= (uint32_t)((rx_irq_sel & 3U) << SLINK_CTRL_RX_IRQ_SEL0);
+  tmp |= (uint32_t)((tx_irq_sel & 3U) << SLINK_CTRL_TX_IRQ_SEL0);
+  NEORV32_SLINK->CTRL = tmp;
 }
 
 /**********************************************************************//**
  * Get FIFO depth of RX link.
- * @return FIFO depth of RX link.
+ * @return FIFO depth of RX link (number of entries).
  **************************************************************************/
 int neorv32_slink_get_rx_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_SLINK->CTRL >> SLINK_CTRL_RX_FIFO_LSB) & 0x0fU;
+  uint32_t tmp = (NEORV32_SLINK->CTRL >> SLINK_CTRL_RX_FIFO_LSB) & 15U;
   return (int)(1U << tmp);
 }
 
 /**********************************************************************//**
  * Get FIFO depth of TX link.
- * @return FIFO depth of TX link.
+ * @return FIFO depth of TX link (number of entries).
  **************************************************************************/
 int neorv32_slink_get_tx_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_SLINK->CTRL >> SLINK_CTRL_TX_FIFO_LSB) & 0x0fU;
+  uint32_t tmp = (NEORV32_SLINK->CTRL >> SLINK_CTRL_TX_FIFO_LSB) & 15U;
   return (int)(1U << tmp);
-}
-
-/**********************************************************************//**
- * Check if RX FIFO is empty.
- * @return Zero if RX FIFO is not empty, non-zero if RX FIFO is empty.
- **************************************************************************/
-int neorv32_slink_rx_empty(void) {
-
-  return (int)(NEORV32_SLINK->CTRL & (1U << SLINK_CTRL_RX_EMPTY));
-}
-
-/**********************************************************************//**
- * Check if RX FIFO is full.
- * @return Zero if RX FIFO is not full, non-zero if RX FIFO is full.
- **************************************************************************/
-int neorv32_slink_rx_full(void) {
-
-  return (int)(NEORV32_SLINK->CTRL & (1U << SLINK_CTRL_RX_FULL));
-}
-
-/**********************************************************************//**
- * Check if TX FIFO is empty.
- * @return Zero if RX FIFO is not empty, non-zero if RX FIFO is empty.
- **************************************************************************/
-int neorv32_slink_tx_empty(void) {
-
-  return (int)(NEORV32_SLINK->CTRL & (1U << SLINK_CTRL_TX_EMPTY));
-}
-
-/**********************************************************************//**
- * Check if TX FIFO is full.
- * @return Zero if TX FIFO is not full, non-zero if TX FIFO is full.
- **************************************************************************/
-int neorv32_slink_tx_full(void) {
-
-  return (int)(NEORV32_SLINK->CTRL & (1U << SLINK_CTRL_TX_FULL));
 }

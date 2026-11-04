@@ -3,15 +3,14 @@
 [![release](https://img.shields.io/github/v/release/stnolting/neorv32?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/releases)
 [![commits-since-latest-release](https://img.shields.io/github/commits-since/stnolting/neorv32/latest?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/activity)
 
-This project uses [semantic versioning](https://semver.org).
-The **version identifier** uses an additional custom element (`MAJOR.MINOR.PATCH.custom`)
-to track individual changes. The identifier is incremented by every core hardware modification
-and also by major software and/or general project changes.
+The core's version identifier (`1.MAJOR.MINOR.PATCH`) is incremented with
+every hardware modification of the core and with major software or general
+project changes - it does not follow semantic versioning.
 
 The version identifier is globally defined by the `hw_version_c` constant in the main VHDL
 [package file](https://github.com/stnolting/neorv32/blob/main/rtl/core/neorv32_package.vhd).
-Software can determine the version by reading the RISC-V-compatible `mimpid` CSR, which uses
-a 8x4-bit BCD (binary-coded decimal) format to represent the current version. Example:
+Software can determine the version by reading the RISC-V-compatible `mimpid` CSR (0xf14),
+which encodes the version as 8x4-bit BCD digits:
 
 ```
 mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
@@ -25,10 +24,15 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 * :warning: changes that might impact compatibility with previous versions
 * :lock: security/safety-related
 * :rocket: official release
-* Date format is "dd.mm.yyyy"
+* Date format is dd.mm.yyyy
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 03.11.2026 | 1.13.7.5 | minor rtl fixes and cleanups | [#1667](https://github.com/stnolting/neorv32/pull/1677) |
+| 02.11.2026 | 1.13.7.4 | :bug: NEOLED: fix CTRL register address check | [#1676](https://github.com/stnolting/neorv32/pull/1676) |
+| 31.10.2026 | 1.13.7.3 | :warning: rework SLINK module | [#1675](https://github.com/stnolting/neorv32/pull/1675) |
+| 23.10.2026 | 1.13.7.2 | :warning: rework TWI module | [#1672](https://github.com/stnolting/neorv32/pull/1672) |
+| 22.10.2026 | 1.13.7.1 | add option to export DMI to attach a custom external JTAG tap | [#1671](https://github.com/stnolting/neorv32/pull/1671) |
 | 22.10.2026 | [**1.13.7**](https://github.com/stnolting/neorv32/releases/tag/v1.13.7) | :rocket: **New release** | |
 | 21.10.2026 | 1.13.6.9 | :bug: fix SLINK IRQ configuration bit positions | [#1669](https://github.com/stnolting/neorv32/pull/1669) |
 | 21.10.2026 | 1.13.6.8 | minor rtl edits and updates | [#1668](https://github.com/stnolting/neorv32/pull/1668) |

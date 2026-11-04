@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+<!-- ================================================================================ -->
+<!-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              -->
+<!-- Copyright (c) NEORV32 contributors.                                              -->
+<!-- Copyright (c) Stephan Nolting. All rights reserved.                              -->
+<!-- Licensed under the BSD-3-Clause license, see LICENSE for details.                -->
+<!-- SPDX-License-Identifier: BSD-3-Clause                                            -->
+<!-- ================================================================================ -->
+
 <device schemaVersion="1.1" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD.xsd" >
   <vendor>github.com/stnolting/neorv32</vendor>
   <name>neorv32</name>
@@ -244,14 +252,27 @@
       <registers>
         <register>
           <name>CTRL</name>
-          <description>Control register</description>
+          <description>Control and status register</description>
           <addressOffset>0x00</addressOffset>
           <fields>
             <field>
-              <name>SLINK_CTRL_EN</name>
+              <name>SLINK_CTRL_RX_EN</name>
               <bitRange>[0:0]</bitRange>
-              <description>SLINK enable flag</description>
+              <description>Enable receiver</description>
             </field>
+            <field>
+              <name>SLINK_CTRL_TX_EN</name>
+              <bitRange>[1:1]</bitRange>
+              <description>Enable transmitter</description>
+            </field>
+
+            <field>
+              <name>SLINK_CTRL_RX_LAST</name>
+              <bitRange>[4:4]</bitRange>
+              <access>read-only</access>
+              <description>Top of RX FIFO is last word of package</description>
+            </field>
+
             <field>
               <name>SLINK_CTRL_RX_EMPTY</name>
               <bitRange>[8:8]</bitRange>
@@ -259,48 +280,59 @@
               <description>RX FIFO empty</description>
             </field>
             <field>
-              <name>SLINK_CTRL_RX_FULL</name>
+              <name>SLINK_CTRL_RX_HALF</name>
               <bitRange>[9:9]</bitRange>
+              <access>read-only</access>
+              <description>RX FIFO at least half full</description>
+            </field>
+            <field>
+              <name>SLINK_CTRL_RX_FULL</name>
+              <bitRange>[10:10]</bitRange>
               <access>read-only</access>
               <description>RX FIFO full</description>
             </field>
             <field>
               <name>SLINK_CTRL_TX_EMPTY</name>
-              <bitRange>[10:10]</bitRange>
+              <bitRange>[11:11]</bitRange>
               <access>read-only</access>
               <description>TX FIFO empty</description>
             </field>
             <field>
+              <name>SLINK_CTRL_TX_HALF</name>
+              <bitRange>[12:12]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO at least half full</description>
+            </field>
+            <field>
               <name>SLINK_CTRL_TX_FULL</name>
-              <bitRange>[11:11]</bitRange>
+              <bitRange>[13:13]</bitRange>
               <access>read-only</access>
               <description>TX FIFO full</description>
             </field>
+
             <field>
-              <name>SLINK_CTRL_RX_LAST</name>
-              <bitRange>[12:12]</bitRange>
-              <description>RX link end-of-stream delimiter</description>
+              <name>SLINK_CTRL_RX_IRQ_SEL</name>
+              <bitRange>[17:16]</bitRange>
+              <description>RX interrupt select</description>
             </field>
             <field>
-              <name>SLINK_CTRL_IRQ_RX_NEMPTY</name>
-              <bitRange>[16:16]</bitRange>
-              <description>Interrupt if RX FIFO not empty</description>
+              <name>SLINK_CTRL_TX_IRQ_SEL</name>
+              <bitRange>[19:18]</bitRange>
+              <description>TX interrupt select</description>
             </field>
             <field>
-              <name>SLINK_CTRL_IRQ_RX_FULL</name>
-              <bitRange>[17:17]</bitRange>
-              <description>Interrupt if RX FIFO full</description>
+              <name>SLINK_CTRL_RX_IRQ_PEND</name>
+              <bitRange>[20:20]</bitRange>
+              <access>read-only</access>
+              <description>RX interrupt active</description>
             </field>
             <field>
-              <name>SLINK_CTRL_IRQ_TX_EMPTY</name>
-              <bitRange>[18:18]</bitRange>
-              <description>Interrupt if TX FIFO empty</description>
+              <name>SLINK_CTRL_TX_IRQ_PEND</name>
+              <bitRange>[21:21]</bitRange>
+              <access>read-only</access>
+              <description>TX interrupt active</description>
             </field>
-            <field>
-              <name>SLINK_CTRL_IRQ_TX_NFULL</name>
-              <bitRange>[19:19]</bitRange>
-              <description>Interrupt if TX FIFO not full</description>
-            </field>
+
             <field>
               <name>SLINK_CTRL_RX_FIFO</name>
               <bitRange>[27:24]</bitRange>
@@ -316,25 +348,13 @@
           </fields>
         </register>
         <register>
-          <name>ROUTE</name>
-          <description>Routing information</description>
-          <addressOffset>0x04</addressOffset>
-          <fields>
-            <field>
-              <name>SLINK_ROUTE</name>
-              <bitRange>[3:0]</bitRange>
-              <description>RX/TX stream source/destination address/ID</description>
-            </field>
-          </fields>
-        </register>
-        <register>
           <name>DATA</name>
           <description>RX/TX data register</description>
           <addressOffset>0x08</addressOffset>
           <readAction>modify</readAction>
         </register>
         <register>
-          <name>DATA_LAST</name>
+          <name>DATA2</name>
           <description>TX data register (plus TX end-of-stream delimiter)</description>
           <addressOffset>0x0c</addressOffset>
           <readAction>modify</readAction>
@@ -990,7 +1010,7 @@
             <field>
               <name>TWI_CTRL_EN</name>
               <bitRange>[0:0]</bitRange>
-              <description>TWI enable flag</description>
+              <description>TWI enable</description>
             </field>
             <field>
               <name>TWI_CTRL_PRSC</name>
@@ -1000,12 +1020,7 @@
             <field>
               <name>TWI_CTRL_CDIV</name>
               <bitRange>[7:4]</bitRange>
-              <description>TWI clock divider</description>
-            </field>
-            <field>
-              <name>TWI_CTRL_CLKSTR</name>
-              <bitRange>[8:8]</bitRange>
-              <description>Enable (allow) clock stretching</description>
+              <description>Clock divider</description>
             </field>
             <field>
               <name>TWI_CTRL_FIFO</name>
@@ -1014,22 +1029,46 @@
               <description>log2(TWI FIFO size)</description>
             </field>
             <field>
-              <name>TWI_CTRL_TX_FULL</name>
-              <bitRange>[29:29]</bitRange>
+              <name>TWI_CTRL_NACK</name>
+              <bitRange>[23:23]</bitRange>
               <access>read-only</access>
-              <description>TX FIFO full</description>
+              <description>Set if any TX transmission returned a NACK, sticky until cleared</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_NACK_CLR</name>
+              <bitRange>[24:24]</bitRange>
+              <access>write-only</access>
+              <description>Clear NACK flag TWI_CTRL_NACK</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_IRQ_CLR</name>
+              <bitRange>[25:25]</bitRange>
+              <access>write-only</access>
+              <description>Clear interrupt request</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_CLAIMED</name>
+              <bitRange>[26:26]</bitRange>
+              <access>read-only</access>
+              <description>Bus is claimed by controller</description>
             </field>
             <field>
               <name>TWI_CTRL_SENSE_SCL</name>
               <bitRange>[27:27]</bitRange>
               <access>read-only</access>
-              <description>current state of the SCL bus line</description>
+              <description>Current state of the SCL bus line</description>
             </field>
             <field>
               <name>TWI_CTRL_SENSE_SDA</name>
               <bitRange>[28:28]</bitRange>
               <access>read-only</access>
-              <description>current state of the SDA bus line</description>
+              <description>Current state of the SDA bus line</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_TX_FULL</name>
+              <bitRange>[29:29]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO full</description>
             </field>
             <field>
               <name>TWI_CTRL_RX_AVAIL</name>
@@ -1041,32 +1080,15 @@
               <name>TWI_CTRL_BUSY</name>
               <bitRange>[31:31]</bitRange>
               <access>read-only</access>
-              <description>Bus engine busy of TX FIFO not empty</description>
+              <description>Bus engine busy or TX FIFO not empty</description>
             </field>
           </fields>
         </register>
         <register>
           <name>DCMD</name>
-          <description>RX/TX data/command register</description>
+          <description>RX/TX data and command register</description>
           <addressOffset>0x04</addressOffset>
           <readAction>modify</readAction>
-          <fields>
-            <field>
-              <name>TWI_DCMD</name>
-              <bitRange>[7:0]</bitRange>
-              <description>RX/TX data</description>
-            </field>
-            <field>
-              <name>TWI_DCMD_ACK</name>
-              <bitRange>[8:8]</bitRange>
-              <description>RX = ACK/NACK, TX = MACK</description>
-            </field>
-            <field>
-              <name>TWI_DCMD_CMD</name>
-              <bitRange>[10:9]</bitRange>
-              <description>Operation command</description>
-            </field>
-          </fields>
         </register>
       </registers>
     </peripheral>
