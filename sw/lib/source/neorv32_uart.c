@@ -153,6 +153,10 @@ void neorv32_uart_vprintf(neorv32_uart_t *uartx, const char *format, va_list arg
   char c = 0;
   char string_buf[36];
   unsigned int i = 0;
+  int32_t n = 0;
+  uint32_t m = 0;
+  void *ptr = NULL;
+  uintptr_t address = 0;
 
   // prevent uninitialized stack bytes
   for (i=0; i<sizeof(string_buf); i++) {
@@ -178,8 +182,8 @@ void neorv32_uart_vprintf(neorv32_uart_t *uartx, const char *format, va_list arg
 
         case 'i': // 32-bit signed
         case 'd':
-          int32_t n  = va_arg(args, int32_t);
-          uint32_t m = (n < 0) ? (0U - (uint32_t)n) : (uint32_t)n;
+          n = va_arg(args, int32_t);
+          m = (n < 0) ? (0U - (uint32_t)n) : (uint32_t)n;
           if (n < 0) {
             neorv32_uart_putc(uartx, '-');
           }
@@ -193,10 +197,20 @@ void neorv32_uart_vprintf(neorv32_uart_t *uartx, const char *format, va_list arg
           break;
 
         case 'x': // 32-bit hexadecimal with leading zeros
-        case 'p':
           neorv32_aux_itoa(string_buf, va_arg(args, uint32_t), 16);
           i = 8 - strlen(string_buf);
-          while (i--) { // add leading zeros
+          while (i--) {
+            neorv32_uart_putc(uartx, '0');
+          }
+          neorv32_uart_puts(uartx, string_buf);
+          break;
+
+        case 'p': // 32-bit pointer with leading zeros
+          ptr = va_arg(args, void *);
+          address = (uintptr_t)ptr;
+          neorv32_aux_itoa(string_buf, (uint32_t)address, 16);
+          i = 8 - strlen(string_buf);
+          while (i--) {
             neorv32_uart_putc(uartx, '0');
           }
           neorv32_uart_puts(uartx, string_buf);
