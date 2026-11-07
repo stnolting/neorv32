@@ -1,21 +1,18 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
 
-
 /**********************************************************************//**
  * @file demo_sdi/main.c
- * @author Stephan Nolting
  * @brief SDI test program (direct access to the SDI module).
  **************************************************************************/
 
 #include <neorv32.h>
 #include <string.h>
-
 
 /**********************************************************************//**
  * @name User configuration
@@ -29,12 +26,10 @@
 void sdi_put(void);
 void sdi_get(void);
 
-
 /**********************************************************************//**
  * This program provides an interactive console for the SDI module.
  *
  * @note This program requires UART0 and the SDI to be synthesized.
- *
  * @return Irrelevant.
  **************************************************************************/
 int main() {
@@ -46,7 +41,7 @@ int main() {
   neorv32_rte_setup();
 
   // setup UART at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   // check if UART0 unit is implemented at all
   if (neorv32_uart0_available() == 0) {
@@ -100,7 +95,6 @@ int main() {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Write data to SDI TX buffer.
  **************************************************************************/
@@ -120,7 +114,6 @@ void sdi_put(void) {
   neorv32_uart0_printf("\nWriting 0x%x to SDI TX buffer...\n", tx_data);
   neorv32_sdi_put_nonblocking(tx_data);
 }
-
 
 /**********************************************************************//**
  * Read data from SDI RX buffer.

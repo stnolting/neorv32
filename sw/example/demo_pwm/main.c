@@ -1,11 +1,10 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
-
 
 /**********************************************************************//**
  * @file demo_pwm/main.c
@@ -13,7 +12,6 @@
  **************************************************************************/
 
 #include <neorv32.h>
-
 
 /**********************************************************************//**
  * @name User configuration
@@ -27,7 +25,6 @@
 #define NUM_CHANNELS 6
 /**@}*/
 
-
 /**********************************************************************//**
  * Simple bus-wait helper.
  *
@@ -37,12 +34,10 @@ void delay_ms(uint32_t time_ms) {
   neorv32_aux_delay_ms(neorv32_sysinfo_get_clk(), time_ms);
 }
 
-
 /**********************************************************************//**
  * This program generates a simple dimming sequence for PWM channels 0 to 3.
  *
  * @note This program requires the PWM controller to be synthesized (the UART is optional).
- *
  * @return !=0 if error.
  **************************************************************************/
 int main() {
@@ -55,7 +50,7 @@ int main() {
   if (neorv32_uart0_available()) {
 
     // setup UART at default baud rate, no interrupts
-    neorv32_uart0_setup(BAUD_RATE, 0);
+    neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
     // say hello
     neorv32_uart0_printf("\n<<< PWM demo program >>>\n");

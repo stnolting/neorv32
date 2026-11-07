@@ -1,11 +1,10 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
-
 
 /**********************************************************************//**
  * @file demo_emulate_unaligned/main.c
@@ -14,7 +13,6 @@
  **************************************************************************/
 
 #include <neorv32.h>
-
 
 /**********************************************************************//**
  * @name User configuration
@@ -26,18 +24,15 @@
 #define DEBUG_INFO 0
 /**@}*/
 
-
 /**********************************************************************//**
  * @name Global variables
  **************************************************************************/
 volatile uint32_t data_block[2];
 
-
 /**********************************************************************//**
  * Emulate unaligned load-word operation
  *
  * @note This is a RTE "second-level" trap handler.
- *
  * @warning Compressed load instructions are not supported here!
  **************************************************************************/
 void trap_handler_emulate_unaligned_lw(void) {
@@ -81,7 +76,6 @@ void trap_handler_emulate_unaligned_lw(void) {
   }
 }
 
-
 /**********************************************************************//**
  * Demo program to showcase RTE-based emulation of unaligned memory accesses.
  *
@@ -95,7 +89,7 @@ int main() {
   neorv32_rte_setup();
 
   // setup UART at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   // intro
   neorv32_uart0_printf("\n<<< Demo: Emulation of Unaligned Memory Accesses >>>\n");
@@ -106,7 +100,6 @@ int main() {
   neorv32_uart0_printf("\nSource data:\n");
   neorv32_uart0_printf("MEM[0x%x] = 0x%x\n", (uint32_t)&data_block[0], data_block[0]);
   neorv32_uart0_printf("MEM[0x%x] = 0x%x\n", (uint32_t)&data_block[1], data_block[1]);
-
 
   // ------------------------------------------
   // Without emulation: RTE debug handler will show an error
@@ -125,7 +118,6 @@ int main() {
   else {
     neorv32_uart0_printf("[FAILED]\n");
   }
-
 
   // ------------------------------------------
   // With emulation: operation is handled by trap_handler_emulate_unaligned_lw
@@ -147,7 +139,6 @@ int main() {
   else {
     neorv32_uart0_printf("[FAILED]\n");
   }
-
 
   neorv32_uart0_printf("\nProgram completed.\n");
   return 0;

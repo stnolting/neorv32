@@ -1,11 +1,10 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
-
 
 /**********************************************************************//**
  * @file demo_clint/main.c
@@ -24,13 +23,11 @@ void msi_irq_handler(void);
 // Week day list
 const char weekdays[7][4] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
 
-
 /**********************************************************************//**
  * This program toggles an LED at GPIO.output(0) at 1Hz and also prints and updates
  * the Unix time in human-readable format using the machine timer interrupt.
  *
  * @note This program requires the CLINT to be synthesized (and UART0 and GPIO).
- *
  * @return Should not return.
  **************************************************************************/
 int main() {
@@ -39,7 +36,7 @@ int main() {
   neorv32_rte_setup();
 
   // setup UART at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   // check if CLINT unit is implemented at all
   if (neorv32_clint_available() == 0) {
@@ -100,10 +97,8 @@ int main() {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Machine timer IRQ handler.
- *
  * @warning This function has to be of type "void xyz(void)" and must not use any interrupt attributes!
  **************************************************************************/
 void mti_irq_handler(void) {
@@ -129,10 +124,8 @@ void mti_irq_handler(void) {
   neorv32_uart0_printf("%u\n", date.seconds);
 }
 
-
 /**********************************************************************//**
  * Machine software IRQ handler.
- *
  * @warning This function has to be of type "void xyz(void)" and must not use any interrupt attributes!
  **************************************************************************/
 void msi_irq_handler(void) {

@@ -7,7 +7,7 @@
 // Setup the processor
 void platform_init(void) {
   neorv32_rte_setup();
-  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 }
 
 // Simple busy-wait delay function

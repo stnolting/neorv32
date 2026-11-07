@@ -1,11 +1,10 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
-
 
 /**********************************************************************//**
  * @file demo_dma/main.c
@@ -13,7 +12,6 @@
  **************************************************************************/
 
 #include <neorv32.h>
-
 
 /**********************************************************************//**
  * @name User configuration
@@ -30,12 +28,10 @@ volatile uint32_t dma_src[4], dma_dst[4];
 void show_arrays(void);
 void dma_firq_handler(void);
 
-
 /**********************************************************************//**
  * Simple demo program to showcase the NEORV32 DMA controller.
  *
  * @note This program requires UART0 and the DMA controller to be synthesized.
- *
  * @return Irrelevant.
  **************************************************************************/
 int main() {
@@ -46,7 +42,7 @@ int main() {
   neorv32_rte_setup();
 
   // setup UART at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   // intro
   neorv32_uart0_printf("\n<<< DMA Controller Demo Program >>>\n\n");
@@ -80,7 +76,6 @@ int main() {
   dma_dst[3] = 0;
 
   asm volatile ("fence"); // flush caches
-
 
   // ----------------------------------------------------------
   // example 1
@@ -133,7 +128,6 @@ int main() {
   }
   show_arrays();
 
-
   // ----------------------------------------------------------
   // example 2
   // ----------------------------------------------------------
@@ -184,7 +178,6 @@ int main() {
   }
   show_arrays();
 
-
   // ----------------------------------------------------------
   // example 3
   // ----------------------------------------------------------
@@ -221,7 +214,6 @@ int main() {
       break;
     }
   }
-
 
   // ----------------------------------------------------------
   // example 4
@@ -275,7 +267,6 @@ int main() {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Print test data arrays
  **************************************************************************/
@@ -290,10 +281,8 @@ void show_arrays(void) {
   neorv32_uart0_printf("---------------------------\n");
 }
 
-
 /**********************************************************************//**
  * DMA FIRQ handler.
- *
  * @warning This function has to be of type "void xyz(void)" and must not use any interrupt attributes!
  **************************************************************************/
 void dma_firq_handler(void) {
