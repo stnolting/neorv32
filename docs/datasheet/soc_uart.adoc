@@ -21,23 +21,26 @@
 **Key Features**
 
 * Independent receiver (RX) and transmitter (TX)
-* Fixed format: 8 data bits, 1 stop bit, no parity bit (8N1)
-* Programmable baud rate
-* Optional RX/TX FIFO buffer
-* Optional RTS/CTS hardware flow-control
-* Interrupt based on RX and TX FIFO status
+* Fixed frame format: 8 data bits, no parity, and 1 stop bit (8N1)
+* Software-configurable baud rate
+* Independently configurable RX and TX FIFO depths
+* Optional RTS/CTS hardware flow control
+* Programmable RX and TX FIFO status interrupt conditions
+* RX FIFO overflow indication
+* RX start-bit and stop-bit validation
 
 
 **Overview**
 
-The NEORV32 UART provides a standard universal asynchronous serial interface with independent transmitter and
-receiver channels, each equipped with a configurable FIFO. The transmission frame is fixed to a **8-N-1** format:
-8 data bits, no parity bit, and 1 stop bit. The actual transmission baud rate is programmable via software.
-Optional RTS and CTS hardware flow control is also supported.
+The NEORV32 UART provides an asynchronous serial interface with independent transmitter and receiver channels.
+Each channel has a configurable FIFO. The frame format is fixed to **8N1**: one start bit, eight data bits, no
+parity bit, and one stop bit.
 
-The modules provides three memory-mapped registers: A control and status register (`CTRL`), a register to
-configure the tranmissionÄ's baud rate (`BAUD`) and a data register for reading receive data and sending
-transmit data (`DATA`).
+The UART provides three memory-mapped registers:
+
+* `CTRL`: control, status, and interrupt configuration
+* `BAUD`: baud-rate configuration
+* `DATA`: receive and transmit data
 
 .C Standard Console
 [NOTE]
@@ -48,12 +51,10 @@ is used to implement C's `stdio` standard consoles `STDIN`, `STDOUT` and `STDERR
 
 **Theory of Operation**
 
-The receiver and transmitter channels are individually enabled by the `UART_CTRL_RX_EN` and `UART_CTRL_TX_EN`
-control register flags. Clearing any of those flags will immediately terminate any receive/transmission operations
-and will also clear the according RX/TX FIFO including any pending interrupts.
-
-The transmission baud rate is configured by a 10-bit baud divisor (`baud_div`) and a 3-bit clock prescaler select
-(`clock_prescaler`). Both values are programmed via the `BAUD` register.
+The receiver and transmitter are enabled independently using `UART_CTRL_RX_EN` and `UART_CTRL_TX_EN`. Clearing
+either bit terminates the corresponding operation and clears its FIFO. The corresponding channel can no longer
+trigger an while disabled. The baud rate is configured through the 10-bit (`baud_div`) and 3-bit clock prescaler
+select (`clock_prescaler`) fields in the BAUD register.
 
 .UART0 Clock Configuration
 [cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
@@ -67,32 +68,45 @@ The transmission baud rate is configured by a 10-bit baud divisor (`baud_div`) a
 _**Actual baud rate**_ = (_f~main~[Hz]_ / `clock_prescaler`) / (`baud_div` + 1)
 ****
 
-A new TX transmission is triggered by writing to the `DATA` register. Vice versa, available RX data can be read
-from the `DATA` register. The `DATA` register is transparently buffered by the configurable RX and TX FIFOs.
-The control register provides flags to check the RX and TX FIFO status ("empty", "at least half full", and "full").
-The FIFO sized are configured by the according top generics: `IO_UART0_RX_FIFO` and `IO_UART0_TX_FIFO`.
-Software can determine the configured sizes via the `UART_CTRL_*X_FIFO` control register bits.
+The achievable baud rate is limited by the available prescalers and the 10-bit divisor. Select the configuration
+according to the required baud-rate accuracy.
+
+Writing `DATA` submits a byte to the TX FIFO. Before writing, software should check that `UART_CTRL_TX_FULL` is
+clear. Reading `DATA` retrieves a byte from the RX FIFO; software should first check that `UART_CTRL_RX_EMPTY` is
+clear. `UART_CTRL_TX_BUSY` remains set while the TX FIFO is not empty or the transmitter is active. Use this flag
+when software needs to wait until a transmission has completed.
+
+The FIFO depths are configured using the `IO_UART0_RX_FIFO` and `IO_UART0_TX_FIFO` generics. Software can determine
+the configured depths from the `UART_CTRL_RX_FIFO` and `UART_CTRL_TX_FIFO` fields in `CTRL`.
 
 
 **RTS/CTS Hardware Flow Control**
 
-Hardware flow control using the standard low-active CTSn (`uart0_ctsn_i`, "clear to send") and RTSn
-(`uart0_rtsn_o`, "ready to send" / "ready to receive") can be enabled by the `UART_CTRL_CTS_EN` and
-`UART_CTRL_RTS_EN` control register bit.
+Hardware flow control uses the active-low CTSn input (`uart0_ctsn_i`) and RTSn output (`uart0_rtsn_o`). CTS and RTS
+are enabled independently using `UART_CTRL_CTS_EN` and `UART_CTRL_RTS_EN`. When CTS flow control is enabled, the
+transmitter waits for CTSn to be low before starting a new frame. When the receiver and RTS flow control are enabled,
+RTSn is low while the RX FIFO is less than half full. RTSn becomes high when the FIFO is at least half full.
+When RTS flow control is disabled, RTSn is low while the receiver is enabled. RTSn is high when the receiver is disabled.
 
-If `UART_CTRL_CTS_EN` is set, the transmitter will not start a new transmission until the `uart0_ctsn_i`
-signal goes low. Vice versa, the receiver will keep `uart0_rtsn_o` low as long the RX FIFO is not at least
-half empty if `UART_CTRL_RTS_EN` is set. `uart0_rtsn_o` is always low if CTS hardware flow-control is
-disabled. It is always high if the receiver is entirely disabled.
+
+**Error Checks**
+
+The receiver validates the start and stop bits of each frame. If the sampled start bit is no longer low, reception is
+aborted. If the sampled stop bit is not high, the received frame is discarded and is not written to the RX FIFO. The
+UART does not provide a separate framing-error flag or per-byte error bits.
+
+`UART_CTRL_RX_OVER` indicates that a write to a full RX FIFO occurred. The flag remains set while the FIFO remains
+full and is cleared automatically when FIFO space becomes available or when the receiver is disabled.
 
 
 **UART Interrupt**
 
-The UART module provides a single interrupt that can be used to signal certain RX/TX (FIFO) conditions,
-which are programmed individually for the receiver and the transmitter using the 2-bit `UART_CTRL_RX_IRQ_SEL`
-and `UART_CTRL_TX_IRQ_SEL` control register bits. As soon as **any** programmed interrupt condition matches,
-theCPU interrupt is triggered. The software can determine the actual cause of the interrupt using the
-`UART_CTRL_RX_IRQ_PEND` and `UART_CTRL_TX_IRQ_PEND` flags.
+The UART provides one combined CPU interrupt. RX and TX interrupt conditions are selected independently using the
+two-bit `UART_CTRL_RX_IRQ_SEL` and `UART_CTRL_TX_IRQ_SEL` fields. The interrupt is level-sensitive: it remains asserted
+while an enabled channel has a matching condition. The `UART_CTRL_RX_IRQ_PEND` and `UART_CTRL_TX_IRQ_PEND` flags report
+the current selected conditions. The CPU interrupt is gated by the corresponding RX or TX enable bits.
+An interrupt handler must remove the condition or disable the corresponding interrupt selection to prevent repeated
+interrupts. In particular, a TX idle or TX not-full condition can be true immediately after configuration
 
 .UART RX/TX Interrupt Trigger Select (and provided bit field C-macros)
 [cols="^1,^6,^6"]
@@ -108,8 +122,10 @@ theCPU interrupt is triggered. The software can determine the actual cause of th
 
 **Simulation Mode**
 
-Simulation mode allows to redirect TX data to the simulator console instead of sending it via the
-physical `uart0_txd_o` line. Simulation mode is enabled by setting the `UART_CTRL_TX_SIM_EN` bit.
+TX simulation mode redirects writes to the simulator console instead of transmitting them through the physical
+TX interface. Set `UART_CTRL_TX_SIM_EN` to enable this mode in simulation. The bit cannot be enabled in
+synthesized hardware. In simulation mode, carriage returns are ignored and a line feed flushes the accumulated
+output line to the simulator console.
 
 
 **Register Map**
