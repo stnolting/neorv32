@@ -79,16 +79,14 @@ void neorv32_uart_setup(neorv32_uart_t *uartx, uint32_t baud, int rx_irq, int tx
   tmp |= (uint32_t)(tx_irq & 3U) << UART_CTRL_TX_IRQ_SEL0; // TX interrupt trigger
 
 #ifdef UART0_SIM_MODE
-#warning UART0_SIM_MODE (primary UART) enabled! \
-Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter.
+#warning UART0 TX simulation mode enabled!
   if (((uint32_t)uartx) == NEORV32_UART0_BASE) {
     tmp |= 1U << UART_CTRL_TX_SIM_EN;
   }
 #endif
 
 #ifdef UART1_SIM_MODE
-#warning UART1_SIM_MODE (secondary UART) enabled! \
-Sending all UART1.TX data to text.io simulation output instead of real UART1 transmitter.
+#warning UART1 TX simulation mode enabled!
   if (((uint32_t)uartx) == NEORV32_UART1_BASE) {
     tmp |= 1U << UART_CTRL_TX_SIM_EN;
   }
