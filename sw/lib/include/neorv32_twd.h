@@ -73,8 +73,6 @@ void    neorv32_twd_setup(int device_addr, int fsel, uint32_t irq_mask);
 void    neorv32_twd_irq_config(int enable, uint32_t irq_mask);
 int     neorv32_twd_get_rx_fifo_depth(void);
 int     neorv32_twd_get_tx_fifo_depth(void);
-void    neorv32_twd_disable(void);
-void    neorv32_twd_enable(void);
 void    neorv32_twd_clear_rx(void);
 void    neorv32_twd_clear_tx(void);
 int     neorv32_twd_com_state(void);

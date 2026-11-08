@@ -58,8 +58,6 @@ enum NEORV32_SDI_CTRL_enum {
 /**@{*/
 int     neorv32_sdi_available(void);
 void    neorv32_sdi_setup(uint32_t irq_mask);
-void    neorv32_sdi_disable(void);
-void    neorv32_sdi_enable(void);
 int     neorv32_sdi_get_fifo_depth(void);
 void    neorv32_sdi_put(uint8_t data);
 uint8_t neorv32_sdi_get(void);

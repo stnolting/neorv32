@@ -19,24 +19,7 @@
  **************************************************************************/
 int neorv32_neoled_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_NEOLED));
-}
-
-
-/**********************************************************************//**
- * Enable NEOLED controller.
- **************************************************************************/
-void neorv32_neoled_enable(void) {
-
-  __MMREG32_BSET(NEORV32_NEOLED->CTRL, 1U << NEOLED_CTRL_EN);
-}
-
-/**********************************************************************//**
- * Disable NEOLED controller.
- **************************************************************************/
-void neorv32_neoled_disable(void) {
-
-  __MMREG32_BCLR(NEORV32_NEOLED->CTRL, 1U << NEOLED_CTRL_EN);
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_IO_NEOLED) & 1U);
 }
 
 /**********************************************************************//**

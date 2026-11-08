@@ -69,7 +69,7 @@ int main() {
                        "Type 'help' to see the help menu.\n\n");
 
   // disable and reset SPI module
-  neorv32_spi_disable();
+  NEORV32_SPI->CTRL = 0;
   spi_configured = 0; // SPI not configured yet
 
 

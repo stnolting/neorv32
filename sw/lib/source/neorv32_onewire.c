@@ -77,22 +77,6 @@ int neorv32_onewire_setup(uint32_t t_base) {
 }
 
 /**********************************************************************//**
- * Enable ONEWIRE controller.
- **************************************************************************/
-void neorv32_onewire_enable(void) {
-
-  __MMREG32_BSET(NEORV32_ONEWIRE->CTRL, 1U << ONEWIRE_CTRL_EN);
-}
-
-/**********************************************************************//**
- * Disable ONEWIRE controller.
- **************************************************************************/
-void neorv32_onewire_disable(void) {
-
-  __MMREG32_BCLR(NEORV32_ONEWIRE->CTRL, 1U << ONEWIRE_CTRL_EN);
-}
-
-/**********************************************************************//**
  * Clear RTX FIFO.
  **************************************************************************/
 void neorv32_onewire_flush(void) {

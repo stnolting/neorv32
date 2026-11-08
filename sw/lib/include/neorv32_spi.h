@@ -70,8 +70,6 @@ enum NEORV32_SPI_DATA_enum {
 int      neorv32_spi_available(void);
 void     neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity);
 uint32_t neorv32_spi_get_clock_speed(void);
-void     neorv32_spi_disable(void);
-void     neorv32_spi_enable(void);
 int      neorv32_spi_get_fifo_depth(void);
 void     neorv32_spi_cs_en(int cs);
 void     neorv32_spi_cs_dis(void);

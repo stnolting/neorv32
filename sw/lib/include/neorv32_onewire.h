@@ -75,8 +75,6 @@ enum NEORV32_ONEWIRE_DCMD_enum {
 int     neorv32_onewire_available(void);
 int     neorv32_onewire_get_fifo_depth(void);
 int     neorv32_onewire_setup(uint32_t t_base);
-void    neorv32_onewire_enable(void);
-void    neorv32_onewire_disable(void);
 void    neorv32_onewire_flush(void);
 int     neorv32_onewire_sense(void);
 int     neorv32_onewire_busy(void);

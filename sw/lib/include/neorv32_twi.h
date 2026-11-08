@@ -71,8 +71,6 @@ int      neorv32_twi_available(void);
 void     neorv32_twi_setup(int prsc, int cdiv);
 uint32_t neorv32_twi_get_fifo_depth(void);
 uint32_t neorv32_twi_get_clock(void);
-void     neorv32_twi_disable(void);
-void     neorv32_twi_enable(void);
 int      neorv32_twi_sense_scl(void);
 int      neorv32_twi_sense_sda(void);
 int      neorv32_twi_claimed(void);

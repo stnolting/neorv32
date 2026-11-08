@@ -60,22 +60,6 @@ uint32_t neorv32_spi_get_clock_speed(void) {
 }
 
 /**********************************************************************//**
- * Disable SPI controller.
- **************************************************************************/
-void neorv32_spi_disable(void) {
-
-  __MMREG32_BCLR(NEORV32_SPI->CTRL, 1U << SPI_CTRL_EN);
-}
-
-/**********************************************************************//**
- * Enable SPI controller.
- **************************************************************************/
-void neorv32_spi_enable(void) {
-
-  __MMREG32_BSET(NEORV32_SPI->CTRL, 1U << SPI_CTRL_EN);
-}
-
-/**********************************************************************//**
  * Get SPI FIFO depth.
  * @return FIFO depth (number of entries), zero if no FIFO implemented
  **************************************************************************/
