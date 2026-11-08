@@ -115,7 +115,7 @@ void neorv32_neoled_setup_ws2812(void) {
 void neorv32_neoled_strobe_blocking(void) {
 
   // wait for FIFO full flag to clear
-  while (NEORV32_NEOLED->CTRL & (1U << NEOLED_CTRL_TX_FULL));
+  while ((NEORV32_NEOLED->CTRL >> NEOLED_CTRL_TX_FULL) & 1U);
   NEORV32_NEOLED->STROBE = 0; // just write any data
 }
 
@@ -134,7 +134,7 @@ void neorv32_neoled_strobe_nonblocking(void) {
 void neorv32_neoled_write32_blocking(uint32_t data) {
 
   // wait for FIFO full flag to clear
-  while (NEORV32_NEOLED->CTRL & (1U << NEOLED_CTRL_TX_FULL));
+  while ((NEORV32_NEOLED->CTRL >> NEOLED_CTRL_TX_FULL) & 1U);
   NEORV32_NEOLED->DATA32 = data;
 }
 
@@ -154,7 +154,7 @@ void neorv32_neoled_write32_nonblocking(uint32_t data) {
 void neorv32_neoled_write24_blocking(uint32_t data) {
 
   // wait for FIFO full flag to clear
-  while (NEORV32_NEOLED->CTRL & (1U << NEOLED_CTRL_TX_FULL));
+  while ((NEORV32_NEOLED->CTRL >> NEOLED_CTRL_TX_FULL) & 1U);
   NEORV32_NEOLED->DATA24 = data;
 }
 
@@ -183,7 +183,7 @@ int neorv32_neoled_get_fifo_depth(void) {
  **************************************************************************/
 int neorv32_neoled_fifo_full(void) {
 
-  return (int)(NEORV32_NEOLED->CTRL & (1U << NEOLED_CTRL_TX_FULL));
+  return (int)((NEORV32_NEOLED->CTRL >> NEOLED_CTRL_TX_FULL) & 1U);
 }
 
 /**********************************************************************//**
@@ -192,7 +192,7 @@ int neorv32_neoled_fifo_full(void) {
  **************************************************************************/
 int neorv32_neoled_fifo_empty(void) {
 
-  return (int)(NEORV32_NEOLED->CTRL & (1U << NEOLED_CTRL_TX_EMPTY));
+  return (int)((NEORV32_NEOLED->CTRL >> NEOLED_CTRL_TX_EMPTY) & 1U);
 }
 
 /**********************************************************************//**
@@ -201,5 +201,5 @@ int neorv32_neoled_fifo_empty(void) {
  **************************************************************************/
 int neorv32_neoled_busy(void) {
 
-  return (int)(NEORV32_NEOLED->CTRL & (1U << NEOLED_CTRL_TX_BUSY));
+  return (int)((NEORV32_NEOLED->CTRL >> NEOLED_CTRL_TX_BUSY) & 1U);
 }

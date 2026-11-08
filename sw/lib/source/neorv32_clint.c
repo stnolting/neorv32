@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_clint_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_CLINT));
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_IO_CLINT) & 1U);
 }
 
 /**********************************************************************//**

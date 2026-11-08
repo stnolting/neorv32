@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_gptmr_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_GPTMR));
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_IO_GPTMR) & 1U);
 }
 
 /**********************************************************************//**

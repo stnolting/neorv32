@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_wdt_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_WDT));
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_IO_WDT) & 1U);
 }
 
 /**********************************************************************//**

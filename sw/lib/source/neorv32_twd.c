@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_twd_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_TWD));
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_IO_TWD) & 1U);
 }
 
 /**********************************************************************//**
@@ -123,7 +123,7 @@ void neorv32_twd_clear_tx(void) {
  **************************************************************************/
 int neorv32_twd_com_state(void) {
 
-  return (int)(NEORV32_TWD->CTRL & (1U << TWD_CTRL_COM));
+  return (int)((NEORV32_TWD->CTRL >> TWD_CTRL_COM) & 1U);
 }
 
 /**********************************************************************//**
@@ -158,7 +158,7 @@ int neorv32_twd_com_ended(void) {
  **************************************************************************/
 int neorv32_twd_rx_available(void) {
 
-  return (int)(NEORV32_TWD->CTRL & (1U << TWD_CTRL_RX_AVAIL));
+  return (int)((NEORV32_TWD->CTRL >> TWD_CTRL_RX_AVAIL) & 1U);
 }
 
 /**********************************************************************//**
@@ -167,7 +167,7 @@ int neorv32_twd_rx_available(void) {
  **************************************************************************/
 int neorv32_twd_rx_full(void) {
 
-  return (int)(NEORV32_TWD->CTRL & (1U << TWD_CTRL_RX_FULL));
+  return (int)((NEORV32_TWD->CTRL >> TWD_CTRL_RX_FULL) & 1U);
 }
 
 /**********************************************************************//**
@@ -176,7 +176,7 @@ int neorv32_twd_rx_full(void) {
  **************************************************************************/
 int neorv32_twd_tx_empty(void) {
 
-  return (int)(NEORV32_TWD->CTRL & (1U << TWD_CTRL_TX_EMPTY));
+  return (int)((NEORV32_TWD->CTRL >> TWD_CTRL_TX_EMPTY) & 1U);
 }
 
 /**********************************************************************//**
@@ -185,7 +185,7 @@ int neorv32_twd_tx_empty(void) {
  **************************************************************************/
 int neorv32_twd_tx_full(void) {
 
-  return (int)(NEORV32_TWD->CTRL & (1U << TWD_CTRL_TX_FULL));
+  return (int)((NEORV32_TWD->CTRL >> TWD_CTRL_TX_FULL) & 1U);
 }
 
 /**********************************************************************//**

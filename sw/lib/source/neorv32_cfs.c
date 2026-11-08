@@ -24,5 +24,5 @@
  **************************************************************************/
 int neorv32_cfs_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_CFS));
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_IO_CFS) & 1U);
 }

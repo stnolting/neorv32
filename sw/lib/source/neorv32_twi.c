@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_twi_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_TWI));
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_IO_TWI) & 1U);
 }
 
 /**********************************************************************//**
@@ -85,7 +85,7 @@ void neorv32_twi_enable(void) {
  **************************************************************************/
 int neorv32_twi_sense_scl(void) {
 
-  return (int)(NEORV32_TWI->CTRL & (1U << TWI_CTRL_SENSE_SCL));
+  return (int)((NEORV32_TWI->CTRL >> TWI_CTRL_SENSE_SCL) & 1U);
 }
 
 /**********************************************************************//**
@@ -94,7 +94,7 @@ int neorv32_twi_sense_scl(void) {
  **************************************************************************/
 int neorv32_twi_sense_sda(void) {
 
-  return (int)(NEORV32_TWI->CTRL & (1U << TWI_CTRL_SENSE_SDA));
+  return (int)((NEORV32_TWI->CTRL >> TWI_CTRL_SENSE_SDA) & 1U);
 }
 
 /**********************************************************************//**
@@ -103,7 +103,7 @@ int neorv32_twi_sense_sda(void) {
  **************************************************************************/
 int neorv32_twi_claimed(void) {
 
-  return (int)(NEORV32_TWI->CTRL & (1U << TWI_CTRL_CLAIMED));
+  return (int)((NEORV32_TWI->CTRL >> TWI_CTRL_CLAIMED) & 1U);
 }
 
 /**********************************************************************//**
@@ -136,7 +136,7 @@ void neorv32_twi_irq_clr(void) {
  **************************************************************************/
 int neorv32_twi_busy(void) {
 
-  return (int)(NEORV32_TWI->CTRL & (1U << TWI_CTRL_BUSY));
+  return (int)((NEORV32_TWI->CTRL >> TWI_CTRL_BUSY) & 1U);
 }
 
 /**********************************************************************//**
@@ -145,7 +145,7 @@ int neorv32_twi_busy(void) {
  **************************************************************************/
 int neorv32_twi_rx_avail(void) {
 
-  return (int)(NEORV32_TWI->CTRL & (1U << TWI_CTRL_RX_AVAIL));
+  return (int)((NEORV32_TWI->CTRL >> TWI_CTRL_RX_AVAIL) & 1U);
 }
 
 /**********************************************************************//**
@@ -154,7 +154,7 @@ int neorv32_twi_rx_avail(void) {
  **************************************************************************/
 int neorv32_twi_tx_full(void) {
 
-  return (int)(NEORV32_TWI->CTRL & (1U<<TWI_CTRL_TX_FULL));
+  return (int)((NEORV32_TWI->CTRL >> TWI_CTRL_TX_FULL) & 1U);
 }
 
 /**********************************************************************//**

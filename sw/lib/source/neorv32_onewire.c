@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_onewire_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_ONEWIRE));
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_IO_ONEWIRE) & 1U);
 }
 
 /**********************************************************************//**
@@ -106,7 +106,7 @@ void neorv32_onewire_flush(void) {
  **************************************************************************/
 int neorv32_onewire_sense(void) {
 
-  return (int)(NEORV32_ONEWIRE->CTRL & (1U << ONEWIRE_CTRL_SENSE));
+  return (int)((NEORV32_ONEWIRE->CTRL >> ONEWIRE_CTRL_SENSE) & 1U);
 }
 
 /**********************************************************************//**
@@ -115,7 +115,7 @@ int neorv32_onewire_sense(void) {
  **************************************************************************/
 int neorv32_onewire_busy(void) {
 
-  return (int)(NEORV32_ONEWIRE->CTRL & (1U << ONEWIRE_CTRL_BUSY));
+  return (int)((NEORV32_ONEWIRE->CTRL >> ONEWIRE_CTRL_BUSY) & 1U);
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -139,7 +139,7 @@ void neorv32_onewire_reset(void) {
  **************************************************************************/
 int neorv32_onewire_reset_get_presence(void) {
 
-  return (int)(NEORV32_ONEWIRE->DCMD & (1U << ONEWIRE_DCMD_PRESENCE));
+  return (int)((NEORV32_ONEWIRE->DCMD >> ONEWIRE_DCMD_PRESENCE) & 1U);
 }
 
 /**********************************************************************//**
@@ -160,7 +160,7 @@ void neorv32_onewire_read_bit(void) {
 uint8_t neorv32_onewire_read_bit_get(void) {
 
   // return read bit
-  if (NEORV32_ONEWIRE->DCMD & (1U << ONEWIRE_DCMD_DATA_MSB)) { // LSB first -> read bit is in MSB
+  if ((NEORV32_ONEWIRE->DCMD >> ONEWIRE_DCMD_DATA_MSB) & 1U) { // LSB first -> read bit is in MSB
     return 1;
   }
   else {

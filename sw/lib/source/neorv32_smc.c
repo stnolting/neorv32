@@ -18,7 +18,7 @@
  * @return 0 if SMC was not synthesized, non-zero if SMC is available.
  **************************************************************************/
 int neorv32_smc_available(void) {
-  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_SMC));
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_SMC) & 1U);
 }
 
 /**********************************************************************//**
@@ -59,7 +59,7 @@ void neorv32_smc_setup(int dual, int msize, int cdiv, int rwait, uint8_t rcmd, u
  * @return Zero if SMC is idle, non-zero if memory operation in progress.
  **************************************************************************/
 int neorv32_smc_busy(void) {
-  return (int)(NEORV32_SMC->CSR0 & (1U<<SMC_CSR0_BUSY));
+  return (int)((NEORV32_SMC->CSR0 >> SMC_CSR0_BUSY) & 1U);
 }
 
 /**********************************************************************//**

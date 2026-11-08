@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_gpio_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_GPIO));
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_IO_GPIO) & 1U);
 }
 
 /**********************************************************************//**
@@ -55,7 +55,7 @@ void neorv32_gpio_pin_toggle(int pin) {
  **************************************************************************/
 uint32_t neorv32_gpio_pin_get(int pin) {
 
-  return NEORV32_GPIO->PORT_IN & (uint32_t)(1U << (pin & 31U));
+  return (NEORV32_GPIO->PORT_IN >> (pin & 31U)) & 1U;
 }
 
 /**********************************************************************//**

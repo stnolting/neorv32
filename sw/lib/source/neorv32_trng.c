@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_trng_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_TRNG));
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_IO_TRNG) & 1U);
 }
 
 /**********************************************************************//**
@@ -98,7 +98,7 @@ int neorv32_trng_get_num_inv(void) {
  **************************************************************************/
 int neorv32_trng_data_avail(void) {
 
-  return (int)(NEORV32_TRNG->CTRL & (1U<<TRNG_CTRL_AVAIL));
+  return (int)((NEORV32_TRNG->CTRL >> TRNG_CTRL_AVAIL) & 1U);
 }
 
 /**********************************************************************//**
@@ -118,5 +118,5 @@ uint8_t neorv32_trng_data_get(void) {
  **************************************************************************/
 int neorv32_trng_check_sim_mode(void) {
 
-  return (int)(NEORV32_TRNG->CTRL & (1U<<TRNG_CTRL_SIM_MODE));
+  return (int)((NEORV32_TRNG->CTRL >> TRNG_CTRL_SIM_MODE) & 1U);
 }
