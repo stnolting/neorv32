@@ -157,6 +157,7 @@ uint32_t neorv32_cpu_pmp_get_num_regions(void) {
 uint32_t neorv32_cpu_pmp_get_granularity(void) {
 
   // PMP implemented at all?
+  if (((neorv32_cpu_csr_read(CSR_MXISA) >> CSR_MXISA_SMPMP) & 1U) == 0) {
     return 0;
   }
 
@@ -341,7 +342,7 @@ uint32_t neorv32_cpu_hpm_get_size(void) {
   uint32_t tmp = 0, cnt = 0;
 
   // HPMs implemented at all?
-  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1U<<CSR_MXISA_ZIHPM)) == 0) {
+  if (((neorv32_cpu_csr_read(CSR_MXISA) >> CSR_MXISA_ZIHPM) & 1U) == 0) {
     return 0;
   }
 
@@ -386,7 +387,7 @@ int neorv32_cpu_hwtrig_get_number(void) {
   while (1) {
     neorv32_cpu_csr_write(CSR_TSELECT, sel);
     if ((neorv32_cpu_csr_read(CSR_TSELECT) == sel) &&
-       ((neorv32_cpu_csr_read(CSR_TINFO) & 0x0000FFFF) != 1)) {
+       ((neorv32_cpu_csr_read(CSR_TINFO) & 0x0000FFFFU) != 1)) {
       cnt++;
     }
     else {

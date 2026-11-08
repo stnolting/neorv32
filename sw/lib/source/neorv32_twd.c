@@ -57,10 +57,10 @@ void neorv32_twd_irq_config(int enable, uint32_t irq_mask) {
                         (1U << TWD_CTRL_IRQ_COM_END);
 
   if (enable) {
-    __MMREG32_BSET(NEORV32_TWD->CTRL, irq_mask & mask);
+    NEORV32_TWD->CTRL |= irq_mask & mask;
   }
   else {
-    __MMREG32_BCLR(NEORV32_TWD->CTRL, irq_mask & mask);
+    NEORV32_TWD->CTRL &= irq_mask & mask;
   }
 }
 
@@ -106,7 +106,7 @@ void neorv32_twd_enable(void) {
  **************************************************************************/
 void neorv32_twd_clear_rx(void) {
 
-  __MMREG32_BSET(NEORV32_TWD->CTRL, 1U << TWD_CTRL_CLR_RX);
+  NEORV32_TWD->CTRL |= (uint32_t)(1U << TWD_CTRL_CLR_RX);
 }
 
 /**********************************************************************//**
@@ -114,7 +114,7 @@ void neorv32_twd_clear_rx(void) {
  **************************************************************************/
 void neorv32_twd_clear_tx(void) {
 
-  __MMREG32_BSET(NEORV32_TWD->CTRL, 1U << TWD_CTRL_CLR_TX);
+  NEORV32_TWD->CTRL |= (uint32_t)(1U << TWD_CTRL_CLR_TX);
 }
 
 /**********************************************************************//**
@@ -147,7 +147,7 @@ int neorv32_twd_com_started(void) {
 int neorv32_twd_com_ended(void) {
 
   uint32_t ctrl_tmp = NEORV32_TWD->CTRL;
-  // clear END keep BEG    
+  // clear END keep BEG
   NEORV32_TWD->CTRL = ctrl_tmp & ~(1U << TWD_CTRL_COM_BEG);
   return (int)(ctrl_tmp & (1U << TWD_CTRL_COM_END));
 }

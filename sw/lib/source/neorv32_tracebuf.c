@@ -63,6 +63,7 @@ int neorv32_tracebuf_get_buffer_depth(void) {
  **************************************************************************/
 int neorv32_tracebuf_run(void) {
 
+  return (int)((NEORV32_TRACEBUF->CTRL >> TRACEBUF_CTRL_RUN) & 1U);
 }
 
 /**********************************************************************//**
@@ -70,7 +71,7 @@ int neorv32_tracebuf_run(void) {
  **************************************************************************/
 void neorv32_tracebuf_irq_ack(void) {
 
-  __MMREG32_BSET(NEORV32_TRACEBUF->CTRL, 1U << TRACEBUF_CTRL_IRQ_CLR);
+  NEORV32_TRACEBUF->CTRL |= (uint32_t)(1U << TRACEBUF_CTRL_IRQ_CLR);
 }
 
 /**********************************************************************//**

@@ -46,8 +46,8 @@ void neorv32_wdt_setup(uint32_t timeout, int lock) {
  **************************************************************************/
 int neorv32_wdt_disable(void) {
 
-  __MMREG32_BCLR(NEORV32_WDT->CTRL, 1 << WDT_CTRL_EN); // try to disable
-  return (int)(NEORV32_WDT->CTRL & (1 << WDT_CTRL_EN));
+  NEORV32_WDT->CTRL &= ~(uint32_t)(1 << WDT_CTRL_EN); // try to disable
+  return (int)((NEORV32_WDT->CTRL >> WDT_CTRL_EN) & 1U);
 }
 
 /**********************************************************************//**

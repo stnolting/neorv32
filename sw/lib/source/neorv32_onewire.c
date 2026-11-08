@@ -97,7 +97,7 @@ void neorv32_onewire_disable(void) {
  **************************************************************************/
 void neorv32_onewire_flush(void) {
 
-  __MMREG32_BSET(NEORV32_ONEWIRE->CTRL, 1U << ONEWIRE_CTRL_CLEAR);
+  NEORV32_ONEWIRE->CTRL |= (uint32_t)(1U << ONEWIRE_CTRL_CLEAR);
 }
 
 /**********************************************************************//**

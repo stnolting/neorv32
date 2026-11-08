@@ -55,7 +55,7 @@ int neorv32_dma_descriptor_fifo_empty(void) {
  **************************************************************************/
 void neorv32_dma_enable(void) {
 
-  __MMREG32_BSET(NEORV32_DMA->CTRL, 1U << DMA_CTRL_EN);
+  NEORV32_DMA->CTRL |= (uint32_t)(1U << DMA_CTRL_EN);
 }
 
 /**********************************************************************//**
@@ -63,7 +63,7 @@ void neorv32_dma_enable(void) {
  **************************************************************************/
 void neorv32_dma_disable(void) {
 
-  __MMREG32_BCLR(NEORV32_DMA->CTRL, 1U << DMA_CTRL_EN);
+  NEORV32_DMA->CTRL &= ~(uint32_t)(1U << DMA_CTRL_EN);
 }
 
 /**********************************************************************//**
@@ -72,7 +72,7 @@ void neorv32_dma_disable(void) {
  **************************************************************************/
 void neorv32_dma_irq_ack(void) {
 
-  __MMREG32_BSET(NEORV32_DMA->CTRL, 1U << DMA_CTRL_ACK);
+  NEORV32_DMA->CTRL |= (uint32_t)(1U << DMA_CTRL_ACK);
 }
 
 /**********************************************************************//**
@@ -114,7 +114,7 @@ void neorv32_dma_program_nocheck(uint32_t src_addr, uint32_t dst_addr, uint32_t 
  **************************************************************************/
 void neorv32_dma_start(void) {
 
-  __MMREG32_BSET(NEORV32_DMA->CTRL, 1U << DMA_CTRL_START);
+  NEORV32_DMA->CTRL |= (uint32_t)(1U << DMA_CTRL_START);
 }
 
 /**********************************************************************//**

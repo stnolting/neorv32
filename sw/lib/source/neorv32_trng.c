@@ -35,7 +35,7 @@ void neorv32_trng_enable(void) {
     asm volatile ("nop");
   }
 
-  NEORV32_TRNG->CTRL = 1U << TRNG_CTRL_EN; // enable
+  NEORV32_TRNG->CTRL = (uint32_t)(1U << TRNG_CTRL_EN); // enable
 }
 
 /**********************************************************************//**
@@ -51,7 +51,7 @@ void neorv32_trng_disable(void) {
  **************************************************************************/
 void neorv32_trng_fifo_clear(void) {
 
-  __MMREG32_BSET(NEORV32_TRNG->CTRL, 1U << TRNG_CTRL_FIFO_CLR);
+  NEORV32_TRNG->CTRL |= (uint32_t)(1U << TRNG_CTRL_FIFO_CLR);
 }
 
 /**********************************************************************//**

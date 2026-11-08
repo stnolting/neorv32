@@ -66,14 +66,14 @@ int neorv32_smc_busy(void) {
  * Enable SMC control of SMC IO pins.
  **************************************************************************/
 void neorv32_smc_pins_enable(void) {
-  __MMREG32_BSET(NEORV32_SMC->CSR0, 1U<<SMC_CSR0_IOEN);
+  NEORV32_SMC->CSR0 |= (uint32_t)(1U << SMC_CSR0_IOEN);
 }
 
 /**********************************************************************//**
  * Disable SMC control of SMC IO pins.
  **************************************************************************/
 void neorv32_smc_pins_disable(void) {
-  __MMREG32_BCLR(NEORV32_SMC->CSR0, 1U<<SMC_CSR0_IOEN);
+  NEORV32_SMC->CSR0 &= ~(uint32_t)(1U << SMC_CSR0_IOEN);
 }
 
 /**********************************************************************//**
