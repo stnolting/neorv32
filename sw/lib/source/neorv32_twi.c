@@ -111,7 +111,6 @@ int neorv32_twi_check_nack(void) {
  **************************************************************************/
 void neorv32_twi_irq_clr(void) {
 
-  __MMREG32_BSET(NEORV32_TWI->CTRL, 1U << TWI_CTRL_IRQ_CLR);
   NEORV32_TWI->CTRL |= (uint32_t)(1U << TWI_CTRL_IRQ_CLR);
 }
 

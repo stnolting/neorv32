@@ -58,7 +58,7 @@ int neorv32_smp_launch(int (*entry_point)(void), uint8_t* stack_memory, size_t s
   }
 
   // align end of stack to 16-bytes according to the RISC-V ABI (#1021)
-  uint32_t stack_top = ((uint32_t)stack_memory + (uint32_t)(stack_size_bytes-1)) & 0xfffffff0;
+  uint32_t stack_top = ((uint32_t)stack_memory + (uint32_t)(stack_size_bytes-1)) & 0xfffffff0U;
 
   // ------------------------------------------------------
   // first boot request: reset vector for core1

@@ -209,22 +209,20 @@ enum NEORV32_CLOCK_PRSC_enum {
  * @name Subword access helper types
  **************************************************************************/
 /**@{*/
-/** 64-bit */
+// 64-bit
 typedef union {
   uint64_t uint64;
   uint32_t uint32[2];
   uint16_t uint16[4];
   uint8_t  uint8[8];
 } subwords64_t;
-
-/** 32-bit */
+// 32-bit
 typedef union {
   uint32_t uint32;
   uint16_t uint16[2];
   uint8_t  uint8[4];
 } subwords32_t;
-
-/** 16-bit */
+// 16-bit
 typedef union {
   uint16_t uint16;
   uint8_t  uint8[2];
