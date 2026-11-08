@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -62,7 +62,6 @@ enum NEORV32_SPI_DATA_enum {
   SPI_DATA_CMD  = 31  /**< SPI data register(31) (-/w): 1=command, 0=data */
 };
 /**@}*/
-
 
 /**********************************************************************//**
  * @name Prototypes
