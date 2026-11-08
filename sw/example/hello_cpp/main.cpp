@@ -1,11 +1,10 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2Stephan Nolting. All rights reserved.                             //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
-
 
 /**********************************************************************//**
  * @file hello_cpp/main.cpp
@@ -14,7 +13,6 @@
  **************************************************************************/
 
 #include <neorv32.h>
-
 
 /**********************************************************************//**
  * @name User configuration
@@ -52,7 +50,6 @@ static DemoClass demo2(2);
  * Main function; prints some fancy stuff via UART.
  *
  * @note This program requires the UART interface to be synthesized.
- *
  * @return 0 if execution was successful
  **************************************************************************/
 int main() {
@@ -62,7 +59,7 @@ int main() {
   neorv32_rte_setup();
 
   // setup UART at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   // print project logo via UART
   neorv32_aux_print_logo();

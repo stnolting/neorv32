@@ -1,11 +1,10 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
-
 
 /**********************************************************************//**
  * @file bus_explorer/main.c
@@ -14,7 +13,6 @@
 
 #include <neorv32.h>
 #include <string.h>
-
 
 /**********************************************************************//**
  * @name User configuration
@@ -39,12 +37,9 @@ void hexdump(uint32_t address);
 void aux_print_hex_byte(uint8_t byte);
 void memory_trap_handler(void);
 
-
 /**********************************************************************//**
  * This program provides an interactive console to read/write memory.
- *
  * @note This program requires the UART to be synthesized.
- *
  * @return 0 if execution was successful
  **************************************************************************/
 int main() {
@@ -71,7 +66,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
   // setup UART at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   // intro
   neorv32_uart0_printf("\n<<< NEORV32 Bus Explorer >>>\n\n");
@@ -207,7 +202,7 @@ int main() {
     else if (!strcmp(command, "exit")) {
       if (NEORV32_SYSINFO->SOC & (1<<SYSINFO_SOC_BOOTLOADER)) {
         neorv32_uart0_printf("Returning to bootloader...\n");
-        while(neorv32_uart0_tx_busy());
+        while(neorv32_uart_tx_busy(NEORV32_UART0));
         const uint32_t boot_addr = (uint32_t)NEORV32_BOOTROM_BASE;
         asm volatile (
           "csrw mepc, %[addr] \n"
@@ -229,7 +224,6 @@ int main() {
 
   return 0;
 }
-
 
 /**********************************************************************//**
  * Configure memory access size
@@ -259,7 +253,6 @@ void setup_access(void) {
     }
   }
 }
-
 
 /**********************************************************************//**
  * Test memory access at given address
@@ -370,7 +363,6 @@ void test_memory(uint32_t address) {
   }
 }
 
-
 /**********************************************************************//**
  * Fill memory range with specific value
  **************************************************************************/
@@ -405,7 +397,6 @@ void set_memory(uint32_t address, int value, uint32_t num) {
     neorv32_uart0_printf("[0x%x] <= 0x%x\n", address_original, value);
   }
 }
-
 
 /**********************************************************************//**
  * Read from memory address
@@ -449,7 +440,6 @@ void read_memory(uint32_t address) {
   }
 }
 
-
 /**********************************************************************//**
  * Write to memory address
  **************************************************************************/
@@ -488,7 +478,6 @@ void write_memory(uint32_t address, uint32_t data) {
   }
 }
 
-
 /**********************************************************************//**
  * Perform atomic swap (32-bit)
  **************************************************************************/
@@ -506,7 +495,6 @@ void atomic_swap(uint32_t address, uint32_t wdata) {
     neorv32_uart0_printf("0x%x => [0x%x] => 0x%x\n", wdata, address, rdata);
   }
 }
-
 
 /**********************************************************************//**
  * Make pretty hexadecimal + ASCII dump (byte-wise)
@@ -558,8 +546,8 @@ void hexdump(uint32_t address) {
     neorv32_uart0_printf("\n");
     address += 16;
 
-    if (neorv32_uart0_char_received()) {
-      c = neorv32_uart0_char_received_get();
+    if (neorv32_uart_rx_avail(NEORV32_UART0)) {
+      c = neorv32_uart0_getc();
       neorv32_uart0_printf("Dumping paused. Press any key to resume or press 'q' to quit.\n");
       c = neorv32_uart0_getc();
       if (c == 'q') {
@@ -568,7 +556,6 @@ void hexdump(uint32_t address) {
     }
   }
 }
-
 
 /**********************************************************************//**
  * Print HEX byte.
@@ -582,7 +569,6 @@ void aux_print_hex_byte(uint8_t byte) {
   neorv32_uart0_putc(symbols[(byte >> 4) & 0x0f]);
   neorv32_uart0_putc(symbols[(byte >> 0) & 0x0f]);
 }
-
 
 /**********************************************************************//**
  * Memory access exception handler

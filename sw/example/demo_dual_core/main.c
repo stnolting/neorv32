@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -18,7 +18,6 @@
 
 /** Global variables */
 volatile uint8_t __attribute__ ((aligned (16))) core1_stack[2048]; // stack memory for core1
-
 
 /**********************************************************************//**
  * Main function for core 1 (secondary core).
@@ -38,13 +37,11 @@ int main_core1(void) {
   return 0; // return to crt0 and halt
 }
 
-
 /**********************************************************************//**
  * Main function for core 0 (primary core).
  *
  * @attention This program requires the dual-core configuration, the CLINT, UART0
  * and the A/Zalrsc ISA extension.
- *
  * @return Irrelevant (but can be inspected by the debugger).
  **************************************************************************/
 int main(void) {
@@ -53,13 +50,12 @@ int main(void) {
   neorv32_rte_setup();
 
 
-  // setup UART0 at default baud rate, no interrupts
+  // setup UART at default baud rate, no interrupts
   if (neorv32_uart0_available() == 0) { // UART0 available?
     return -1;
   }
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
   neorv32_uart0_printf("\n<< NEORV32 Simple SMP Dual-Core Demo >>\n\n");
-
 
   // check hardware/software configuration
   if (neorv32_sysinfo_get_numcores() < 2) { // two cores available?
@@ -79,7 +75,6 @@ int main(void) {
   neorv32_uart0_printf("[ERROR] Application has to be compiled with 'A' ISA extension!\n");
   return -1;
 #endif
-
 
   // Core one is halted in crt0 right after reset and wait for its machine-level software
   // interrupt before resuming. Before the interrupt is triggered, a launch configuration
@@ -105,7 +100,6 @@ int main(void) {
     return -1;
   }
   // core1 should be running now.
-
 
   // UART0 is used by both cores so it is a shared resource. We need to ensure exclusive
   // access by using a simple spinlock (based on atomic memory operations).

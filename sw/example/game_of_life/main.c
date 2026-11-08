@@ -1,11 +1,10 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
-
 
 /**********************************************************************//**
  * @file game_of_life/main.c
@@ -13,7 +12,6 @@
  **************************************************************************/
 
 #include <neorv32.h>
-
 
 /**********************************************************************//**
  * @name User configuration
@@ -34,7 +32,6 @@
 /**@}*/
 
 
-
 /**********************************************************************//**
  * The universe
  **************************************************************************/
@@ -48,7 +45,6 @@ int get_neighborhood(int u, int x, int y);
 void print_universe(int u);
 int pop_count(int u);
 
-
 /**********************************************************************//**
  * Simple bus-wait helper.
  *
@@ -58,12 +54,10 @@ void delay_ms(uint32_t time_ms) {
   neorv32_aux_delay_ms(neorv32_sysinfo_get_clk(), time_ms);
 }
 
-
 /**********************************************************************//**
  * Conway's Game of Life.
  *
  * @note This program requires the UART to be synthesized (the TRNG is optional).
- *
  * @return 0 if execution was successful
  **************************************************************************/
 int main(void) {
@@ -73,15 +67,12 @@ int main(void) {
     return 1;
   }
 
-
   // capture all exceptions and give debug info via UART
   // this is not required, but keeps us safe
   neorv32_rte_setup();
 
-
   // setup UART at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
-
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   while (1) {
 
@@ -101,7 +92,6 @@ int main(void) {
     neorv32_uart0_printf("Press any key to start a random-initialized torus-style universe of %ux%u cells.\n", NUM_CELLS_X, NUM_CELLS_Y);
     neorv32_uart0_printf("You can pause/restart the simulation by pressing any key.\n");
 
-
     // check if TRNG was synthesized
     if (neorv32_trng_available()) {
       neorv32_uart0_printf("\nTRNG detected. Using TRNG for universe initialization.\n");
@@ -109,13 +99,11 @@ int main(void) {
       trng_available = 1;
     }
 
-
     // randomize until key pressed
-    while (neorv32_uart0_char_received() == 0) {
+    while (neorv32_uart_rx_avail(NEORV32_UART0) == 0) {
       neorv32_aux_xorshift32();
     }
-    neorv32_uart0_char_received_get(); // discard received char
-
+    neorv32_uart0_getc(); // discard received char
 
     // initialize universe using true random data
     for (x=0; x<NUM_CELLS_X/8; x++) {
@@ -130,12 +118,11 @@ int main(void) {
       }
     }
 
-
     while(1) {
 
       // user abort?
-      if (neorv32_uart0_char_received()) {
-        neorv32_uart0_char_received_get(); // discard received char
+      if (neorv32_uart_rx_avail(NEORV32_UART0)) {
+        neorv32_uart0_getc(); // discard received char
         neorv32_uart0_printf("\nRestart (y/n)?");
         if (neorv32_uart0_getc() == 'y') {
           break;
@@ -177,7 +164,6 @@ int main(void) {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Print universe via UARt.
  *
@@ -218,7 +204,6 @@ void print_universe(int u){
   neorv32_uart0_putc('+');
 }
 
-
 /**********************************************************************//**
  * Kill all cells in universe.
  *
@@ -235,7 +220,6 @@ void clear_universe(int u){
   }
 }
 
-
 /**********************************************************************//**
  * Make cell alive.
  *
@@ -250,7 +234,6 @@ void set_cell(int u, int x, int y){
 
   universe[u][x>>3][y] |= (uint8_t)(1 << (7 - (x & 7)));
 }
-
 
 /**********************************************************************//**
  * Get state of cell.
@@ -285,7 +268,6 @@ int get_cell(int u, int x, int y){
     return 1; // ALIVE
 }
 
-
 /**********************************************************************//**
  * Get number of living cells in neighborhood.
  *
@@ -313,7 +295,6 @@ int get_neighborhood(int u, int x, int y){
 
   return num;
 }
-
 
 /**********************************************************************//**
  * Count living cells in universe.

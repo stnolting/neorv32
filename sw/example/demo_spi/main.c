@@ -1,11 +1,10 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
-
 
 /**********************************************************************//**
  * @file demo_spi/main.c
@@ -14,7 +13,6 @@
 
 #include <neorv32.h>
 #include <string.h>
-
 
 /**********************************************************************//**
  * @name User configuration
@@ -34,12 +32,10 @@ void spi_transfer(void);
 void spi_setup(void);
 void aux_print_hex_byte(uint8_t byte);
 
-
 /**********************************************************************//**
  * This program provides an interactive console to communicate with SPI devices.
  *
  * @note This program requires the UART and the SPI to be synthesized.
- *
  * @return Irrelevant.
  **************************************************************************/
 int main() {
@@ -51,14 +47,13 @@ int main() {
   // this is not required, but keeps us safe
   neorv32_rte_setup();
 
-  // setup UART at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
-
-
   // check if UART0 unit is implemented at all
   if (neorv32_uart0_available() == 0) {
     return 1;
   }
+
+  // setup UART at default baud rate, no interrupts
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   // intro
   neorv32_uart0_printf("\n<<< SPI Bus Explorer >>>\n\n");
@@ -120,7 +115,6 @@ int main() {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Enable or disable chip-select line
  *
@@ -157,7 +151,6 @@ void spi_cs(uint32_t type) {
     neorv32_spi_cs_dis();
   }
 }
-
 
 /**********************************************************************//**
  * SPI data transfer
@@ -238,7 +231,6 @@ void spi_setup(void) {
   neorv32_spi_setup(spi_prsc, clk_div, clk_phase, clk_pol);
   spi_configured = 1; // SPI is configured now
 }
-
 
 /**********************************************************************//**
  * Print HEX byte.

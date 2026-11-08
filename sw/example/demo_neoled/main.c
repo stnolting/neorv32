@@ -1,20 +1,17 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
 
-
 /**********************************************************************//**
  * @file demo_neopixel/main.c
- * @author Stephan Nolting
  * @brief NeoPixel (WS2812) interface demo using the processor's smart LED interface (NEOLED).
  **************************************************************************/
 
 #include <neorv32.h>
-
 
 /**********************************************************************//**
  * @name User configuration
@@ -28,10 +25,8 @@
 #define MAX_INTENSITY (16)
 /**@}*/
 
-
 // prototypes
 uint32_t hsv2rgb(int h, int v);
-
 
 /**********************************************************************//**
  * Simple bus-wait helper.
@@ -42,13 +37,10 @@ void delay_ms(uint32_t time_ms) {
   neorv32_aux_delay_ms(neorv32_sysinfo_get_clk(), time_ms);
 }
 
-
 /**********************************************************************//**
- * Main function
- * This demo uses a 12-LED RGB ring
+ * Main function. This demo uses a 12-LED RGB ring
  *
  * @note This program requires the NEOLED controller to be synthesized (UART0 is optional).
- *
  * @return 0 if execution was successful
  **************************************************************************/
 int main() {
@@ -58,8 +50,7 @@ int main() {
   neorv32_rte_setup();
 
   // setup UART at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
-
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   // check if NEOLED unit is implemented at all, abort if not
   if (neorv32_neoled_available() == 0) {
@@ -67,23 +58,19 @@ int main() {
     return 1;
   }
 
-
   // illustrate setup
   neorv32_uart0_printf("\n\n<<< NEORV32 NeoPixel Controller (NEOLED) Demo Program >>>\n"
                        "(TM) 'NeoPixel' is a trademark of Adafruit Industries.\n\n"
                        "This demo uses the following LED setup:\n"
                        "NEORV32.neoled_o -> %u RGB-LEDs (WS2812, 24-bit)\n\n", (uint32_t)NUM_LEDS_24BIT);
 
-
   // use the "neorv32_neoled_setup_ws2812()" setup function here instead the raw "neorv32_neoled_setup()"
   // neorv32_neoled_setup_ws2812() will configure all timing parameters according to the WS2812 specs.
   // for the current processor clock speed
   neorv32_neoled_setup_ws2812();
 
-
   // check NEOLED configuration
   neorv32_uart0_printf("Hardware FIFO size: %u entries\n\n", neorv32_neoled_get_fifo_depth());
-
 
   // clear all LEDs
   neorv32_uart0_printf("Clearing all LEDs...\n");
@@ -92,7 +79,6 @@ int main() {
     neorv32_neoled_write24_blocking(0);
   }
   delay_ms(500);
-
 
   // a simple animation example: rotating rainbow
   // this example uses BLOCKING NEOLED functions that check the FIFO flags before writing new data
@@ -115,12 +101,10 @@ int main() {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Convert HSV color to RGB.
  *
  * @note Very simple version: using integer arithmetic and ignoring saturation (saturation is always MAX).
- *
  * @param[in] h Hue (color angle), 0..359
  * @param[in] v Value (intensity), 0..255
  * @return LSB-aligned 24-bit RGB data [G,R,B]

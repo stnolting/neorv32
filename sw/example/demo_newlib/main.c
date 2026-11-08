@@ -1,15 +1,13 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
 
-
 /**********************************************************************//**
  * @file demo_newlib/main.c
- * @author Stephan Nolting
  * @brief Demo/test program for NEORV32's newlib C standard library support.
  **************************************************************************/
 #include <neorv32.h>
@@ -18,7 +16,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 /**********************************************************************//**
  * @name User configuration
  **************************************************************************/
@@ -26,7 +23,6 @@
 /** UART BAUD rate */
 #define BAUD_RATE 19200
 /**@}*/
-
 
 /**********************************************************************//**
  * @name Print main's return code using a destructor
@@ -40,12 +36,10 @@ void __attribute__((destructor)) main_destructor_test(void) {
   neorv32_uart0_printf("[destructor] main() terminated with return/exit code %i\n", main_ret);
 }
 
-
 /**********************************************************************//**
  * Main function: Check some of newlib's core functions.
  *
  * @note This program requires UART0 and the CLINT (and optionally UART1).
- *
  * @return 0 if execution was successful
  **************************************************************************/
 int main() {
@@ -54,10 +48,10 @@ int main() {
   // -> catch all traps and give debug information via UART0
   neorv32_rte_setup();
 
-  // setup UARTs at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  // setup UART at default baud rate, no interrupts
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
   if (neorv32_uart1_available()) {
-    neorv32_uart1_setup(BAUD_RATE, 0);
+    neorv32_uart_setup(NEORV32_UART1, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
   }
 
   // check if UART0 is implemented at all

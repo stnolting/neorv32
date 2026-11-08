@@ -1,18 +1,16 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
-
 
 /**********************************************************************//**
  * @file demo_wdt/main.c
  * @brief Watchdog demo program.
  **************************************************************************/
 #include <neorv32.h>
-
 
 /**********************************************************************//**
  * @name User configuration
@@ -24,12 +22,10 @@
 #define WDT_TIMEOUT_SEC 8
 /**@}*/
 
-
 /**********************************************************************//**
  * Main function
  *
  * @note This program requires the WDT and UART0 to be synthesized.
- *
  * @return Should never return.
  **************************************************************************/
 int main() {
@@ -38,7 +34,7 @@ int main() {
   neorv32_rte_setup();
 
   // setup UART at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   // check if UART0 is implemented at all
   if (neorv32_uart0_available() == 0) {

@@ -34,7 +34,7 @@ int main() {
   neorv32_rte_setup();
 
   // setup UART at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   // intro
   neorv32_uart0_printf("\n<<< SLINK Demo Program >>>\n\n");

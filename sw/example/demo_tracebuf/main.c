@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -14,7 +14,6 @@
 
 /** User configuration */
 #define BAUD_RATE 19200
-
 
 /**********************************************************************//**
  * TRACEBUF interrupt handler.
@@ -47,17 +46,14 @@ void tracebuf_irq_handler(void) {
   }
 }
 
-
 /**********************************************************************//**
- * Environment call exception handler.
- * We want to trace how we got here.
+ * Environment call exception handler. We want to trace how we got here.
  *
  * @note No inlining so we have actual branches that we can trace.
  **************************************************************************/
 void __attribute__ ((noinline)) ecall_exc_handler(void) {
   asm volatile ("nop");
 }
-
 
 /**********************************************************************//**
  * This is the function we want to trace.
@@ -70,13 +66,11 @@ void __attribute__ ((noinline)) test_code(void) {
   asm volatile ("nop");
 }
 
-
 /**********************************************************************//**
  * Main function for core 0 (primary core).
  *
  * @attention This program requires the dual-core configuration, the CLINT, UART0
  * and the A/Zalrsc ISA extension.
- *
  * @return Irrelevant (but can be inspected by the debugger).
  **************************************************************************/
 int main(void) {
@@ -87,11 +81,11 @@ int main(void) {
   neorv32_rte_handler_install(TRACEBUF_TRAP_CODE, tracebuf_irq_handler); // install trace buffer interrupt
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupt
 
-  // setup UART0 at default baud rate, no interrupts
+  // setup UART at default baud rate, no interrupts
   if (neorv32_uart0_available() == 0) { // UART0 available?
     return -1;
   }
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
   neorv32_uart0_printf("\n<< NEORV32 Trace Buffer Demo >>\n\n");
 
   // check hardware/software configuration
@@ -106,7 +100,6 @@ int main(void) {
   // configure tracing
   uint32_t stop_address = (uint32_t)&ecall_exc_handler; // automatically stop tracing when reaching this address
   neorv32_tracebuf_enable(0, stop_address); // 0 = trace CPU core 0
-
 
   // ----------------------------------------------------------------
   // This is the part where we want to trace program execution.
@@ -128,7 +121,6 @@ int main(void) {
   test_code();              // this is code/function that we want to trace
   neorv32_tracebuf_stop();  // stop trace logging
   //
-
 
   neorv32_uart0_printf("\nProgram completed\n");
   return 0; // return to crt0 and halt

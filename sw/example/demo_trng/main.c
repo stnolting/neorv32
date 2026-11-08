@@ -1,11 +1,10 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
-
 
 /**********************************************************************//**
  * @file demo_trng/main.c
@@ -30,7 +29,6 @@ void adaptive_proportion_test(void);
 void generate_histogram(void);
 void compute_rate(void);
 
-
 /**********************************************************************//**
  * Simple bus-wait helper.
  *
@@ -48,12 +46,10 @@ void trng_firq_handler(void) {
   irq_ack = 1;
 }
 
-
 /**********************************************************************//**
  * Simple true random number test/demo program.
  *
  * @note This program requires the UART and the TRNG to be synthesized.
- *
  * @return 0 if execution was successful
  **************************************************************************/
 int main(void) {
@@ -69,7 +65,7 @@ int main(void) {
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
   // setup UART at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   // intro
   neorv32_uart0_printf("\n<<< NEORV32 TRNG Demo >>>\n\n");
@@ -150,7 +146,6 @@ int main(void) {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Test TRNG interrupt.
  **************************************************************************/
@@ -178,7 +173,6 @@ void irq_test(void) {
   }
 }
 
-
 /**********************************************************************//**
  * Print random numbers until a key is pressed.
  **************************************************************************/
@@ -192,14 +186,13 @@ void print_random_data(void) {
     while(neorv32_trng_data_avail() == 0);
     neorv32_uart0_printf("%u ", (uint32_t)neorv32_trng_data_get());
     num_samples++;
-    if (neorv32_uart0_char_received()) { // abort when key pressed
-      neorv32_uart0_char_received_get(); // discard received char
+    if (neorv32_uart_rx_avail(NEORV32_UART0)) { // abort when key pressed
+      neorv32_uart0_getc(); // discard received char
       break;
     }
   }
   neorv32_uart0_printf("\nPrinted samples: %u\n", num_samples);
 }
-
 
 /**********************************************************************//**
  * Print random numbers as HEX dump.
@@ -239,13 +232,12 @@ void print_hex(void) {
 
     neorv32_uart0_printf("\n");
 
-    if (neorv32_uart0_char_received()) {
-      neorv32_uart0_char_received_get();
+    if (neorv32_uart_rx_avail(NEORV32_UART0)) {
+      neorv32_uart0_getc();
       return;
     }
   }
 }
-
 
 /**********************************************************************//**
  * Print HEX byte.
@@ -259,7 +251,6 @@ void aux_print_hex_byte(uint8_t byte) {
   neorv32_uart0_putc(symbols[(byte >> 4) & 0x0f]);
   neorv32_uart0_putc(symbols[(byte >> 0) & 0x0f]);
 }
-
 
 /**********************************************************************//**
  * Run repetition count test (NIST SP 800-90B)
@@ -297,8 +288,8 @@ void repetition_count_test(void) {
     if (fail) {
       break;
     }
-    if (neorv32_uart0_char_received()) { // abort when key pressed
-      neorv32_uart0_char_received_get(); // discard received char
+    if (neorv32_uart_rx_avail(NEORV32_UART0)) { // abort when key pressed
+      neorv32_uart0_getc(); // discard received char
       break;
     }
   }
@@ -310,7 +301,6 @@ void repetition_count_test(void) {
     neorv32_uart0_printf("Test ok!\n");
   }
 }
-
 
 /**********************************************************************//**
  * Run adaptive proportion test (NIST SP 800-90B)
@@ -347,8 +337,8 @@ void adaptive_proportion_test(void) {
     if (fail) {
       break;
     }
-    if (neorv32_uart0_char_received()) { // abort when key pressed
-      neorv32_uart0_char_received_get(); // discard received char
+    if (neorv32_uart_rx_avail(NEORV32_UART0)) { // abort when key pressed
+      neorv32_uart0_getc(); // discard received char
       break;
     }
   }
@@ -360,7 +350,6 @@ void adaptive_proportion_test(void) {
     neorv32_uart0_printf("Test ok!\n");
   }
 }
-
 
 /**********************************************************************//**
  * Generate and print histogram. Samples random data until a key is pressed.
@@ -406,8 +395,8 @@ void generate_histogram(void) {
     }
 
     // user abort
-    if (neorv32_uart0_char_received()) {
-      neorv32_uart0_char_received_get(); // discard received char
+    if (neorv32_uart_rx_avail(NEORV32_UART0)) {
+      neorv32_uart0_getc(); // discard received char
       break;
     }
   }
@@ -462,7 +451,6 @@ neorv32_uart0_printf("[NOTE] integer numbers only\n");
   neorv32_uart0_printf("Max:          %u = average + %u (deviation) at bin %u (optimum deviation would be 0)\n", occ_max, occ_max - occ_avg, bin_max);
   neorv32_uart0_printf("Average dev.: +/- %u (optimum would be 0)\n", occ_avg_dev);
 }
-
 
 /**********************************************************************//**
  * Compute average random generation rate

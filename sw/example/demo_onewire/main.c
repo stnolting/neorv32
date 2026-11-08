@@ -1,15 +1,13 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
 
-
 /**********************************************************************//**
  * @file demo_onewire/main.c
- * @author Stephan Nolting
  * @brief Demo program for the NEORV32 1-Wire interface controller (ONEWIRE).
  **************************************************************************/
 #include <neorv32.h>
@@ -17,7 +15,6 @@
 
 // device search algorithm
 #include "onewire_aux.h"
-
 
 /**********************************************************************//**
  * @name User configuration
@@ -37,12 +34,10 @@ void read_byte(void);
 void write_byte(void);
 void scan_bus(void);
 
-
 /**********************************************************************//**
  * Main function
  *
  * @note This program requires the ONEWIRE and UART0 modules. Only non-blocking ONEWIRE functions are used.
- *
  * @return !=0 if setup error
  **************************************************************************/
 int main() {
@@ -51,14 +46,13 @@ int main() {
   neorv32_rte_setup();
 
   // setup UART at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   // check if ONEWIRE is implemented at all
   if (!neorv32_onewire_available()) {
     neorv32_uart0_printf("Error! ONEWIRE module not synthesized!\n");
     return -1;
   }
-
 
   // intro
   neorv32_uart0_printf("\n\n<<< NEORV32 1-Wire Interface (ONEWIRE) Demo Program >>>\n\n");
@@ -82,7 +76,6 @@ int main() {
   else {
     neorv32_uart0_printf("FAILED! Short circuit? Missing pull-up resistor?\n");
   }
-
 
   neorv32_uart0_printf("Starting interactive user console...\n\n");
 
@@ -142,7 +135,6 @@ int main() {
   return 0; // should never be reached
 }
 
-
 /**********************************************************************//**
  * Show help menu.
  **************************************************************************/
@@ -161,7 +153,6 @@ void show_help(void) {
                        " s: Scan bus (get IDs from all devices)\n");
 }
 
-
 /**********************************************************************//**
  * Show standard 1-wire commands.
  **************************************************************************/
@@ -175,7 +166,6 @@ void show_1wire_commands(void) {
                        " 0xF5 - PIO read access\n"
                        " 0x5A - PIO write access\n");
 }
-
 
 /**********************************************************************//**
  * Read full byte from bus.
@@ -204,7 +194,6 @@ void read_byte(void) {
   neorv32_uart0_printf(")\n");
 }
 
-
 /**********************************************************************//**
  * Write full byte to bus.
  **************************************************************************/
@@ -225,7 +214,6 @@ void write_byte(void) {
 
   neorv32_uart0_printf("\n");
 }
-
 
 /**********************************************************************//**
  * Scan bus for devices and print IDs.

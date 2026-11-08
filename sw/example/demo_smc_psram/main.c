@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -32,7 +32,6 @@ uint32_t xorshift32(uint32_t x32) {
  * Use external PSRAM (2MB) as main memory via the Serial Memory Controller (SMC).
  *
  * @note This program requires the SMC, UART0 and CLINT modules.
- *
  * @return Irrelevant.
  **************************************************************************/
 int main() {
@@ -44,8 +43,8 @@ int main() {
   // setup NEORV32 runtime environment
   neorv32_rte_setup();
 
-  // setup UART0 at 19200 baud, no interrupts
-  neorv32_uart0_setup(19200, 0);
+  // setup UART at default baud rate, no interrupts
+  neorv32_uart_setup(NEORV32_UART0, 19200, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   // check if SMC is available
   if (neorv32_smc_available() == 0) {
@@ -178,7 +177,6 @@ int main() {
     }
   }
 
-
   // reports
   uint64_t clock = (uint64_t)neorv32_sysinfo_get_clk(); // clock speed in Hz
   time_wr = time_wr / (psram_size / 1024); // write: cycles per kB
@@ -189,7 +187,6 @@ int main() {
   neorv32_uart0_printf("\nTest errors: %u/%u\n", errors, psram_size);
   neorv32_uart0_printf("Write rate: ~%u kB/s\n", (uint32_t)(time_wr));
   neorv32_uart0_printf("Read rate:  ~%u kB/s\n", (uint32_t)(time_rd));
-
 
   neorv32_uart0_printf("\nProgram completed.\n");
   return 0;

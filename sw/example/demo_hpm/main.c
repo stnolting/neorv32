@@ -1,19 +1,16 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
 
-
 /**********************************************************************//**
  * @file demo_hpm/main.c
- * @author Stephan Nolting
  * @brief Hardware performance monitor (HPM) example program.
  **************************************************************************/
 #include <neorv32.h>
-
 
 /**********************************************************************//**
  * @name User configuration
@@ -23,12 +20,10 @@
 #define BAUD_RATE 19200
 /**@}*/
 
-
 /**********************************************************************//**
  * Main function
  *
  * @note This program requires the CPU Zihpm extension (with at least 2 regions) and UART0.
- *
  * @return 0 if execution was successful
  **************************************************************************/
 int main() {
@@ -37,7 +32,7 @@ int main() {
   neorv32_rte_setup();
 
   // setup UART at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   // check if UART0 is implemented
   if (neorv32_uart0_available() == 0) {
@@ -56,21 +51,17 @@ int main() {
     return 1;
   }
 
-
   // intro
   neorv32_uart0_printf("\n<<< NEORV32 Hardware Performance Monitors (HPMs) Example Program >>>\n\n");
   neorv32_uart0_printf("[NOTE] This program will use up to 7 HPM counters (if available).\n\n");
-
 
   // show HPM hardware configuration
   uint32_t hpm_num = neorv32_cpu_hpm_get_num_counters();
   uint32_t hpm_width = neorv32_cpu_hpm_get_size();
   neorv32_uart0_printf("%u HPM counter(s) detected, each %u bits wide\n", hpm_num, hpm_width);
 
-
   // stop all CPU counters including HPMs
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1);
-
 
   // clear HPM counters (low and high word);
   // there will be NO exception if we access a HPM counter register that has not been implemented
@@ -106,10 +97,8 @@ int main() {
   if (hpm_num > 5) { neorv32_cpu_csr_write(CSR_MHPMEVENT8,  1 << HPMCNT_EVENT_LOAD);     } // memory load operation
   if (hpm_num > 6) { neorv32_cpu_csr_write(CSR_MHPMEVENT9,  1 << HPMCNT_EVENT_STORE);    } // memory store operation
 
-
   // enable all CPU counters including HPMs
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0);
-
 
   // this is the part of the the program that is going to be "benchmarked" using the HPMs
   // here we are just doing some pointless stuff that will trigger the configured HPM events
@@ -118,11 +107,9 @@ int main() {
     neorv32_uart0_printf("> Print some number: %u\n", 52983740);
   }
 
-
   // stop all CPU counters including HPMs
   neorv32_uart0_printf("\nHalting all counters...\n");
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1);
-
 
   // print HPM counter values (low word only); read from unprivileged HPM CSRs
   neorv32_uart0_printf("\nHPM results (low-words only):\n");
