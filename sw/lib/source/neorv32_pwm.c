@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_pwm_available(void) {
 
-  return(int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_PWM));
+  return(int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_IO_PWM) & 1U);
 }
 
 /**********************************************************************//**
@@ -58,7 +58,7 @@ void neorv32_pwm_set_clock(int prsc) {
  **************************************************************************/
 void neorv32_pwm_ch_enable_mask(uint32_t mask) {
 
-  __MMREG32_BSET(NEORV32_PWM->ENABLE, mask);
+  NEORV32_PWM->ENABLE |= mask;
 }
 
 /**********************************************************************//**
@@ -67,7 +67,7 @@ void neorv32_pwm_ch_enable_mask(uint32_t mask) {
  **************************************************************************/
 void neorv32_pwm_ch_disable_mask(uint32_t mask) {
 
-  __MMREG32_BCLR(NEORV32_PWM->ENABLE, mask);
+  NEORV32_PWM->ENABLE &= mask;
 }
 
 /**********************************************************************//**
@@ -76,7 +76,7 @@ void neorv32_pwm_ch_disable_mask(uint32_t mask) {
  **************************************************************************/
 void neorv32_pwm_ch_enable_single(int ch) {
 
-  __MMREG32_BSET(NEORV32_PWM->ENABLE, 1U << (ch & 31U));
+  NEORV32_PWM->ENABLE |= (uint32_t)(1U << (ch & 31U));
 }
 
 /**********************************************************************//**
@@ -85,7 +85,7 @@ void neorv32_pwm_ch_enable_single(int ch) {
  **************************************************************************/
 void neorv32_pwm_ch_disable_single(int ch) {
 
-  __MMREG32_BCLR(NEORV32_PWM->ENABLE, 1U << (ch & 31U));
+  NEORV32_PWM->ENABLE &= ~(uint32_t)(1U << (ch & 31U));
 }
 
 /**********************************************************************//**
@@ -101,15 +101,15 @@ void neorv32_pwm_ch_setup(int ch, int top, int pol, int mode) {
   uint32_t mask = 1U << ch;
 
   if (pol) {
-    __MMREG32_BSET(NEORV32_PWM->POLARITY, mask);
+    NEORV32_PWM->POLARITY |= mask;
   } else {
-    __MMREG32_BCLR(NEORV32_PWM->POLARITY, mask);
+    NEORV32_PWM->POLARITY &= ~mask;
   }
 
   if (mode) {
-    __MMREG32_BSET(NEORV32_PWM->MODE, mask);
+    NEORV32_PWM->MODE |= mask;
   } else {
-    __MMREG32_BCLR(NEORV32_PWM->MODE, mask);
+    NEORV32_PWM->MODE &= ~mask;
   }
 
   NEORV32_PWM->CHANNEL[ch].TOP = top;

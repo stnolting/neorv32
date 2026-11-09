@@ -1,11 +1,10 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
-
 
 /**********************************************************************//**
  * @file demo_semihosting/main.c
@@ -19,10 +18,8 @@
 #include <fcntl.h> // for open
 #include <unistd.h> // for close
 
-
 // UART0 baud rate
 #define BAUD_RATE 19200
-
 
 /**********************************************************************//**
  * EBREAK trap handler. In case we are using semihosting without a host
@@ -33,12 +30,9 @@ void ebreak_trap_handler(void) {
   neorv32_rte_context_put(10, 0); // a0 = service return value = 0
 }
 
-
 /**********************************************************************//**
  * Echo data from host's STDIN back to host's STDOUT.
- *
  * @note This program requires the UART interface to be synthesized.
- *
  * @return Should never return.
  **************************************************************************/
 int main() {
@@ -46,7 +40,7 @@ int main() {
   // hardware setup
   neorv32_rte_setup();
   neorv32_rte_handler_install(TRAP_CODE_BREAKPOINT, ebreak_trap_handler);
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   // say hello via UART0
   neorv32_uart0_puts("NEORV32 semihosting example\n\n");
@@ -57,27 +51,10 @@ int main() {
   neorv32_uart0_printf("Recompile with USER_FLAGS+=-DSTDIO_SEMIHOSTING\n\n");
 #endif
 
-  // hint
-#ifndef UART_SEMIHOSTING
-  neorv32_uart0_puts("[NOTE] You can redirect ALL UART data via semihosting\n");
-  neorv32_uart0_puts("Recompile with USER_FLAGS+\"=-DSTDIO_SEMIHOSTING -DUART_SEMIHOSTING\"\n\n");
-#endif
-
-
   // ------------------------------------------------------
   // Print string to host's STDOUT
   // ------------------------------------------------------
   neorv32_semihosting_puts("Hello semihosting!\r\n");
-
-
-  // ------------------------------------------------------
-  // Print a RTE panic message via UART redirection
-  // ------------------------------------------------------
-#ifdef UART_SEMIHOSTING
-  neorv32_uart0_printf("NEORV32-RTE panic warning:\r\n");
-  asm volatile ("ecall");
-#endif
-
 
   // ------------------------------------------------------
   // Print host's system time (no localization)
@@ -89,14 +66,12 @@ int main() {
   neorv32_uart0_printf("%u.%u.%u ", date.day, date.month, date.year);
   neorv32_uart0_printf("%u:%u:%u\n", date.hours, date.minutes, date.seconds);
 
-
   // ------------------------------------------------------
   // Execute a command on the host system (be careful!)
   // ----------------------------------------
   char cmd[] = "dir"; // DIR is available on Linux and Windows and should cause no harm
   int cmd_rc = neorv32_semihosting_system(cmd);
   neorv32_uart0_printf("`%s` exit status: %i\n", cmd, cmd_rc);
-
 
   // ------------------------------------------------------
   // Read file from host
@@ -122,7 +97,6 @@ int main() {
     neorv32_uart0_printf("Closing file (%i)\n\n", close_rc);
   }
 
-
   // ------------------------------------------------------
   // Write file on host system
   // ------------------------------------------------------
@@ -146,7 +120,6 @@ int main() {
     int close_rc = close(handle_write);
     neorv32_uart0_printf("Closing file (%i)\n\n", close_rc);
   }
-
 
   // ------------------------------------------------------
   // Endless console echo loop (STDIN -> STDOUT)

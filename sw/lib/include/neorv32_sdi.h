@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -58,8 +58,6 @@ enum NEORV32_SDI_CTRL_enum {
 /**@{*/
 int     neorv32_sdi_available(void);
 void    neorv32_sdi_setup(uint32_t irq_mask);
-void    neorv32_sdi_disable(void);
-void    neorv32_sdi_enable(void);
 int     neorv32_sdi_get_fifo_depth(void);
 void    neorv32_sdi_put(uint8_t data);
 uint8_t neorv32_sdi_get(void);

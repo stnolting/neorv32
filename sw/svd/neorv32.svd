@@ -739,7 +739,7 @@
 
       <addressBlock>
         <offset>0</offset>
-        <size>0x08</size>
+        <size>0x10</size>
         <usage>registers</usage>
       </addressBlock>
 
@@ -750,111 +750,157 @@
           <addressOffset>0x00</addressOffset>
           <fields>
             <field>
-              <name>UART_CTRL_EN</name>
+              <name>UART_CTRL_RX_EN</name>
               <bitRange>[0:0]</bitRange>
-              <description>UART enable flag</description>
+              <description>Enable receiver (RX)</description>
             </field>
             <field>
-              <name>UART_CTRL_SIM_MODE</name>
+              <name>UART_CTRL_TX_EN</name>
               <bitRange>[1:1]</bitRange>
-              <description>Simulation output override enable, for use in simulation only</description>
+              <description>Enable transceiver (TX)</description>
             </field>
             <field>
-              <name>UART_CTRL_HWFC_EN</name>
+              <name>UART_CTRL_TX_SIM_EN</name>
               <bitRange>[2:2]</bitRange>
-              <description>Enable RTS/CTS hardware flow-control</description>
+              <description>Enable TX output to simulator</description>
             </field>
             <field>
-              <name>UART_CTRL_PRSC</name>
-              <bitRange>[5:3]</bitRange>
-              <description>CLock prescaler select</description>
+              <name>UART_CTRL_RTS_EN</name>
+              <bitRange>[3:3]</bitRange>
+              <description> Enable RX hardware flow-control (RTS)</description>
             </field>
             <field>
-              <name>UART_CTRL_BAUD</name>
-              <bitRange>[15:6]</bitRange>
-              <description>BAUD rate divisor</description>
+              <name>UART_CTRL_CTS_EN</name>
+              <bitRange>[4:4]</bitRange>
+              <description>Enable TX hardware flow-control (CTS</description>
             </field>
+
             <field>
-              <name>UART_CTRL_RX_NEMPTY</name>
-              <bitRange>[16:16]</bitRange>
+              <name>UART_CTRL_RX_EMPTY</name>
+              <bitRange>[8:8]</bitRange>
               <access>read-only</access>
-              <description>RX FIFO not empty</description>
+              <description>RX FIFO is empty</description>
+            </field>
+            <field>
+              <name>UART_CTRL_RX_HALF</name>
+              <bitRange>[9:9]</bitRange>
+              <access>read-only</access>
+              <description>RX FIFO is at least half full</description>
             </field>
             <field>
               <name>UART_CTRL_RX_FULL</name>
-              <bitRange>[17:17]</bitRange>
+              <bitRange>[10:10]</bitRange>
               <access>read-only</access>
-              <description>RX FIFO full</description>
-            </field>
-            <field>
-              <name>UART_CTRL_TX_EMPTY</name>
-              <bitRange>[18:18]</bitRange>
-              <access>read-only</access>
-              <description>TX FIFO empty</description>
-            </field>
-            <field>
-              <name>UART_CTRL_TX_NFULL</name>
-              <bitRange>[19:19]</bitRange>
-              <access>read-only</access>
-              <description>TX FIFO not full</description>
-            </field>
-            <field>
-              <name>UART_CTRL_IRQ_RX_NEMPTY</name>
-              <bitRange>[20:20]</bitRange>
-              <description>Fire IRQ if RX FIFO not empty</description>
-            </field>
-            <field>
-              <name>UART_CTRL_IRQ_RX_FULL</name>
-              <bitRange>[21:21]</bitRange>
-              <description>Fire IRQ if RX FIFO full</description>
-            </field>
-            <field>
-              <name>UART_CTRL_IRQ_TX_EMPTY</name>
-              <bitRange>[22:22]</bitRange>
-              <description>Fire IRQ if TX FIFO empty</description>
-            </field>
-            <field>
-              <name>UART_CTRL_IRQ_TX_NFULL</name>
-              <bitRange>[23:23]</bitRange>
-              <description>Fire IRQ if TX FIFO not full</description>
+              <description>RX FIFO is full</description>
             </field>
             <field>
               <name>UART_CTRL_RX_OVER</name>
-              <bitRange>[30:30]</bitRange>
+              <bitRange>[11:11]</bitRange>
               <access>read-only</access>
-              <readAction>modify</readAction>
-              <description>RX FIFO overflow; clears on CTRL read access</description>
+              <description>RX FIFO overflow</description>
+            </field>
+            <field>
+              <name>UART_CTRL_TX_EMPTY</name>
+              <bitRange>[12:12]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO is empty</description>
+            </field>
+            <field>
+              <name>UART_CTRL_TX_HALF</name>
+              <bitRange>[13:13]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO is is at least half full</description>
+            </field>
+            <field>
+              <name>UART_CTRL_TX_FULL</name>
+              <bitRange>[14:14]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO is full</description>
             </field>
             <field>
               <name>UART_CTRL_TX_BUSY</name>
-              <bitRange>[31:31]</bitRange>
+              <bitRange>[15:15]</bitRange>
               <access>read-only</access>
               <description>Transmitter busy or TX FIFO not empty</description>
+            </field>
+
+            <field>
+              <name>UART_CTRL_RX_IRQ_SEL</name>
+              <bitRange>[17:16]</bitRange>
+              <description>RX interrupt select</description>
+            </field>
+            <field>
+              <name>UART_CTRL_TX_IRQ_SEL</name>
+              <bitRange>[19:18]</bitRange>
+              <description>TX interrupt select</description>
+            </field>
+            <field>
+              <name>UART_CTRL_RX_IRQ_PEND</name>
+              <bitRange>[20:20]</bitRange>
+              <access>read-only</access>
+              <description>RX interrupt pending</description>
+            </field>
+            <field>
+              <name>UART_CTRL_TX_IRQ_PEND</name>
+              <bitRange>[21:21]</bitRange>
+              <access>read-only</access>
+              <description>TX interrupt pending</description>
+            </field>
+
+            <field>
+              <name>UART_CTRL_RX_FIFO</name>
+              <bitRange>[27:24]</bitRange>
+              <access>read-only</access>
+              <description>log2(RX FIFO depth)</description>
+            </field>
+            <field>
+              <name>UART_CTRL_TX_FIFO</name>
+              <bitRange>[31:28]</bitRange>
+              <access>read-only</access>
+              <description>log2(TX FIFO depth)</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>BAUD</name>
+          <description>Baud rate configuration register</description>
+          <addressOffset>0x04</addressOffset>
+          <readAction>modify</readAction>
+          <fields>
+            <field>
+              <name>UART_BAUD_DIV</name>
+              <bitRange>[9:0]</bitRange>
+              <description>Baud rate divider</description>
+            </field>
+            <field>
+              <name>UART_BAUD_PRSC</name>
+              <bitRange>[18:16]</bitRange>
+              <description>Baud rate clock prescaler select</description>
             </field>
           </fields>
         </register>
         <register>
           <name>DATA</name>
           <description>RTX data register</description>
-          <addressOffset>0x04</addressOffset>
+          <addressOffset>0x08</addressOffset>
           <readAction>modify</readAction>
           <fields>
             <field>
-              <name>UART_DATA_RTX</name>
+              <name>UART_DATA</name>
               <bitRange>[7:0]</bitRange>
               <description>Receive/transmit data</description>
             </field>
             <field>
-              <name>UART_DATA_RX_FIFO</name>
-              <bitRange>[11:8]</bitRange>
+              <name>UART_DATA_FRAME_ERR</name>
+              <bitRange>[8:8]</bitRange>
               <access>read-only</access>
-              <description>log2(RX FIFO size)</description>
+              <description>RX frame error, clears on read</description>
             </field>
             <field>
-              <name>UART_DATA_TX_FIFO</name>
-              <bitRange>[15:12]</bitRange>
+              <name>UART_DATA_OVERF_ERR</name>
+              <bitRange>[9:9]</bitRange>
               <access>read-only</access>
-              <description>log2(TX FIFO size)</description>
+              <description>RX FIFO overflow error, clears on read</description>
             </field>
           </fields>
         </register>
@@ -873,7 +919,7 @@
 
       <addressBlock>
         <offset>0</offset>
-        <size>0x08</size>
+        <size>0x10</size>
         <usage>registers</usage>
       </addressBlock>
     </peripheral>

@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -36,19 +36,14 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 enum NEORV32_SYSINFO_MISC_enum {
   SYSINFO_MISC_IMEM_LSB =  0, /**< SYSINFO_MISC  (0) (r/-): log2(internal IMEM size in bytes) (via IMEM_SIZE generic), LSB */
   SYSINFO_MISC_IMEM_MSB =  7, /**< SYSINFO_MISC  (7) (r/-): log2(internal IMEM size in bytes) (via IMEM_SIZE generic), MSB */
-
   SYSINFO_MISC_DMEM_LSB =  8, /**< SYSINFO_MISC  (8) (r/-): log2(internal DMEM size in bytes) (via DMEM_SIZE generic), LSB */
   SYSINFO_MISC_DMEM_MSB = 15, /**< SYSINFO_MISC (15) (r/-): log2(internal DMEM size in bytes) (via DMEM_SIZE generic), MSB */
-
   SYSINFO_MISC_HART_LSB = 16, /**< SYSINFO_MISC (16) (r/-): number of physical CPU cores ("harts"), LSB */
   SYSINFO_MISC_HART_MSB = 19, /**< SYSINFO_MISC (19) (r/-): number of physical CPU cores ("harts"), MSB */
-
   SYSINFO_MISC_BOOT_LSB = 20, /**< SYSINFO_MISC (20) (r/-): boot mode configuration (via BOOT_MODE_SELECT generic), LSB */
   SYSINFO_MISC_BOOT_MSB = 21, /**< SYSINFO_MISC (21) (r/-): boot mode configuration (via BOOT_MODE_SELECT generic), MSB */
-
   SYSINFO_MISC_ITMO_LSB = 22, /**< SYSINFO_MISC (22) (r/-): log2(internal bus timeout cycles), LSB */
   SYSINFO_MISC_ITMO_MSB = 26, /**< SYSINFO_MISC (26) (r/-): log2(internal bus timeout cycles), MSB */
-
   SYSINFO_MISC_ETMO_LSB = 27, /**< SYSINFO_MISC (27) (r/-): log2(external bus timeout cycles), LSB */
   SYSINFO_MISC_ETMO_MSB = 31  /**< SYSINFO_MISC (31) (r/-): log2(external bus timeout cycles), MSB */
 };
@@ -93,18 +88,13 @@ enum NEORV32_SYSINFO_SOC_enum {
  enum NEORV32_SYSINFO_CACHE_enum {
   SYSINFO_CACHE_BLOCK_SIZE_0   =  0, /**< SYSINFO_CACHE  (0) (r/-): log2(Block size in bytes), bit 0 (via CACHE_BLOCK_SIZE generic) */
   SYSINFO_CACHE_BLOCK_SIZE_3   =  3, /**< SYSINFO_CACHE  (3) (r/-): log2(Block size in bytes), bit 3 (via CACHE_BLOCK_SIZE generic) */
-
   SYSINFO_CACHE_I_NUM_BLOCKS_0 =  4, /**< SYSINFO_CACHE  (4) (r/-): i-cache: log2(Number of cache blocks), bit 0 (via ICACHE_NUM_BLOCKS generic) */
   SYSINFO_CACHE_I_NUM_BLOCKS_3 =  7, /**< SYSINFO_CACHE  (7) (r/-): i-cache: log2(Number of cache blocks), bit 3 (via ICACHE_NUM_BLOCKS generic) */
-
   SYSINFO_CACHE_D_NUM_BLOCKS_0 =  8, /**< SYSINFO_CACHE  (8) (r/-): d-cache: log2(Number of cache blocks), bit 0 (via DCACHE_NUM_BLOCKS generic) */
   SYSINFO_CACHE_D_NUM_BLOCKS_3 = 11, /**< SYSINFO_CACHE (11) (r/-): d-cache: log2(Number of cache blocks), bit 3 (via DCACHE_NUM_BLOCKS generic) */
-
   SYSINFO_CACHE_UC_BEGIN_0     = 12, /**< SYSINFO_CACHE (12) (r/-): start of non-cached address space, 256MB page (via CACHE_BYPASS_BEGIN generic) */
   SYSINFO_CACHE_UC_BEGIN_3     = 15, /**< SYSINFO_CACHE (15) (r/-): start of non-cached address space, 256MB page (via CACHE_BYPASS_BEGIN generic) */
-
   SYSINFO_CACHE_BURSTS_EN      = 16  /**< SYSINFO_CACHE (16) (r/-): issue burst transfers for cache updates (via CACHE_BURSTS_EN generic) */
-
 };
 /**@}*/
 

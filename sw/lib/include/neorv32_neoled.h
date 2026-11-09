@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -57,8 +57,6 @@ enum NEORV32_NEOLED_CTRL_enum {
  **************************************************************************/
 /**@{*/
 int  neorv32_neoled_available(void);
-void neorv32_neoled_enable(void);
-void neorv32_neoled_disable(void);
 void neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero, uint32_t t_high_one);
 void neorv32_neoled_setup_ws2812(void);
 void neorv32_neoled_strobe_blocking(void);

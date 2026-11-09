@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_spi_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_SPI));
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_IO_SPI) & 1U);
 }
 
 /**********************************************************************//**
@@ -60,22 +60,6 @@ uint32_t neorv32_spi_get_clock_speed(void) {
 }
 
 /**********************************************************************//**
- * Disable SPI controller.
- **************************************************************************/
-void neorv32_spi_disable(void) {
-
-  __MMREG32_BCLR(NEORV32_SPI->CTRL, 1U << SPI_CTRL_EN);
-}
-
-/**********************************************************************//**
- * Enable SPI controller.
- **************************************************************************/
-void neorv32_spi_enable(void) {
-
-  __MMREG32_BSET(NEORV32_SPI->CTRL, 1U << SPI_CTRL_EN);
-}
-
-/**********************************************************************//**
  * Get SPI FIFO depth.
  * @return FIFO depth (number of entries), zero if no FIFO implemented
  **************************************************************************/
@@ -93,7 +77,7 @@ int neorv32_spi_get_fifo_depth(void) {
  **************************************************************************/
 void neorv32_spi_cs_en(int cs) {
 
-  while (NEORV32_SPI->CTRL & (1U<<SPI_CTRL_TX_FULL)); // wait for free space in TX FIFO
+  while ((NEORV32_SPI->CTRL >> SPI_CTRL_TX_FULL) & 1U); // wait for free space in TX FIFO
   neorv32_spi_cs_en_nonblocking(cs);
 }
 
@@ -104,7 +88,7 @@ void neorv32_spi_cs_en(int cs) {
  **************************************************************************/
 void neorv32_spi_cs_dis(void) {
 
-  while (NEORV32_SPI->CTRL & (1U<<SPI_CTRL_TX_FULL)); // wait for free space in TX FIFO
+  while ((NEORV32_SPI->CTRL >> SPI_CTRL_TX_FULL) & 1U); // wait for free space in TX FIFO
   neorv32_spi_cs_dis_nonblocking();
 }
 
@@ -164,7 +148,7 @@ void neorv32_spi_cs_dis_nonblocking(void) {
  **************************************************************************/
 int neorv32_spi_check_cs(void) {
 
-  return (int)(NEORV32_SPI->CTRL & (1U << SPI_CS_ACTIVE));
+  return (int)((NEORV32_SPI->CTRL >> SPI_CS_ACTIVE) & 1U);
 }
 
 /**********************************************************************//**
@@ -173,7 +157,7 @@ int neorv32_spi_check_cs(void) {
  **************************************************************************/
 int neorv32_spi_rx_avail(void) {
 
-  return (int)(NEORV32_SPI->CTRL & (1U << SPI_CTRL_RX_AVAIL));
+  return (int)((NEORV32_SPI->CTRL >> SPI_CTRL_RX_AVAIL) & 1U);
 }
 
 /**********************************************************************//**
@@ -182,7 +166,7 @@ int neorv32_spi_rx_avail(void) {
  **************************************************************************/
 int neorv32_spi_tx_empty(void) {
 
-  return (int)(NEORV32_SPI->CTRL & (1U << SPI_CTRL_TX_EMPTY));
+  return (int)((NEORV32_SPI->CTRL >> SPI_CTRL_TX_EMPTY) & 1U);
 }
 
 /**********************************************************************//**
@@ -191,7 +175,7 @@ int neorv32_spi_tx_empty(void) {
  **************************************************************************/
 int neorv32_spi_tx_full(void) {
 
-  return (int)(NEORV32_SPI->CTRL & (1U << SPI_CTRL_TX_FULL));
+  return (int)((NEORV32_SPI->CTRL >> SPI_CTRL_TX_FULL) & 1U);
 }
 
 /**********************************************************************//**
@@ -200,5 +184,5 @@ int neorv32_spi_tx_full(void) {
  **************************************************************************/
 int neorv32_spi_busy(void) {
 
-  return (int)(NEORV32_SPI->CTRL & (1U << SPI_CTRL_BUSY));
+  return (int)((NEORV32_SPI->CTRL >> SPI_CTRL_BUSY) & 1U);
 }

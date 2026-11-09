@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_wdt_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_WDT));
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_IO_WDT) & 1U);
 }
 
 /**********************************************************************//**
@@ -46,8 +46,8 @@ void neorv32_wdt_setup(uint32_t timeout, int lock) {
  **************************************************************************/
 int neorv32_wdt_disable(void) {
 
-  __MMREG32_BCLR(NEORV32_WDT->CTRL, 1 << WDT_CTRL_EN); // try to disable
-  return (int)(NEORV32_WDT->CTRL & (1 << WDT_CTRL_EN));
+  NEORV32_WDT->CTRL &= ~(uint32_t)(1 << WDT_CTRL_EN); // try to disable
+  return (int)((NEORV32_WDT->CTRL >> WDT_CTRL_EN) & 1U);
 }
 
 /**********************************************************************//**

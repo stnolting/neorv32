@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -75,8 +75,6 @@ enum NEORV32_ONEWIRE_DCMD_enum {
 int     neorv32_onewire_available(void);
 int     neorv32_onewire_get_fifo_depth(void);
 int     neorv32_onewire_setup(uint32_t t_base);
-void    neorv32_onewire_enable(void);
-void    neorv32_onewire_disable(void);
 void    neorv32_onewire_flush(void);
 int     neorv32_onewire_sense(void);
 int     neorv32_onewire_busy(void);

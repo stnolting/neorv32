@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2Stephan Nolting. All rights reserved.                             //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_tracebuf_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_TRACEBUF));
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_IO_TRACEBUF) & 1U);
 }
 
 /**********************************************************************//**
@@ -63,7 +63,7 @@ int neorv32_tracebuf_get_buffer_depth(void) {
  **************************************************************************/
 int neorv32_tracebuf_run(void) {
 
-  return (int)(NEORV32_TRACEBUF->CTRL & (1U << TRACEBUF_CTRL_RUN));
+  return (int)((NEORV32_TRACEBUF->CTRL >> TRACEBUF_CTRL_RUN) & 1U);
 }
 
 /**********************************************************************//**
@@ -71,7 +71,7 @@ int neorv32_tracebuf_run(void) {
  **************************************************************************/
 void neorv32_tracebuf_irq_ack(void) {
 
-  __MMREG32_BSET(NEORV32_TRACEBUF->CTRL, 1U << TRACEBUF_CTRL_IRQ_CLR);
+  NEORV32_TRACEBUF->CTRL |= (uint32_t)(1U << TRACEBUF_CTRL_IRQ_CLR);
 }
 
 /**********************************************************************//**
@@ -80,7 +80,7 @@ void neorv32_tracebuf_irq_ack(void) {
  **************************************************************************/
 int neorv32_tracebuf_data_avail(void) {
 
-  return (int)(NEORV32_TRACEBUF->CTRL & (1U << TRACEBUF_CTRL_AVAIL));
+  return (int)((NEORV32_TRACEBUF->CTRL >> TRACEBUF_CTRL_AVAIL) & 1U);
 }
 
 /**********************************************************************//**

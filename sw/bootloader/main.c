@@ -47,9 +47,9 @@ int main(void) {
     while (1) {
 
       // wait for user input via UART0
-      if (neorv32_uart0_available()) {
-        if (neorv32_uart0_char_received()) {
-          neorv32_uart0_char_received_get(); // discard received char
+      if (neorv32_uart_available(NEORV32_UART0)) {
+        if (neorv32_uart_rx_avail(NEORV32_UART0)) {
+          neorv32_uart_getc(NEORV32_UART0); // discard received char
           uart_puts("Aborted.\n\n");
           goto skip_auto_boot;
         }

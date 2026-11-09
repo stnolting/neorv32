@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -14,7 +14,6 @@
 
 /** User configuration */
 #define BAUD_RATE 19200
-
 
 /**********************************************************************//**
  * GPIO interrupt handler.
@@ -35,13 +34,11 @@ void gpio_interrupt_handler(void) {
   neorv32_uart0_printf("GPIO.input = 0x%x\n", neorv32_gpio_port_get());
 }
 
-
 /**********************************************************************//**
  * GPIO interrupt demo.
  *
  * @attention This program requires the UART0 and the GPIO controller with
  * at least 1 input/output pair.
- *
  * @return Irrelevant (but can be inspected by the debugger).
  **************************************************************************/
 int main(void) {
@@ -49,11 +46,11 @@ int main(void) {
   // setup NEORV32 runtime-environment (RTE)
   neorv32_rte_setup();
 
-  // setup UART0 at default baud rate, no interrupts
+  // setup UART at default baud rate, no interrupts
   if (neorv32_uart0_available() == 0) { // UART0 available?
     return -1;
   }
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
   neorv32_uart0_printf("\n<< NEORV32 GPIO IRQ Demo >>\n\n");
 
   // check hardware/software configuration

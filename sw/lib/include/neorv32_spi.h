@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -63,7 +63,6 @@ enum NEORV32_SPI_DATA_enum {
 };
 /**@}*/
 
-
 /**********************************************************************//**
  * @name Prototypes
  **************************************************************************/
@@ -71,8 +70,6 @@ enum NEORV32_SPI_DATA_enum {
 int      neorv32_spi_available(void);
 void     neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity);
 uint32_t neorv32_spi_get_clock_speed(void);
-void     neorv32_spi_disable(void);
-void     neorv32_spi_enable(void);
 int      neorv32_spi_get_fifo_depth(void);
 void     neorv32_spi_cs_en(int cs);
 void     neorv32_spi_cs_dis(void);

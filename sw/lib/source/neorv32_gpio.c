@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_gpio_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_GPIO));
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_IO_GPIO) & 1U);
 }
 
 /**********************************************************************//**
@@ -32,10 +32,10 @@ void neorv32_gpio_pin_set(int pin, int value) {
   uint32_t mask = (uint32_t)(1U << (pin & 31U));
 
   if (value) {
-    __MMREG32_BSET(NEORV32_GPIO->PORT_OUT, mask);
+    NEORV32_GPIO->PORT_OUT |= mask;
   }
   else {
-    __MMREG32_BCLR(NEORV32_GPIO->PORT_OUT, mask);
+    NEORV32_GPIO->PORT_OUT &= ~mask;
   }
 }
 
@@ -45,7 +45,7 @@ void neorv32_gpio_pin_set(int pin, int value) {
  **************************************************************************/
 void neorv32_gpio_pin_toggle(int pin) {
 
-  __MMREG32_BINV(NEORV32_GPIO->PORT_OUT, 1U << (pin & 31U));
+  NEORV32_GPIO->PORT_OUT ^= (uint32_t)(1U << (pin & 31U));
 }
 
 /**********************************************************************//**
@@ -55,7 +55,7 @@ void neorv32_gpio_pin_toggle(int pin) {
  **************************************************************************/
 uint32_t neorv32_gpio_pin_get(int pin) {
 
-  return NEORV32_GPIO->PORT_IN & (uint32_t)(1U << (pin & 31U));
+  return (NEORV32_GPIO->PORT_IN >> (pin & 31U)) & 1U;
 }
 
 /**********************************************************************//**
@@ -73,7 +73,7 @@ void neorv32_gpio_port_set(uint32_t pin_mask) {
  **************************************************************************/
 void neorv32_gpio_port_toggle(uint32_t pin_mask) {
 
-  __MMREG32_BINV(NEORV32_GPIO->PORT_OUT, pin_mask);
+  NEORV32_GPIO->PORT_OUT ^= pin_mask;
 }
 
 /**********************************************************************//**
@@ -115,10 +115,10 @@ void neorv32_gpio_pin_dir_set(int pin, int dir) {
   uint32_t mask = (uint32_t)(1U << (pin & 31U));
 
   if (dir) {
-    __MMREG32_BSET(NEORV32_GPIO->PORT_DIR, mask);
+    NEORV32_GPIO->PORT_DIR |= mask;
   }
   else {
-    __MMREG32_BCLR(NEORV32_GPIO->PORT_DIR, mask);
+    NEORV32_GPIO->PORT_DIR &= ~mask;
   }
 }
 
@@ -133,18 +133,18 @@ void neorv32_gpio_irq_setup(int pin, int trigger) {
 
   // trigger type
   if ((trigger == GPIO_TRIG_EDGE_FALLING) || (trigger == GPIO_TRIG_EDGE_RISING)) {
-    __MMREG32_BSET(NEORV32_GPIO->IRQ_TYPE, mask); // set = edge
+    NEORV32_GPIO->IRQ_TYPE |= mask; // set = edge
   }
   else {
-    __MMREG32_BCLR(NEORV32_GPIO->IRQ_TYPE, mask); // clear = level
+    NEORV32_GPIO->IRQ_TYPE &= ~mask; // clear = level
   }
 
   // polarity type
   if ((trigger == GPIO_TRIG_EDGE_RISING) || (trigger == GPIO_TRIG_LEVEL_HIGH)) {
-    __MMREG32_BSET(NEORV32_GPIO->IRQ_POLARITY, mask); // set = rising edge / high level
+    NEORV32_GPIO->IRQ_POLARITY |= mask; // set = rising edge / high level
   }
   else {
-    __MMREG32_BCLR(NEORV32_GPIO->IRQ_POLARITY, mask); // clear = falling edge / low level
+    NEORV32_GPIO->IRQ_POLARITY &= ~mask; // clear = falling edge / low level
   }
 }
 

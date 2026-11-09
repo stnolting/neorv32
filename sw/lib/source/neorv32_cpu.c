@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -120,7 +120,7 @@ void neorv32_cpu_set_minstret(uint64_t value) {
 uint32_t neorv32_cpu_pmp_get_num_regions(void) {
 
   // PMP implemented at all?
-  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1U<<CSR_MXISA_SMPMP)) == 0) {
+  if (((neorv32_cpu_csr_read(CSR_MXISA) >> CSR_MXISA_SMPMP) & 1U) == 0) {
     return 0;
   }
 
@@ -157,7 +157,7 @@ uint32_t neorv32_cpu_pmp_get_num_regions(void) {
 uint32_t neorv32_cpu_pmp_get_granularity(void) {
 
   // PMP implemented at all?
-  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1U<<CSR_MXISA_SMPMP)) == 0) {
+  if (((neorv32_cpu_csr_read(CSR_MXISA) >> CSR_MXISA_SMPMP) & 1U) == 0) {
     return 0;
   }
 
@@ -193,7 +193,7 @@ uint32_t neorv32_cpu_pmp_get_granularity(void) {
  **************************************************************************/
 int neorv32_cpu_pmp_configure_region(int index, uint32_t addr, uint8_t config) {
 
-  if ((index > 15) || ((neorv32_cpu_csr_read(CSR_MXISA) & (1U<<CSR_MXISA_SMPMP)) == 0)) {
+  if (((index > 15) || ((neorv32_cpu_csr_read(CSR_MXISA) >> CSR_MXISA_SMPMP) & 1U) == 0)) {
     return -1; // entry not available
   }
 
@@ -259,7 +259,7 @@ int neorv32_cpu_pmp_configure_region(int index, uint32_t addr, uint8_t config) {
 uint32_t neorv32_cpu_hpm_get_num_counters(void) {
 
   // HPMs implemented at all?
-  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1U<<CSR_MXISA_ZIHPM)) == 0) {
+  if (((neorv32_cpu_csr_read(CSR_MXISA) >> CSR_MXISA_ZIHPM) & 1U) == 0) {
     return 0;
   }
 
@@ -342,7 +342,7 @@ uint32_t neorv32_cpu_hpm_get_size(void) {
   uint32_t tmp = 0, cnt = 0;
 
   // HPMs implemented at all?
-  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1U<<CSR_MXISA_ZIHPM)) == 0) {
+  if (((neorv32_cpu_csr_read(CSR_MXISA) >> CSR_MXISA_ZIHPM) & 1U) == 0) {
     return 0;
   }
 
@@ -380,14 +380,14 @@ int neorv32_cpu_hwtrig_get_number(void) {
   int cnt = 0;
   uint32_t sel = 0;
 
-  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1U<<CSR_MXISA_SDTRIG)) == 0) {
+  if (((neorv32_cpu_csr_read(CSR_MXISA) >> CSR_MXISA_SDTRIG) & 1U) == 0) {
     return 0;
   }
 
   while (1) {
     neorv32_cpu_csr_write(CSR_TSELECT, sel);
     if ((neorv32_cpu_csr_read(CSR_TSELECT) == sel) &&
-       ((neorv32_cpu_csr_read(CSR_TINFO) & 0x0000FFFF) != 1)) {
+       ((neorv32_cpu_csr_read(CSR_TINFO) & 0x0000FFFFU) != 1)) {
       cnt++;
     }
     else {

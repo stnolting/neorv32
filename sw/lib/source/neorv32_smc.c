@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -18,7 +18,7 @@
  * @return 0 if SMC was not synthesized, non-zero if SMC is available.
  **************************************************************************/
 int neorv32_smc_available(void) {
-  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_SMC));
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_SMC) & 1U);
 }
 
 /**********************************************************************//**
@@ -59,21 +59,21 @@ void neorv32_smc_setup(int dual, int msize, int cdiv, int rwait, uint8_t rcmd, u
  * @return Zero if SMC is idle, non-zero if memory operation in progress.
  **************************************************************************/
 int neorv32_smc_busy(void) {
-  return (int)(NEORV32_SMC->CSR0 & (1U<<SMC_CSR0_BUSY));
+  return (int)((NEORV32_SMC->CSR0 >> SMC_CSR0_BUSY) & 1U);
 }
 
 /**********************************************************************//**
  * Enable SMC control of SMC IO pins.
  **************************************************************************/
 void neorv32_smc_pins_enable(void) {
-  __MMREG32_BSET(NEORV32_SMC->CSR0, 1U<<SMC_CSR0_IOEN);
+  NEORV32_SMC->CSR0 |= (uint32_t)(1U << SMC_CSR0_IOEN);
 }
 
 /**********************************************************************//**
  * Disable SMC control of SMC IO pins.
  **************************************************************************/
 void neorv32_smc_pins_disable(void) {
-  __MMREG32_BCLR(NEORV32_SMC->CSR0, 1U<<SMC_CSR0_IOEN);
+  NEORV32_SMC->CSR0 &= ~(uint32_t)(1U << SMC_CSR0_IOEN);
 }
 
 /**********************************************************************//**

@@ -85,10 +85,10 @@ void system_setup(void) {
 
   // setup UART0
 #if (UART_EN == 1)
-  if (neorv32_uart0_available()) {
-    neorv32_uart0_setup(UART_BAUD, 0);
+  if (neorv32_uart_available(NEORV32_UART0)) {
+  neorv32_uart_setup(NEORV32_UART0, UART_BAUD, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 #if (UART_HWFC == 1)
-    neorv32_uart0_rtscts_enable(); // enable RTS/CTS hardware flow control
+  NEORV32_UART0->CTRL |= (1U << UART_CTRL_RTS_EN) | (1U << UART_CTRL_CTS_EN); // enable HW flow control
 #endif
   }
 #endif
@@ -309,7 +309,7 @@ void system_app_boot(void) {
   uart_puts("Booting (@");
   uart_puth(boot_addr);
   uart_puts(")...\n\n");
-  while (neorv32_uart0_tx_busy()); // wait for UART0 to complete transmission
+  while (neorv32_uart_tx_busy(NEORV32_UART0)); // wait for UART0 to complete transmission
 #endif
 
   // start application

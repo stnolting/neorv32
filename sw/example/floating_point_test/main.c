@@ -1,15 +1,14 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
 
-
 /**********************************************************************//**
  * @file floating_point_test/main.c
- * @author Stephan Nolting, Mikael Mortensen
+ * @author Mikael Mortensen
  * @brief Verification program for the NEORV32 'Zfinx' extension (floating-point in x registers) using
  * pseudo-random data as input; compares results from hardware against pure-sw reference functions.
  **************************************************************************/
@@ -105,7 +104,7 @@ int main() {
   float_conv_t res_sw;
 
   // setup UART at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   // capture all exceptions and give debug info via UART
   neorv32_rte_setup();

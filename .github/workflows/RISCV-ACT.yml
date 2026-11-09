@@ -1,0 +1,91 @@
+name: 'RISC-V Architectural Certification Tests'
+
+# Runs the ACT port from stnolting/neorv32-riscv-act against the RTL of the commit that
+# triggered this workflow (replaces the neorv32 submodule of the test repository).
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+
+  riscv-act:
+    runs-on: ubuntu-latest
+    name: 'RISC-V ACT'
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+
+    - name: '📂 Test Repository Checkout'
+      uses: actions/checkout@v6
+      with:
+        repository: stnolting/neorv32-riscv-act
+        ref: main
+        fetch-depth: 0
+
+    - name: '📂 Test Framework Checkout'
+      run: git submodule update --init --recursive riscv-arch-test
+
+    - name: '🧰 DUT Repository Checkout'
+      uses: actions/checkout@v6
+      with:
+        path: neorv32
+
+    - name: '📦 Install Python'
+      uses: actions/setup-python@v7
+      with:
+        python-version: '3.11'
+
+    - name: '📦 Install xPack RISC-V GCC'
+      run: |
+        wget -q https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v15.2.0-1/xpack-riscv-none-elf-gcc-15.2.0-1-linux-x64.tar.gz
+        mkdir $GITHUB_WORKSPACE/riscv-gcc
+        tar -xzf xpack-riscv-none-elf-gcc-15.2.0-1-linux-x64.tar.gz -C $GITHUB_WORKSPACE/riscv-gcc
+        echo "$GITHUB_WORKSPACE/riscv-gcc/xpack-riscv-none-elf-gcc-15.2.0-1/bin" >> $GITHUB_PATH
+
+    - name: '📦 Install Sail RISC-V reference model'
+      run: |
+        wget -q https://github.com/riscv/sail-riscv/releases/download/0.16/sail-riscv-$(uname)-$(arch).tar.gz
+        mkdir $GITHUB_WORKSPACE/sail-riscv
+        tar -xzf $GITHUB_WORKSPACE/sail-riscv-$(uname)-$(arch).tar.gz -C $GITHUB_WORKSPACE/sail-riscv
+        echo "$GITHUB_WORKSPACE/sail-riscv/sail-riscv-$(uname)-$(arch)/bin" >> $GITHUB_PATH
+
+    - name: '📦 Install GHDL'
+      uses: ghdl/setup-ghdl@v1
+      with:
+        version: nightly
+        backend: mcode
+
+    - name: '📦 Install mise'
+      run: curl https://mise.jdx.dev/install.sh | sh
+
+    - name: '🔍 Check tools'
+      run: make check
+
+    - name: '⚙️ Setup configuration'
+      run: make setup
+
+    - name: '⚙️ Generate tests and coverpoints'
+      run: make tests
+
+    - name: '⚙️ Build ELFs'
+      run: make elfs
+
+    - name: '⚙️ Setup simulation'
+      run: make sim
+
+    - name: '▶️ Run tests'
+      run: make run
+
+    - name: '📤 Archive test report'
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: riscv-act-summary
+        path: riscv-arch-test/work/neorv32/summary.log
+        if-no-files-found: warn

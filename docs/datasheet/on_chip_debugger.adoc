@@ -163,7 +163,7 @@ files should be defined:
 [source,gdb]
 ----
 (gdb) monitor arm semihosting_fileio enable
-(gdb) monitor arm semihosting_basedir path/to/neorv32/sw/example/demo_semihosting
+(gdb) monitor arm semihosting_basedir path/to/folder
 ----
 
 The NEORV32 software framework provides a built-in library for semihosting primitives (`sw/lib/include/neorv32_semihosting.h`).
@@ -181,14 +181,9 @@ USER_FLAGS += -DSTDIO_SEMIHOSTING
 When `STDIO_SEMIHOSTING` is defined _all_ file accesses provided by `stdio.h` (via Newlib) will be redirected to the host
 computer via semihosting services.
 
-.Redirecting all UART data via Semihosting
-[TIP]
-You can redirect **all** physical UART data via semihosting by defining `UART_SEMIHOSTING`
-(e.g. `"USER_FLAGS+=-DSTDIO_SEMIHOSTING -DUART_SEMIHOSTING"`).
-
 .Semihosting Services Without a Host
 [NOTE]
-If any semihosting request is issued without a host being connected, an environment breakpoint exception is raised.
+If any semihosting request is issued without a host being connected an environment breakpoint exception is raised.
 
 Further references:
 

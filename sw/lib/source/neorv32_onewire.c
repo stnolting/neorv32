@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_onewire_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_ONEWIRE));
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_IO_ONEWIRE) & 1U);
 }
 
 /**********************************************************************//**
@@ -77,27 +77,11 @@ int neorv32_onewire_setup(uint32_t t_base) {
 }
 
 /**********************************************************************//**
- * Enable ONEWIRE controller.
- **************************************************************************/
-void neorv32_onewire_enable(void) {
-
-  __MMREG32_BSET(NEORV32_ONEWIRE->CTRL, 1U << ONEWIRE_CTRL_EN);
-}
-
-/**********************************************************************//**
- * Disable ONEWIRE controller.
- **************************************************************************/
-void neorv32_onewire_disable(void) {
-
-  __MMREG32_BCLR(NEORV32_ONEWIRE->CTRL, 1U << ONEWIRE_CTRL_EN);
-}
-
-/**********************************************************************//**
  * Clear RTX FIFO.
  **************************************************************************/
 void neorv32_onewire_flush(void) {
 
-  __MMREG32_BSET(NEORV32_ONEWIRE->CTRL, 1U << ONEWIRE_CTRL_CLEAR);
+  NEORV32_ONEWIRE->CTRL |= (uint32_t)(1U << ONEWIRE_CTRL_CLEAR);
 }
 
 /**********************************************************************//**
@@ -106,7 +90,7 @@ void neorv32_onewire_flush(void) {
  **************************************************************************/
 int neorv32_onewire_sense(void) {
 
-  return (int)(NEORV32_ONEWIRE->CTRL & (1U << ONEWIRE_CTRL_SENSE));
+  return (int)((NEORV32_ONEWIRE->CTRL >> ONEWIRE_CTRL_SENSE) & 1U);
 }
 
 /**********************************************************************//**
@@ -115,7 +99,7 @@ int neorv32_onewire_sense(void) {
  **************************************************************************/
 int neorv32_onewire_busy(void) {
 
-  return (int)(NEORV32_ONEWIRE->CTRL & (1U << ONEWIRE_CTRL_BUSY));
+  return (int)((NEORV32_ONEWIRE->CTRL >> ONEWIRE_CTRL_BUSY) & 1U);
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -139,7 +123,7 @@ void neorv32_onewire_reset(void) {
  **************************************************************************/
 int neorv32_onewire_reset_get_presence(void) {
 
-  return (int)(NEORV32_ONEWIRE->DCMD & (1U << ONEWIRE_DCMD_PRESENCE));
+  return (int)((NEORV32_ONEWIRE->DCMD >> ONEWIRE_DCMD_PRESENCE) & 1U);
 }
 
 /**********************************************************************//**
@@ -160,7 +144,7 @@ void neorv32_onewire_read_bit(void) {
 uint8_t neorv32_onewire_read_bit_get(void) {
 
   // return read bit
-  if (NEORV32_ONEWIRE->DCMD & (1U << ONEWIRE_DCMD_DATA_MSB)) { // LSB first -> read bit is in MSB
+  if ((NEORV32_ONEWIRE->DCMD >> ONEWIRE_DCMD_DATA_MSB) & 1U) { // LSB first -> read bit is in MSB
     return 1;
   }
   else {

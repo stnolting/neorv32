@@ -141,9 +141,8 @@ int main() {
   neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
   // setup UARTs at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
-  NEORV32_UART1->CTRL = 0;
-  NEORV32_UART1->CTRL = NEORV32_UART0->CTRL;
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
+  neorv32_uart_setup(NEORV32_UART1, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
 
   // setup RTE
@@ -1277,23 +1276,24 @@ int main() {
     // wait for UART to finish transmitting
     while (neorv32_uart_tx_busy(NEORV32_UART0));
 
-    // backup current UART configurations
+    // backup current UART configuration
     tmp_a = NEORV32_UART0->CTRL;
-    tmp_b = NEORV32_UART1->CTRL;
 
-    // setup UARTs, UART0: IRQ if RX FIFO not empty
-    neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, 1 << UART_CTRL_IRQ_RX_NEMPTY);
-    NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_SIM_MODE); // make sure sim mode is disabled
-    neorv32_uart_rtscts_enable(NEORV32_UART0);
-    NEORV32_UART1->CTRL = 0; // reset
-    NEORV32_UART1->CTRL = NEORV32_UART0->CTRL;
+    // setup UARTs: IRQ if RX FIFO not empty
+    neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_AVAIL, UART_TX_IRQ_NONE);
+    neorv32_uart_setup(NEORV32_UART1, BAUD_RATE, UART_RX_IRQ_NONE,  UART_TX_IRQ_NONE);
+    // enable HW flow control
+    NEORV32_UART0->CTRL |= (1 << UART_CTRL_RTS_EN) | (1 << UART_CTRL_CTS_EN);
+    NEORV32_UART1->CTRL |= (1 << UART_CTRL_RTS_EN) | (1 << UART_CTRL_CTS_EN);
+    // make sure sim mode is disabled
+    NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_TX_SIM_EN);
+    NEORV32_UART1->CTRL &= ~(1 << UART_CTRL_TX_SIM_EN);
 
     // enable fast interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << UART0_FIRQ_ENABLE);
 
-    // send a char to trigger interrupt
-    neorv32_uart_putc(NEORV32_UART1, 0x18);
-    while (neorv32_uart_tx_busy(NEORV32_UART0));
+    // send a char to trigger interrupt (UART1 -> UART0)
+    neorv32_uart_putc(NEORV32_UART1, 238);
 
     // wait for interrupt
     neorv32_cpu_sleep();
@@ -1301,14 +1301,20 @@ int main() {
     // disable interrupts
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    int uart0_test_avail = neorv32_uart_char_received(NEORV32_UART0);
-    char uart0_test_data = neorv32_uart_char_received_get(NEORV32_UART0);
+    // checks
+    tmp_b = 0;
+    tmp_b |= (neorv32_cpu_csr_read(CSR_MCAUSE)     == UART0_TRAP_CODE) ? 0x1U : 0U; // correct trap code
+    tmp_b |= (neorv32_uart_rx_irq(NEORV32_UART0)   != 0              ) ? 0x2U : 0U; // RX IRQ is pending
+    tmp_b |= (neorv32_uart_rx_avail(NEORV32_UART0) != 0              ) ? 0x4U : 0U; // RX data available
+    tmp_b |= (neorv32_uart_rx_get(NEORV32_UART0)   == 238            ) ? 0x8U : 0U; // correct data received
 
     // restore original configurations
+    NEORV32_UART0->CTRL = 0;
+    NEORV32_UART1->CTRL = 0;
     NEORV32_UART0->CTRL = tmp_a;
-    NEORV32_UART1->CTRL = tmp_b;
+    NEORV32_UART1->CTRL = tmp_a;
 
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) ==UART0_TRAP_CODE) && (uart0_test_avail) && (uart0_test_data == 0x18)) {
+    if (tmp_b == 0xfU) {
       test_ok();
     }
     else {
@@ -1332,20 +1338,21 @@ int main() {
     // wait for UART to finish transmitting
     while (neorv32_uart_tx_busy(NEORV32_UART1));
 
-    // backup current UART configurations
+    // backup current UART configuration
     tmp_a = NEORV32_UART0->CTRL;
-    tmp_b = NEORV32_UART1->CTRL;
 
-    // setup UARTs, UART1: IRQ if TX FIFO empty
-    neorv32_uart_setup(NEORV32_UART1, BAUD_RATE, 1 << UART_CTRL_IRQ_TX_EMPTY);
-    NEORV32_UART1->CTRL &= ~(1 << UART_CTRL_SIM_MODE); // make sure sim mode is disabled
-    neorv32_uart_rtscts_enable(NEORV32_UART1);
-    NEORV32_UART0->CTRL = 0; // reset
-    NEORV32_UART0->CTRL = NEORV32_UART1->CTRL;
+    // setup UARTs: IRQ if RX FIFO not empty
+    neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
+    neorv32_uart_setup(NEORV32_UART1, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_IDLE);
+    // enable HW flow control
+    NEORV32_UART0->CTRL |= (1 << UART_CTRL_RTS_EN) | (1 << UART_CTRL_CTS_EN);
+    NEORV32_UART1->CTRL |= (1 << UART_CTRL_RTS_EN) | (1 << UART_CTRL_CTS_EN);
+    // make sure sim mode is disabled
+    NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_TX_SIM_EN);
+    NEORV32_UART1->CTRL &= ~(1 << UART_CTRL_TX_SIM_EN);
 
-    // send a char to trigger interrupt
-    neorv32_uart_putc(NEORV32_UART1, 0x81);
-    while (neorv32_uart_tx_busy(NEORV32_UART1));
+    // send a char to trigger interrupt (UART1 -> UART0)
+    neorv32_uart_putc(NEORV32_UART1, 173);
 
     // UART0 TX interrupt enable
     neorv32_cpu_csr_write(CSR_MIE, 1 << UART1_FIRQ_ENABLE);
@@ -1353,17 +1360,23 @@ int main() {
     // wait for interrupt
     neorv32_cpu_sleep();
 
-    int uart1_test_avail = neorv32_uart_char_received(NEORV32_UART0);
-    char uart1_test_data = neorv32_uart_char_received_get(NEORV32_UART0);
-
     // disable interrupts
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    // restore original configurations
-    NEORV32_UART0->CTRL = tmp_a;
-    NEORV32_UART1->CTRL = tmp_b;
+    // checks
+    tmp_b = 0;
+    tmp_b |= (neorv32_cpu_csr_read(CSR_MCAUSE)    == UART1_TRAP_CODE) ? 0x1U : 0U; // correct trap code
+    tmp_b |= (neorv32_uart_tx_irq(NEORV32_UART1)  != 0              ) ? 0x2U : 0U; // TX IRQ is pending
+    tmp_b |= (neorv32_uart_tx_busy(NEORV32_UART1) == 0              ) ? 0x4U : 0U; // TX is idle
+    tmp_b |= (neorv32_uart_rx_get(NEORV32_UART0)  == 173            ) ? 0x8U : 0U; // correct data received
 
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) ==UART1_TRAP_CODE) && (uart1_test_avail) && (uart1_test_data == 0x81)) {
+    // restore original configurations
+    NEORV32_UART0->CTRL = 0;
+    NEORV32_UART1->CTRL = 0;
+    NEORV32_UART0->CTRL = tmp_a;
+    NEORV32_UART1->CTRL = tmp_a;
+
+    if (tmp_b == 0xfU) {
       test_ok();
     }
     else {

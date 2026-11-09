@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -20,7 +20,6 @@
 volatile uint8_t __attribute__ ((aligned (16))) core1_stack[2048]; // stack memory for core1
 volatile _Atomic int shared_arg[2]; // shared variable to pass data between core
 volatile _Atomic int shared_run = 0; // shared variable to pass status between core
-
 
 /**********************************************************************//**
  * Check if number is prime.
@@ -42,7 +41,6 @@ uint32_t is_prime(uint32_t n) {
   return 1;
 }
 
-
 /**********************************************************************//**
  * Count all prime numbers in range.
  *
@@ -60,7 +58,6 @@ uint32_t count_primes(uint32_t beg, uint32_t end) {
   }
   return num_primes;
 }
-
 
 /**********************************************************************//**
  * Main function for core 1 (secondary core).
@@ -82,12 +79,10 @@ int core1_entry(void) {
   return 0;
 }
 
-
 /**********************************************************************//**
  * Find prime numbers by combining the power of both CPU cores.
  *
  * @note This program requires the dual-core configuration, the CLINT and UART0.
- *
  * @return Irrelevant (but can be inspected by the debugger).
  **************************************************************************/
 int main(void) {
@@ -95,11 +90,11 @@ int main(void) {
   // setup NEORV32 runtime-environment (RTE) for _this_ core (core0)
   neorv32_rte_setup();
 
-  // setup UART0 at default baud rate, no interrupts
+  // setup UART at default baud rate, no interrupts
   if (neorv32_uart0_available() == 0) { // UART0 available?
     return -1;
   }
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
   neorv32_uart0_printf("\n<< NEORV32 SMP Dual-Core Prime Numbers >>\n\n");
 
   // check hardware/software configuration

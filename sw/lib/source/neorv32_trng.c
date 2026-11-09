@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -19,7 +19,7 @@
  **************************************************************************/
 int neorv32_trng_available(void) {
 
-  return (int)(NEORV32_SYSINFO->SOC & (1U << SYSINFO_SOC_IO_TRNG));
+  return (int)((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_IO_TRNG) & 1U);
 }
 
 /**********************************************************************//**
@@ -35,7 +35,7 @@ void neorv32_trng_enable(void) {
     asm volatile ("nop");
   }
 
-  NEORV32_TRNG->CTRL = 1U << TRNG_CTRL_EN; // enable
+  NEORV32_TRNG->CTRL = (uint32_t)(1U << TRNG_CTRL_EN); // enable
 }
 
 /**********************************************************************//**
@@ -51,7 +51,7 @@ void neorv32_trng_disable(void) {
  **************************************************************************/
 void neorv32_trng_fifo_clear(void) {
 
-  __MMREG32_BSET(NEORV32_TRNG->CTRL, 1U << TRNG_CTRL_FIFO_CLR);
+  NEORV32_TRNG->CTRL |= (uint32_t)(1U << TRNG_CTRL_FIFO_CLR);
 }
 
 /**********************************************************************//**
@@ -98,7 +98,7 @@ int neorv32_trng_get_num_inv(void) {
  **************************************************************************/
 int neorv32_trng_data_avail(void) {
 
-  return (int)(NEORV32_TRNG->CTRL & (1U<<TRNG_CTRL_AVAIL));
+  return (int)((NEORV32_TRNG->CTRL >> TRNG_CTRL_AVAIL) & 1U);
 }
 
 /**********************************************************************//**
@@ -118,5 +118,5 @@ uint8_t neorv32_trng_data_get(void) {
  **************************************************************************/
 int neorv32_trng_check_sim_mode(void) {
 
-  return (int)(NEORV32_TRNG->CTRL & (1U<<TRNG_CTRL_SIM_MODE));
+  return (int)((NEORV32_TRNG->CTRL >> TRNG_CTRL_SIM_MODE) & 1U);
 }

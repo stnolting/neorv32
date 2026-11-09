@@ -49,7 +49,7 @@ int main() {
   }
 
   // setup UART at default baud rate, no interrupts
-  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
 
   // check if TWI unit is implemented at all
   if (neorv32_twi_available() == 0) {

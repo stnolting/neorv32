@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) Stephan Nolting. All rights reserved.                              //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -41,8 +41,6 @@ int      neorv32_cpu_hwtrig_get_number(void);
 /**********************************************************************//**
  * Store unsigned word to address space.
  *
- * @note An unaligned access address will raise an alignment exception.
- *
  * @param[in] addr Address (32-bit).
  * @param[in] wdata Data word (32-bit) to store.
  **************************************************************************/
@@ -55,8 +53,6 @@ static inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_wo
 
 /**********************************************************************//**
  * Store unsigned half-word to address space.
- *
- * @note An unaligned access address will raise an alignment exception.
  *
  * @param[in] addr Address (32-bit).
  * @param[in] wdata Data half-word (16-bit) to store.
@@ -84,8 +80,6 @@ static inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_by
 /**********************************************************************//**
  * Load unsigned word from address space.
  *
- * @note An unaligned access address will raise an alignment exception.
- *
  * @param[in] addr Address (32-bit).
  * @return Read data word (32-bit).
  **************************************************************************/
@@ -100,8 +94,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned
 /**********************************************************************//**
  * Load unsigned half-word from address space.
  *
- * @note An unaligned access address will raise an alignment exception.
- *
  * @param[in] addr Address (32-bit).
  * @return Read data half-word (16-bit).
  **************************************************************************/
@@ -115,8 +107,6 @@ static inline uint16_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned
 
 /**********************************************************************//**
  * Load signed half-word from address space.
- *
- * @note An unaligned access address will raise an alignment exception.
  *
  * @param[in] addr Address (32-bit).
  * @return Read data half-word (16-bit).
@@ -231,8 +221,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_swap(cons
 /**********************************************************************//**
  * Atomic memory access: load-reservate word.
  *
- * @warning This function requires the A/Zalrsc ISA extension.
- *
  * @param[in] addr Address (32-bit, word-aligned).
  * @return Read data word (32-bit).
  **************************************************************************/
@@ -248,8 +236,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amolr(uint32_
 
 /**********************************************************************//**
  * Atomic memory access: store-conditional word.
- *
- * @warning This function requires the A/Zalrsc ISA extension.
  *
  * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Data word to-be-written conditionally (32-bit).
@@ -269,8 +255,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amosc(uint32_
 /**********************************************************************//**
  * Atomic memory access: 32-bit atomic SWAP.
  *
- * @warning This function requires the A/Zaamo ISA extension.
- *
  * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
@@ -288,8 +272,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoswap(uint3
 
 /**********************************************************************//**
  * Atomic memory access: 32-bit atomic ADD.
- *
- * @warning This function requires the A/Zaamo ISA extension.
  *
  * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
@@ -309,8 +291,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoadd(uint32
 /**********************************************************************//**
  * Atomic memory access: 32-bit atomic XOR.
  *
- * @warning This function requires the A/Zaamo ISA extension.
- *
  * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
@@ -328,8 +308,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoxor(uint32
 
 /**********************************************************************//**
  * Atomic memory access: 32-bit atomic AND.
- *
- * @warning This function requires the A/Zaamo ISA extension.
  *
  * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
@@ -349,8 +327,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoand(uint32
 /**********************************************************************//**
  * Atomic memory access: 32-bit atomic OR.
  *
- * @warning This function requires the A/Zaamo ISA extension.
- *
  * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
@@ -368,8 +344,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoor(uint32_
 
 /**********************************************************************//**
  * Atomic memory access: 32-bit atomic MIN.
- *
- * @warning This function requires the A/Zaamo ISA extension.
  *
  * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
@@ -389,8 +363,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomin(uint32
 /**********************************************************************//**
  * Atomic memory access: 32-bit atomic MAX.
  *
- * @warning This function requires the A/Zaamo ISA extension.
- *
  * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
@@ -409,8 +381,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomax(uint32
 /**********************************************************************//**
  * Atomic memory access: 32-bit atomic MINU.
  *
- * @warning This function requires the A/Zaamo ISA extension.
- *
  * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
@@ -428,8 +398,6 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amominu(uint3
 
 /**********************************************************************//**
  * Atomic memory access: 32-bit atomic MAXU.
- *
- * @warning This function requires the A/Zaamo ISA extension.
  *
  * @param[in] addr Address (32-bit, word-aligned).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).

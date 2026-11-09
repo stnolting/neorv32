@@ -1217,8 +1217,8 @@ begin
     if IO_UART0_EN generate
       uart0_inst: entity neorv32.neorv32_uart
       generic map (
-        UART_RX_FIFO => IO_UART0_RX_FIFO,
-        UART_TX_FIFO => IO_UART0_TX_FIFO
+        RX_FIFO_DEPTH => IO_UART0_RX_FIFO,
+        TX_FIFO_DEPTH => IO_UART0_TX_FIFO
       )
       port map (
         clk_i       => clk_i,
@@ -1248,8 +1248,8 @@ begin
     if IO_UART1_EN generate
       uart1_inst: entity neorv32.neorv32_uart
       generic map (
-        UART_RX_FIFO => IO_UART1_RX_FIFO,
-        UART_TX_FIFO => IO_UART1_TX_FIFO
+        RX_FIFO_DEPTH => IO_UART1_RX_FIFO,
+        TX_FIFO_DEPTH => IO_UART1_TX_FIFO
       )
       port map (
         clk_i       => clk_i,
