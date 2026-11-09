@@ -1277,6 +1277,43 @@ package neorv32_package is
   );
   end component;
 
+  -- Declaration of a FD-compatible FPU --
+  component neorv32_fpu_dummy
+  port (
+    rstn_i     : in  std_ulogic;
+    clk_i      : in  std_ulogic;
+    rs1        : in  std_ulogic_vector(63 downto 0);
+    rs2        : in  std_ulogic_vector(63 downto 0);
+    rs3        : in  std_ulogic_vector(63 downto 0);
+    fmadd      : in  std_ulogic;
+    fmsub      : in  std_ulogic;
+    fnmadd     : in  std_ulogic;
+    fnmsub     : in  std_ulogic;
+    fadd       : in  std_ulogic;
+    fsub       : in  std_ulogic;
+    fmul       : in  std_ulogic;
+    fdiv       : in  std_ulogic;
+    fsqrt      : in  std_ulogic;
+    fsgnj      : in  std_ulogic;
+    fcmp       : in  std_ulogic;
+    fmax       : in  std_ulogic;
+    fclass     : in  std_ulogic;
+    fmv_i2f    : in  std_ulogic;
+    fmv_f2i    : in  std_ulogic;
+    fcvt_f2f   : in  std_ulogic;
+    fcvt_i2f   : in  std_ulogic;
+    fcvt_f2i   : in  std_ulogic;
+    fcvt_op    : in  std_ulogic_vector(1 downto 0);
+    fmt        : in  std_ulogic_vector(1 downto 0);
+    rm         : in  std_ulogic_vector(2 downto 0);
+    res        : out std_ulogic_vector(63 downto 0);
+    flags      : out std_ulogic_vector(4 downto 0);
+    ready      : out std_ulogic;
+    clear      : in  std_ulogic
+  );
+  end component;
+
+  -- CPU register file for FD-extensions --
   component neorv32_cpu_regfile_double
   generic (
     AWIDTH  : natural range 4 to 5; -- address width

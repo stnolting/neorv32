@@ -214,7 +214,7 @@ begin
                                      ctrl_i.ir_funct12(11 downto 6) = "111000" or
                                      ctrl_i.ir_funct12(11 downto 6) = "111100") else csr_frm; 
 
-  neorv32_cpu_alu_fpu64_inst: entity work.fpu_unit
+  neorv32_cpu_alu_fpu64_inst: entity work.neorv32_fpu_dummy
   port map(
     rstn_i    => rstn_i,
     clk_i     => clk_i,
