@@ -32,7 +32,7 @@ entity neorv32_tb is
     RISCV_ISA_C       : boolean                        := true;        -- compressed extension
     RISCV_ISA_E       : boolean                        := false;       -- embedded RF extension
     RISCV_ISA_M       : boolean                        := true;        -- mul/div extension
-    RISCV_ISA_D       : boolean                        := true;        -- 32- and 64-bit floating-point extension
+    RISCV_ISA_D       : boolean                        := false;       -- 32- and 64-bit floating-point extension
     RISCV_ISA_U       : boolean                        := true;        -- user mode extension
     RISCV_ISA_Zaamo   : boolean                        := true;        -- atomic read-modify-write operations extension
     RISCV_ISA_Zalrsc  : boolean                        := true;        -- atomic reservation-set operations extension
@@ -45,7 +45,7 @@ entity neorv32_tb is
     RISCV_ISA_Zbs     : boolean                        := true;        -- single-bit bit-manipulation extension
     RISCV_ISA_Zcb     : boolean                        := true;        -- additional code size reduction instructions
     RISCV_ISA_Zcmop   : boolean                        := true;        -- compressed may-be-operations
-    RISCV_ISA_Zfinx   : boolean                        := false;        -- 32-bit floating-point extension
+    RISCV_ISA_Zfinx   : boolean                        := true;        -- 32-bit floating-point extension
     RISCV_ISA_Zibi    : boolean                        := true;        -- branch with immediate
     RISCV_ISA_Zicntr  : boolean                        := true;        -- base counters
     RISCV_ISA_Zicond  : boolean                        := true;        -- integer conditional operations

@@ -246,6 +246,7 @@ begin
   generic map (
     HART_ID     => HART_ID,       -- hardware thread ID
     RISCV_C     => RISCV_ISA_C,   -- implement C ISA extension
+    RISCV_D     => RISCV_ISA_D,   -- implement D ISA extension
     RISCV_ZCB   => RISCV_ISA_Zcb, -- implement Zcb ISA sub-extension
     RISCV_ZCMOP => riscv_zcmop_c  -- implement Zcb ISA sub-extension
   )

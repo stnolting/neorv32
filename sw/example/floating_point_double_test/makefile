@@ -1,7 +1,7 @@
 # Bootloader (for BOOTROM) makefile.
 
 # Minimal RISC-V ISA (E!) only
-MARCH = rv32imfd_zicsr_zifencei
+MARCH = rv32imfdc_zicsr_zifencei
 MABI = ilp32d
 
 # Optimize for minimal size

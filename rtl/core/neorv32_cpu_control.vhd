@@ -390,7 +390,7 @@ begin
           when opcode_load_d | opcode_store_d =>
             ctrl_nxt.lsu_rd <= not exec.ir(instr_opcode_lsb_c+5);
             ctrl_nxt.lsu_wr <= exec.ir(instr_opcode_lsb_c+5);
-            if (funct3_v = "011") then
+            if (funct3_v(1 downto 0) = "11") then
               ctrl_nxt.rf_d_mem   <= '1';
             else
               ctrl_nxt.rf_f_mem   <= '1';

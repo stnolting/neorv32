@@ -14,7 +14,7 @@ typedef union converter_s{
 
 int main()
 {
-  neorv32_uart_setup(NEORV32_UART0, 19200, 0);
+  neorv32_uart_setup(NEORV32_UART0, 19200, 0, 0);
   
   converter NAN;    // quiet NAN
   converter s_NAN;  // signal NAN
