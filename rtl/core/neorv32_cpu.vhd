@@ -567,12 +567,26 @@ begin
     trace <= trace_port_terminate_c;
   end generate;
 
-  -- simulation-only trace logger --
-  sim_trace_enabled:
-  if TRACE_SIMLOG_EN and is_simulation_c generate
+  -- simulation-only trace logger - CPU0 --
+  sim_trace0_enabled:
+  if TRACE_SIMLOG_EN and is_simulation_c and (HART_ID = 0) generate
     trace_simlog_inst: entity neorv32.neorv32_cpu_trace_simlog
     generic map (
-      HART_ID => HART_ID
+      LOG_FILE => "neorv32_trace0.log"
+    )
+    port map (
+      clk_i   => clk_i,
+      rstn_i  => rstn_i,
+      trace_i => trace
+    );
+  end generate;
+
+  -- simulation-only trace logger - CPU1 --
+  sim_trace1_enabled:
+  if TRACE_SIMLOG_EN and is_simulation_c and (HART_ID = 1) generate
+    trace_simlog_inst: entity neorv32.neorv32_cpu_trace_simlog
+    generic map (
+      LOG_FILE => "neorv32_trace1.log"
     )
     port map (
       clk_i   => clk_i,
