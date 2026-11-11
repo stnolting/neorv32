@@ -107,7 +107,8 @@ end entity;
 architecture neorv32_core_complex_rtl of neorv32_core_complex is
 
   signal cpu_i_fence, cpu_d_fence, icache_sync, dcache_sync : std_ulogic;
-  signal cpu_i_req, cpu_d_req, icache_req, dcache_req, bus_req : bus_req_t;
+  signal ifetch_hold, dcache_busy, ifence_pnd, ifetch_pnd : std_ulogic;
+  signal cpu_i_req, ifetch_req, cpu_d_req, icache_req, dcache_req, bus_req : bus_req_t;
   signal cpu_i_rsp, cpu_d_rsp, icache_rsp, dcache_rsp, bus_rsp : bus_rsp_t;
 
 begin
@@ -203,7 +204,8 @@ begin
       clk_i      => clk_i,
       rstn_i     => rstn_i,
       sync_i     => icache_sync,
-      host_req_i => cpu_i_req,
+      busy_o     => open,
+      host_req_i => ifetch_req,
       host_rsp_o => cpu_i_rsp,
       bus_req_o  => icache_req,
       bus_rsp_i  => icache_rsp
@@ -215,7 +217,7 @@ begin
   icache_disabled:
   if not ICACHE_EN generate
     icache_sync <= '0';
-    icache_req  <= cpu_i_req;
+    icache_req  <= ifetch_req;
     cpu_i_rsp   <= icache_rsp;
   end generate;
 
@@ -235,6 +237,7 @@ begin
       clk_i      => clk_i,
       rstn_i     => rstn_i,
       sync_i     => dcache_sync,
+      busy_o     => dcache_busy,
       host_req_i => cpu_d_req,
       host_rsp_o => cpu_d_rsp,
       bus_req_o  => dcache_req,
@@ -248,9 +251,35 @@ begin
   dcache_disabled:
   if not DCACHE_EN generate
     dcache_sync <= '0';
+    dcache_busy <= '0';
     dcache_req  <= cpu_d_req;
     cpu_d_rsp   <= dcache_rsp;
   end generate;
+
+  -- Instruction Fetch Hold -----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- fence.i: instruction fetches following the fence.i have to observe all stores executed before it
+  -- (Zifencei). Hence, no new instruction fetch request may be issued (to the I$ or - if there is no
+  -- I$ - to the bus) before the D$ has written back all modified blocks. Requests that are already in
+  -- progress complete; an I$ block refilled by such a request is invalidated by the pending I$ sync.
+  ifetch_hold_ctrl: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      ifence_pnd <= '0';
+      ifetch_pnd <= '0';
+    elsif rising_edge(clk_i) then
+      ifence_pnd <= (ifence_pnd or cpu_i_fence) and dcache_busy; -- D$ sync triggered by fence.i in progress
+      ifetch_pnd <= (ifetch_pnd or cpu_i_req.stb) and ifetch_hold; -- buffer the delayed fetch request
+    end if;
+  end process;
+
+  ifetch_hold <= (ifence_pnd or cpu_i_fence) and dcache_busy; -- a plain "fence" does not stall instruction fetch
+
+  ifetch_request: process(cpu_i_req, ifetch_pnd, ifetch_hold)
+  begin
+    ifetch_req     <= cpu_i_req;
+    ifetch_req.stb <= (cpu_i_req.stb or ifetch_pnd) and (not ifetch_hold);
+  end process;
 
   -- Instruction/Data Bus Switch ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

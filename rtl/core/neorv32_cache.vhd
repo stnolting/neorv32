@@ -37,6 +37,7 @@ entity neorv32_cache is
     clk_i      : in  std_ulogic; -- global clock, rising edge
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     sync_i     : in  std_ulogic; -- perform full synchronization with main memory
+    busy_o     : out std_ulogic; -- synchronization pending or in progress
     host_req_i : in  bus_req_t;  -- host request
     host_rsp_o : out bus_rsp_t;  -- host response
     bus_req_o  : out bus_req_t;  -- bus request
@@ -569,6 +570,9 @@ begin
     data_i    => cache_o.data,
     data_o    => cache_i.data
   );
+
+  -- synchronization pending or in progress --
+  busy_o <= ctrl.pnd_syn or ctrl.sync or sync_i;
 
   -- cache hit --
   cache_i.hit <= '1' when ((cache_i.tag(tag_width_c-1 downto 0) = host_req_i.addr(31 downto 31-(tag_width_c-1))) and
