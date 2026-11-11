@@ -190,7 +190,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_trace_simlog is
   generic (
-    HART_ID : natural -- hardware thread ID
+    LOG_FILE : string -- trace log file
   );
   port (
     clk_i   : in std_ulogic;  -- global clock line
@@ -785,7 +785,7 @@ begin
   sim_trace_gen:
   if is_simulation_c generate
     sim_trace: process(rstn_i, clk_i)
-      file     file_v : text open write_mode is "neorv32_trace" & natural'image(HART_ID) & ".log";
+      file     file_v : text open write_mode is LOG_FILE;
       variable line_v : line;
     begin
       if (rstn_i = '0') then
