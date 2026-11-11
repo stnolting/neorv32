@@ -323,10 +323,16 @@ package neorv32_package is
   constant opcode_store_c  : std_ulogic_vector(6 downto 0) := "0100011"; -- store
   constant opcode_amo_c    : std_ulogic_vector(6 downto 0) := "0101111"; -- atomic memory access
   constant opcode_fence_c  : std_ulogic_vector(6 downto 0) := "0001111"; -- fence / fence.i
+  constant opcode_load_d   : std_ulogic_vector(6 downto 0) := "0000111"; -- load double
+  constant opcode_store_d  : std_ulogic_vector(6 downto 0) := "0100111"; -- store double
   -- system/csr --
   constant opcode_system_c : std_ulogic_vector(6 downto 0) := "1110011"; -- environment/CSR access
   -- floating point operations --
   constant opcode_fpu_c    : std_ulogic_vector(6 downto 0) := "1010011"; -- dual/single operand instruction
+  constant opcode_fpu_fma  : std_ulogic_vector(6 downto 0) := "1000011"; -- fpu fused mul and add
+  constant opcode_fpu_fms  : std_ulogic_vector(6 downto 0) := "1000111"; -- fpu fused mul and sub
+  constant opcode_fpu_fnms : std_ulogic_vector(6 downto 0) := "1001011"; -- fpu fused negative mul and sub
+  constant opcode_fpu_fnma : std_ulogic_vector(6 downto 0) := "1001111"; -- fpu fused negative mul and add
   -- official custom opcodes - free for custom instructions --
   constant opcode_cust0_c  : std_ulogic_vector(6 downto 0) := "0001011"; -- custom-0 (NEORV32 CFU)
   constant opcode_cust1_c  : std_ulogic_vector(6 downto 0) := "0101011"; -- custom-1 (NEORV32 CFU)
@@ -352,9 +358,11 @@ package neorv32_package is
   constant funct3_lbu_c    : std_ulogic_vector(2 downto 0) := "100"; -- load byte (unsigned)
   constant funct3_lhu_c    : std_ulogic_vector(2 downto 0) := "101"; -- load half word (unsigned)
   constant funct3_lwu_c    : std_ulogic_vector(2 downto 0) := "110"; -- load word (unsigned)
+  constant funct3_fld      : std_ulogic_vector(2 downto 0) := "011"; -- load double
   constant funct3_sb_c     : std_ulogic_vector(2 downto 0) := "000"; -- store byte
   constant funct3_sh_c     : std_ulogic_vector(2 downto 0) := "001"; -- store half word
   constant funct3_sw_c     : std_ulogic_vector(2 downto 0) := "010"; -- store word
+  constant funct3_fsd      : std_ulogic_vector(2 downto 0) := "011"; -- store double
   -- alu --
   constant funct3_sadd_c   : std_ulogic_vector(2 downto 0) := "000"; -- sub/add
   constant funct3_sll_c    : std_ulogic_vector(2 downto 0) := "001"; -- shift logical left
@@ -666,12 +674,19 @@ package neorv32_package is
     rf_rs1       : std_ulogic_vector(4 downto 0);  -- source register 1 address
     rf_rs2       : std_ulogic_vector(4 downto 0);  -- source register 2 address
     rf_rd        : std_ulogic_vector(4 downto 0);  -- destination register address
+    rf_d_mem     : std_ulogic;                     -- double precision floating point memmory access
+    rf_f_mem     : std_ulogic;                     -- single precision floating point memmory access --
+    rf_d_alu     : std_ulogic;                     -- full FP register file
+    rf_d_cvt     : std_ulogic;                     -- rs1 from GP resgister, rest from FP
+    rf_d_int     : std_ulogic;                     -- res to GP register, rest from FP
+    rf_int       : std_ulogic;                     -- normalworkflow without FP
     rf_zero      : std_ulogic;                     -- allow/force write access to x0
     -- alu --
     alu_op       : std_ulogic_vector(2 downto 0);  -- operation select
     alu_sub      : std_ulogic;                     -- addition/subtraction control
     alu_opa_mux  : std_ulogic;                     -- operand A select (0=rs1, 1=PC)
     alu_opb_mux  : std_ulogic;                     -- operand B select (0=rs2, 1=IMM)
+    alu_opad_mux : std_ulogic;                     -- operand A select (0=rs1, 1=IMM)
     alu_unsigned : std_ulogic;                     -- is unsigned operation
     alu_imm      : std_ulogic_vector(31 downto 0); -- immediate
     alu_cp_alu   : std_ulogic;                     -- base co-processor trigger (one-shot)
@@ -717,11 +732,18 @@ package neorv32_package is
     rf_rs1       => (others => '0'),
     rf_rs2       => (others => '0'),
     rf_rd        => (others => '0'),
+    rf_d_mem     => '0',
+    rf_f_mem     => '0',
+    rf_d_alu     => '0',
+    rf_d_cvt     => '0',
+    rf_d_int     => '0',
+    rf_int       => '0',
     rf_zero      => '0',
     alu_op       => (others => '0'),
     alu_sub      => '0',
     alu_opa_mux  => '0',
     alu_opb_mux  => '0',
+    alu_opad_mux => '0',
     alu_unsigned => '0',
     alu_imm      => (others => '0'),
     alu_cp_alu   => '0',
@@ -909,6 +931,7 @@ package neorv32_package is
     RISCV_ISA_C         : boolean                        := false;
     RISCV_ISA_E         : boolean                        := false;
     RISCV_ISA_M         : boolean                        := false;
+    RISCV_ISA_D         : boolean                        := false;
     RISCV_ISA_U         : boolean                        := false;
     RISCV_ISA_Zaamo     : boolean                        := false;
     RISCV_ISA_Zalrsc    : boolean                        := false;
@@ -1251,6 +1274,68 @@ package neorv32_package is
     rs2_i    : in  std_ulogic_vector(31 downto 0);
     result_o : out std_ulogic_vector(31 downto 0);
     valid_o  : out std_ulogic
+  );
+  end component;
+
+  -- Declaration of a FD-compatible FPU --
+  component neorv32_fpu_dummy
+  port (
+    rstn_i     : in  std_ulogic;
+    clk_i      : in  std_ulogic;
+    rs1        : in  std_ulogic_vector(63 downto 0);
+    rs2        : in  std_ulogic_vector(63 downto 0);
+    rs3        : in  std_ulogic_vector(63 downto 0);
+    fmadd      : in  std_ulogic;
+    fmsub      : in  std_ulogic;
+    fnmadd     : in  std_ulogic;
+    fnmsub     : in  std_ulogic;
+    fadd       : in  std_ulogic;
+    fsub       : in  std_ulogic;
+    fmul       : in  std_ulogic;
+    fdiv       : in  std_ulogic;
+    fsqrt      : in  std_ulogic;
+    fsgnj      : in  std_ulogic;
+    fcmp       : in  std_ulogic;
+    fmax       : in  std_ulogic;
+    fclass     : in  std_ulogic;
+    fmv_i2f    : in  std_ulogic;
+    fmv_f2i    : in  std_ulogic;
+    fcvt_f2f   : in  std_ulogic;
+    fcvt_i2f   : in  std_ulogic;
+    fcvt_f2i   : in  std_ulogic;
+    fcvt_op    : in  std_ulogic_vector(1 downto 0);
+    fmt        : in  std_ulogic_vector(1 downto 0);
+    rm         : in  std_ulogic_vector(2 downto 0);
+    res        : out std_ulogic_vector(63 downto 0);
+    flags      : out std_ulogic_vector(4 downto 0);
+    ready      : out std_ulogic;
+    clear      : in  std_ulogic
+  );
+  end component;
+
+  -- CPU register file for FD-extensions --
+  component neorv32_cpu_regfile_double
+  generic (
+    AWIDTH  : natural range 4 to 5; -- address width
+    ARCHSEL : natural range 0 to 3  -- architecture style select
+  );
+  port (
+    -- global control --
+    clk_i      : in  std_ulogic; -- global clock, rising edge
+    rstn_i     : in  std_ulogic; -- global reset, low-active, async
+    -- write port (rd) --
+    rd_we_i    : in  std_ulogic;                     -- write-enable
+    rd_addr_i  : in  std_ulogic_vector(4 downto 0);  -- address
+    rd_data_i  : in  std_ulogic_vector(63 downto 0); -- write data
+    -- read port 1 (rs1) --
+    rs1_addr_i : in  std_ulogic_vector(4 downto 0);  -- address
+    rs1_data_o : out std_ulogic_vector(63 downto 0); -- read data
+    -- read port 1 (rs2) --
+    rs2_addr_i : in  std_ulogic_vector(4 downto 0);  -- address
+    rs2_data_o : out std_ulogic_vector(63 downto 0); -- read data
+    -- read port 1 (rs3) --
+    rs3_addr_i : in  std_ulogic_vector(4 downto 0);  -- address
+    rs3_data_o : out std_ulogic_vector(63 downto 0)  -- read data
   );
   end component;
 

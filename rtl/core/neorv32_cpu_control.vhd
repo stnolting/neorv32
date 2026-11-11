@@ -29,6 +29,7 @@ entity neorv32_cpu_control is
     RISCV_ISA_C         : boolean; -- compressed extension
     RISCV_ISA_E         : boolean; -- embedded-class register file extension
     RISCV_ISA_M         : boolean; -- mul/div extension
+    RISCV_ISA_D         : boolean; -- 32- and 64-bit floating-point extension
     RISCV_ISA_U         : boolean; -- user mode extension
     RISCV_ISA_Zaamo     : boolean; -- atomic read-modify-write extension
     RISCV_ISA_Zalrsc    : boolean; -- atomic reservation-set operations extension
@@ -94,7 +95,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- execution micro sequencer --
   type exec_state_t is (S_RESTART, S_DISPATCH, S_TRAP_ENTER, S_TRAP_EXIT, S_EXECUTE,
-                        S_ALU_WAIT, S_BRANCH, S_MEM_REQ, S_MEM_RSP, S_SYSTEM, S_SLEEP);
+                        S_ALU_WAIT, S_BRANCH, S_MEM_REQ, S_MEM_REQ2, S_MEM_RSP, S_MEM_RSP2, S_SYSTEM, S_SLEEP);
   type exec_t is record
     state : exec_state_t;
     ir    : std_ulogic_vector(31 downto 0); -- instruction word being executed right now
@@ -238,7 +239,7 @@ begin
 
     -- immediate --
     case opcode_v is
-      when opcode_store_c  => ctrl_nxt.alu_imm <= replicate_f(exec.ir(31), 21) & exec.ir(30 downto 25) & exec.ir(11 downto 7); -- S-type
+      when opcode_store_c | opcode_store_d  => ctrl_nxt.alu_imm <= replicate_f(exec.ir(31), 21) & exec.ir(30 downto 25) & exec.ir(11 downto 7); -- S-type
       when opcode_branch_c => ctrl_nxt.alu_imm <= replicate_f(exec.ir(31), 20) & exec.ir(7) & exec.ir(30 downto 25) & exec.ir(11 downto 8) & '0'; -- B-type
       when opcode_lui_c | opcode_auipc_c => ctrl_nxt.alu_imm <= exec.ir(31 downto 12) & x"000"; -- U-type
       when opcode_jal_c    => ctrl_nxt.alu_imm <= replicate_f(exec.ir(31), 12) & exec.ir(19 downto 12) & exec.ir(20) & exec.ir(30 downto 21) & '0'; -- J-type
@@ -273,6 +274,7 @@ begin
       when S_DISPATCH => -- wait for ISSUE ENGINE to emit a valid instruction word
       -- ------------------------------------------------------------
         -- prepare PC increment (pc2 in S_EXECUTE state) --
+        ctrl_nxt.rf_int    <= '1';   -- switch to GP register
         ctrl_nxt.alu_opa_mux <= '1'; -- opa = current PC
         ctrl_nxt.alu_opb_mux <= '1'; -- opb = immediate = +2/4
         if RISCV_ISA_C and (frontend_i.compr = '1') then
@@ -384,6 +386,17 @@ begin
             end if;
             exec_nxt.state <= S_MEM_REQ;
 
+          -- single and double precision floating point memmory access --
+          when opcode_load_d | opcode_store_d =>
+            ctrl_nxt.lsu_rd <= not exec.ir(instr_opcode_lsb_c+5);
+            ctrl_nxt.lsu_wr <= exec.ir(instr_opcode_lsb_c+5);
+            if (funct3_v(1 downto 0) = "11") then
+              ctrl_nxt.rf_d_mem   <= '1';
+            else
+              ctrl_nxt.rf_f_mem   <= '1';
+            end if;
+            exec_nxt.state <= S_MEM_REQ;
+
           -- branch / jump-and-link (with register) --
           when opcode_branch_c | opcode_jal_c | opcode_jalr_c =>
             exec_nxt.state <= S_BRANCH;
@@ -400,7 +413,23 @@ begin
           -- FPU: floating-point operations --
           when opcode_fpu_c =>
             ctrl_nxt.alu_cp_fpu <= '1';
+            if exec.ir(instr_imm12_msb_c downto instr_imm12_lsb_c+7) = "10100" or
+                  exec.ir(instr_imm12_msb_c downto instr_imm12_lsb_c+7) = "11000" or
+                  exec.ir(instr_imm12_msb_c downto instr_imm12_lsb_c+7) = "11100" then
+              ctrl_nxt.rf_d_int <= '1';
+            elsif exec.ir(instr_imm12_msb_c downto instr_imm12_lsb_c+7) = "11010" or
+                  exec.ir(instr_imm12_msb_c downto instr_imm12_lsb_c+7) = "11110" then
+              ctrl_nxt.rf_d_cvt <= '1';
+            else
+              ctrl_nxt.rf_d_alu <= '1';
+            end if;
             exec_nxt.state      <= S_ALU_WAIT; -- will be aborted by monitor timeout if FPU is not implemented
+
+          -- fused floating point instructions --
+          when opcode_fpu_fma | opcode_fpu_fms | opcode_fpu_fnma | opcode_fpu_fnms =>
+            ctrl_nxt.alu_cp_fpu <= '1';
+            ctrl_nxt.rf_d_alu   <= '1';
+            exec_nxt.state      <= S_ALU_WAIT;
 
           -- CFU: custom / extended RISC-V instructions --
           when opcode_cust0_c | opcode_cust1_c | opcode_op32_c | opcode_op32i_c =>
@@ -449,6 +478,29 @@ begin
         end if;
 
       when S_MEM_RSP => -- wait for memory response
+      -- ------------------------------------------------------------
+        if (lsu_wait_i = '0') or (or_reduce_f(exc_buf(exc_laccess_c downto exc_salign_c)) = '1') then -- bus response or load/store exception
+          if funct3_v(1 downto 0) = "11" then
+            ctrl_nxt.alu_opad_mux <= '1';
+            ctrl_nxt.alu_opb_mux  <= '1';
+            ctrl_nxt.alu_imm  <= alu_add_i;
+            exec_nxt.state    <= S_MEM_REQ2;
+          else
+            ctrl_nxt.rf_wb_en <= ctrl.lsu_rd; -- write to RF if read operation (won't happen in case of exception)
+            exec_nxt.state    <= S_DISPATCH;
+          end if;
+        end if;
+
+      when S_MEM_REQ2 => -- memory request for second half of a double
+      -- ------------------------------------------------------------
+        if (or_reduce_f(exc_buf(exc_ialign_c downto exc_iaccess_c)) = '0') then -- memory request if no instruction exception
+          ctrl_nxt.lsu_req <= '1';
+          exec_nxt.state   <= S_MEM_RSP2;
+        else
+          exec_nxt.state <= S_DISPATCH;
+        end if;
+
+      when S_MEM_RSP2 => -- wait for memory response
       -- ------------------------------------------------------------
         if (lsu_wait_i = '0') or (or_reduce_f(exc_buf(exc_laccess_c downto exc_salign_c)) = '1') then -- bus response or load/store exception
           ctrl_nxt.rf_wb_en <= ctrl.lsu_rd; -- write to RF if read operation (won't happen in case of exception)
@@ -501,12 +553,19 @@ begin
   ctrl_o.rf_rs2       <= exec.ir(instr_rs2_msb_c downto instr_rs2_lsb_c);
   ctrl_o.rf_rd        <= exec.ir(instr_rd_msb_c downto instr_rd_lsb_c);
   ctrl_o.rf_zero      <= ctrl.rf_zero;
+  ctrl_o.rf_d_mem     <= ctrl.rf_d_mem;
+  ctrl_o.rf_f_mem     <= ctrl.rf_f_mem;
+  ctrl_o.rf_d_alu     <= ctrl.rf_d_alu;
+  ctrl_o.rf_d_cvt     <= ctrl.rf_d_cvt;
+  ctrl_o.rf_d_int     <= ctrl.rf_d_int;
+  ctrl_o.rf_int       <= ctrl.rf_int;
   -- alu --
   ctrl_o.alu_op       <= ctrl.alu_op;
   ctrl_o.alu_sub      <= ctrl.alu_sub;
   ctrl_o.alu_opa_mux  <= ctrl.alu_opa_mux;
   ctrl_o.alu_opb_mux  <= ctrl.alu_opb_mux;
   ctrl_o.alu_unsigned <= ctrl.alu_unsigned;
+  ctrl_o.alu_opad_mux <= ctrl.alu_opad_mux;
   ctrl_o.alu_imm      <= ctrl.alu_imm;
   ctrl_o.alu_cp_alu   <= ctrl.alu_cp_alu and (not or_reduce_f(exc_buf(exc_ialign_c downto exc_iaccess_c))); -- trigger if no instruction exception
   ctrl_o.alu_cp_cfu   <= ctrl.alu_cp_cfu and (not or_reduce_f(exc_buf(exc_ialign_c downto exc_iaccess_c))); -- trigger if no instruction exception
@@ -515,8 +574,8 @@ begin
   ctrl_o.lsu_req      <= ctrl.lsu_req;
   ctrl_o.lsu_rd       <= ctrl.lsu_rd;
   ctrl_o.lsu_wr       <= ctrl.lsu_wr;
-  ctrl_o.lsu_mo_en    <= '1' when (exec.state = S_MEM_REQ) else '0'; -- write memory output registers
-  ctrl_o.lsu_mi_en    <= '1' when (exec.state = S_MEM_RSP) else '0'; -- write memory input registers
+  ctrl_o.lsu_mo_en    <= '1' when (exec.state = S_MEM_REQ or exec.state = S_MEM_REQ2) else '0'; -- write memory output registers
+  ctrl_o.lsu_mi_en    <= '1' when (exec.state = S_MEM_RSP or exec.state = S_MEM_RSP2) else '0'; -- write memory input registers
   ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.prv_level; -- effective privilege level for loads/stores in M-mode
   ctrl_o.lsu_fence    <= ctrl.lsu_fence;
   -- control and status registers --
@@ -584,7 +643,7 @@ begin
 
       -- floating-point-unit CSRs --
       when csr_fflags_c | csr_frm_c | csr_fcsr_c =>
-        csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zfinx);
+        csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zfinx) or bool_to_ulogic_f(RISCV_ISA_D);
 
       -- machine trap setup/handling, environment/information registers, etc. --
       when csr_mstatus_c       | csr_mstatush_c  | csr_misa_c    | csr_mie_c    | csr_mtvec_c | csr_mhartid_c    |
@@ -729,12 +788,18 @@ begin
           when others => illegal_cmd <= '1';
         end case;
 
+      when opcode_load_d =>
+        illegal_cmd <= not bool_to_ulogic_f(RISCV_ISA_D);
+
       -- memory store --
       when opcode_store_c =>
         case exec.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
           when funct3_sb_c | funct3_sh_c | funct3_sw_c => illegal_cmd <= '0';
           when others => illegal_cmd <= '1';
         end case;
+
+      when opcode_store_d =>
+        illegal_cmd <= not bool_to_ulogic_f(RISCV_ISA_D);
 
       -- atomic memory operation --
       when opcode_amo_c =>
@@ -750,6 +815,9 @@ begin
       -- ALU[I] / FPU / OP32 / custom operations --
       when opcode_alu_c | opcode_alui_c | opcode_fpu_c | opcode_op32_c | opcode_op32i_c | opcode_cust0_c | opcode_cust1_c =>
         illegal_cmd <= '0'; -- [NOTE] valid if not terminated/invalidated by the "instruction execution monitor"
+
+      when opcode_fpu_fma | opcode_fpu_fms | opcode_fpu_fnma | opcode_fpu_fnms =>
+        illegal_cmd <= not bool_to_ulogic_f(RISCV_ISA_D);
 
       -- memory ordering --
       when opcode_fence_c =>
@@ -1218,6 +1286,7 @@ begin
             csr_rdata(0)  <= bool_to_ulogic_f(RISCV_ISA_A);
             csr_rdata(1)  <= bool_to_ulogic_f(RISCV_ISA_B);
             csr_rdata(2)  <= bool_to_ulogic_f(RISCV_ISA_C);
+            csr_rdata(3)  <= bool_to_ulogic_f(RISCV_ISA_D);
             csr_rdata(4)  <= bool_to_ulogic_f(RISCV_ISA_E);
             csr_rdata(8)  <= bool_to_ulogic_f(not RISCV_ISA_E);
             csr_rdata(12) <= bool_to_ulogic_f(RISCV_ISA_M);
