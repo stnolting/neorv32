@@ -28,6 +28,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 11.11.2026 | 1.13.7.7 | CPU: remove non-synthesizable statement | [#1683](https://github.com/stnolting/neorv32/pull/1683) |
 | 07.11.2026 | 1.13.7.6 | :warning: rework UART modules | [#1680](https://github.com/stnolting/neorv32/pull/1680) |
 | 03.11.2026 | 1.13.7.5 | minor rtl fixes and cleanups | [#1667](https://github.com/stnolting/neorv32/pull/1677) |
 | 02.11.2026 | 1.13.7.4 | :bug: NEOLED: fix CTRL register address check | [#1676](https://github.com/stnolting/neorv32/pull/1676) |
