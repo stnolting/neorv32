@@ -87,6 +87,7 @@ volatile int vectored_mei_handler_ack = 0; // vectored mei trap handler acknowle
 volatile uint32_t gpio_trap_handler_ack = 0; // gpio trap handler acknowledge
 volatile uint32_t dma_src[2], dma_dst[2]; // dma source & destination data
 volatile uint32_t store_access_addr[2]; // variable to test store accesses
+volatile uint32_t __attribute__((aligned(256))) fencei_buf[64]; // buffer for fence.i synchronization test
 volatile uint32_t __attribute__((aligned(8*4))) pmp_access[8]; // variable to test pmp
 volatile uint32_t trap_cnt; // number of triggered traps
 volatile uint32_t pmp_num_regions; // number of implemented pmp regions
@@ -331,6 +332,45 @@ int main() {
   store_access_addr[0] += 0x11111111;
 
   if ((store_access_addr[0] == 0x88888888) &&
+      (neorv32_cpu_csr_read(CSR_MCAUSE) == trap_never_c)) { // no exception
+    test_ok();
+  }
+  else {
+    test_fail();
+  }
+
+
+  // ----------------------------------------------------------
+  // Test instruction stream synchronization (fence.i)
+  // ----------------------------------------------------------
+  PRINT("[%i] Fence.i sync ", cnt_test);
+  neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
+  cnt_test++;
+
+  // Zifencei: instruction fetches following a fence.i have to observe all stores executed before the fence.i.
+  // Hence, the instruction cache (or the CPU's instruction fetch) must not reload code from main memory before
+  // the data cache has written back all of its modified blocks. To expose this race, the code is placed in the
+  // last cache block of a block-aligned buffer and all preceding blocks of the buffer are modified: the data
+  // cache synchronization walks the blocks in ascending order, so these blocks are written back *before* the
+  // block that holds the code (default testbench configuration: 32-byte cache blocks).
+
+  // 1. initial code "li a0, 0x111; ret"; make sure it is in main memory before executing it
+  fencei_buf[56] = 0x11100513; // addi a0, zero, 0x111
+  fencei_buf[57] = 0x00008067; // ret
+  asm volatile ("fence" ::: "memory"); // write back data cache
+  tmp_b = fencei_buf[57]; // data access: stalls until the write-back has completed
+  asm volatile ("fence.i" ::: "memory");
+  tmp_a = ((uint32_t (*)(void))(uintptr_t)&fencei_buf[56])();
+
+  // 2. make all other cache blocks dirty, then modify the code: "li a0, 0x222; ret"
+  for (tmp_b=0; tmp_b<56; tmp_b++) {
+    fencei_buf[tmp_b] = tmp_b;
+  }
+  fencei_buf[56] = 0x22200513; // addi a0, zero, 0x222
+  asm volatile ("fence.i" ::: "memory"); // fence.i only: no explicit data cache flush and no data access
+  tmp_b = ((uint32_t (*)(void))(uintptr_t)&fencei_buf[56])();
+
+  if ((tmp_a == 0x111) && (tmp_b == 0x222) &&
       (neorv32_cpu_csr_read(CSR_MCAUSE) == trap_never_c)) { // no exception
     test_ok();
   }
