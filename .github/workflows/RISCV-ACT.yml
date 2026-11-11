@@ -22,7 +22,7 @@ jobs:
     steps:
 
     - name: '📂 Test Repository Checkout'
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         repository: stnolting/neorv32-riscv-act
         ref: main
@@ -32,7 +32,7 @@ jobs:
       run: git submodule update --init --recursive riscv-arch-test
 
     - name: '🧰 DUT Repository Checkout'
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         path: neorv32
 

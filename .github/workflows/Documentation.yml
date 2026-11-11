@@ -26,7 +26,9 @@ jobs:
 
     steps:
       - name: '🧰 Repository Checkout'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
+        with:
+          submodules: false
 
       - name: '📦 Install Doxygen'
         run: |
@@ -58,7 +60,9 @@ jobs:
 
     steps:
       - name: '🧰 Repository Checkout'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
+        with:
+          submodules: false
 
       - name: '💎 Set Up Ruby'
         uses: ruby/setup-ruby@v1
@@ -102,7 +106,9 @@ jobs:
 
     steps:
       - name: '🧰 Repository Checkout'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
+        with:
+          submodules: false
 
       - name: '📥 Download Artifacts'
         uses: actions/download-artifact@v8
