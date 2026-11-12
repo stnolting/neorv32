@@ -463,16 +463,16 @@ begin
             case exec.ir(instr_imm12_lsb_c+2 downto instr_imm12_lsb_c) is -- three LSBs are sufficient here
               when "000"  => ecall          <= '1';         -- ecall
               when "001"  => ebreak         <= '1';         -- ebreak
-              when "010"  => exec_nxt.state <= S_TRAP_EXIT; -- mret/dret
+              when "010"  => exec_nxt.state <= S_TRAP_EXIT; -- xret
               when "101"  => exec_nxt.state <= S_SLEEP;     -- wfi
-              when others => exec_nxt.state <= S_DISPATCH;  -- illegal or CSR operation
+              when others => exec_nxt.state <= S_DISPATCH;  -- unknown
             end case;
           elsif (funct3_v /= funct3_zimop_c) and -- write to CSR if not may-be-operation
                 ((funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c) or (exec.ir(instr_rs1_msb_c downto instr_rs1_lsb_c) /= "00000")) then
             ctrl_nxt.csr_we <= '1'; -- CSRRW[I]: always write CSR; CSRR[S/C][I]: write CSR if rs1/imm5 is NOT zero
           end if;
         end if;
-        -- always write to register file; environment operations have rd = zero so this does not hurt --
+        -- always write to register file; environment/MOP have rd = zero so this does not hurt --
         ctrl_nxt.rf_wb_en <= '1'; -- won't happen if exception
 
       when others => -- S_SLEEP / undefined state: halt CPU
