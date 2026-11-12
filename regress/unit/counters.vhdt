@@ -1,0 +1,67 @@
+--! dut neorv32_cpu_counters
+--! generic ZICNTR_EN=true
+--! generic ZIHPM_EN=true
+--! generic SMCNTRPMF_EN=true
+--! generic UMODE_EN=true
+--! generic HPM_NUM=29
+--! generic HPM_WIDTH=64
+--! config counters_full
+--! config counters_narrow HPM_NUM=3 HPM_WIDTH=20
+--! config counters_32 HPM_NUM=1 HPM_WIDTH=32
+--! config counters_nohpm ZIHPM_EN=false HPM_NUM=0
+--! config counters_nocnt ZICNTR_EN=false SMCNTRPMF_EN=false
+--! config counters_nopmf SMCNTRPMF_EN=false
+--! config counters_nou UMODE_EN=false
+--! config counters_none ZICNTR_EN=false ZIHPM_EN=false SMCNTRPMF_EN=false UMODE_EN=false HPM_NUM=0
+--! stim
+  -- procs
+  --! include ctrl_rand.inc
+    variable a : std_ulogic_vector(11 downto 0);
+    constant list_c : csr_list_t := (csr_mcountinhibit_c, csr_mcyclecfg_c, csr_minstretcfg_c, csr_mcyclecfgh_c, csr_minstretcfgh_c,
+      csr_mcycle_c, csr_minstret_c, csr_mcycleh_c, csr_minstreth_c, csr_cycle_c, csr_time_c, csr_instret_c, csr_cycleh_c, csr_timeh_c, csr_instreth_c,
+      csr_mhpmcounter3_c, csr_mhpmcounter4_c, csr_mhpmcounter5_c, csr_mhpmcounter31_c, csr_mhpmcounter3h_c, csr_mhpmcounter31h_c,
+      csr_mhpmevent3_c, csr_mhpmevent4_c, csr_mhpmevent5_c, csr_mhpmevent31_c, csr_hpmcounter3_c, csr_hpmcounter3h_c);
+  -- end procs
+  tick(4);
+  mtime_i <= x"0123456789ABCDEF";
+  -- each counter and event in turn
+  for c in 0 to 31 loop
+    ctrl_i.csr_we <= '1';
+    ctrl_i.csr_addr <= std_ulogic_vector(unsigned(csr_mhpmevent3_c) + c);
+    ctrl_i.csr_wdata <= x"FFFFFFFF";
+    tick;
+    ctrl_i.csr_addr <= std_ulogic_vector(unsigned(csr_mcycle_c) + c);
+    ctrl_i.csr_wdata <= x"FFFFFFFE";
+    tick;
+    ctrl_i.csr_addr <= std_ulogic_vector(unsigned(csr_mcycleh_c) + c);
+    tick;
+    ctrl_i.csr_we <= '0';
+    ctrl_i.csr_re <= '1';
+    ctrl_i.cnt_event <= (others => '1');
+    tick(3);
+    ctrl_i.csr_addr <= std_ulogic_vector(unsigned(csr_mcycle_c) + c);
+    tick(2);
+    ctrl_i.csr_addr <= std_ulogic_vector(unsigned(csr_cycle_c) + c);
+    tick(2);
+    ctrl_i.csr_addr <= std_ulogic_vector(unsigned(csr_cycleh_c) + c);
+    tick(2);
+    ctrl_i.csr_re <= '0';
+    tick;
+  end loop;
+  -- privilege filter in every mode
+  for m in 0 to 15 loop
+    ctrl_i.cpu_priv <= std_ulogic'val(2 + m mod 2);
+    ctrl_i.cpu_debug <= std_ulogic'val(2 + (m / 2) mod 2);
+    ctrl_i.csr_we <= '1';
+    ctrl_i.csr_wdata <= std_ulogic_vector(to_unsigned(m * 16#1000000#, 32));
+    ctrl_i.csr_addr <= csr_mcyclecfgh_c;
+    tick;
+    ctrl_i.csr_addr <= csr_minstretcfgh_c;
+    tick;
+    ctrl_i.csr_we <= '0';
+    tick(3);
+  end loop;
+  ctrl_i.cpu_debug <= '0';
+  for i in 1 to 3000 loop
+    ctrl_random(list_c);
+  end loop;

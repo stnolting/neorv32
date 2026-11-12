@@ -1,0 +1,17 @@
+--! dut neorv32_bus_amo_rmw
+--! arch
+  mem: entity neorv32.regress_bus_mem generic map (LATENCY => 2) port map (clk_i => clk_i, req_i => sys_req_o, rsp_o => sys_rsp_i);
+--! stim
+  -- procs
+    variable a : std_ulogic_vector(31 downto 0);
+  -- end procs
+  tick(4);
+  for op in 0 to 15 loop
+    for i in 0 to 12 loop
+      a := x"000000" & randv(6) & "00";
+      bus_xfer(clk_i, core_req_i, core_rsp_o, a, randv(32), '1');
+      bus_xfer(clk_i, core_req_i, core_rsp_o, a, randv(32), '0', amo => '1', amoop => std_ulogic_vector(to_unsigned(op, 4)));
+      bus_xfer(clk_i, core_req_i, core_rsp_o, a, x"00000000", '0');
+    end loop;
+    bus_xfer(clk_i, core_req_i, core_rsp_o, x"E0000000", randv(32), '0', amo => '1', amoop => std_ulogic_vector(to_unsigned(op, 4)));
+  end loop;

@@ -1,0 +1,28 @@
+--! dut neorv32_trng
+--! generic TRNG_FIFO=4
+--! generic NUM_RO=3
+--! generic NUM_INV=5
+--! generic NUM_RBIT=64
+--! config trng_4 TRNG_FIFO=4
+--! config trng_1 TRNG_FIFO=1 NUM_RBIT=8
+--! config trng_even TRNG_FIFO=2 NUM_INV=6 NUM_RO=2 NUM_RBIT=16
+--! stim
+  -- procs
+    variable d : std_ulogic_vector(31 downto 0);
+  -- end procs
+  tick(5);
+  rd(x"00000000");
+  wr(x"00000000", x"00000001"); -- enable
+  for i in 0 to 7 loop
+    tick(4 * NUM_RBIT);
+    rd(x"00000000", d);
+    rd(x"00000004");
+  end loop;
+  tick(16 * NUM_RBIT);
+  wr(x"00000000", x"00000003"); -- clear FIFO
+  rd(x"00000000");
+  tick(600);
+  rd(x"00000004");
+  wr(x"00000000", x"00000000");
+  tick(10);
+  fuzz(4, 200);

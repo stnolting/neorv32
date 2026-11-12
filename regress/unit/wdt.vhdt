@@ -1,0 +1,46 @@
+--! dut neorv32_wdt
+--! reset rstn_ext_i
+--! config wdt_timeout CFG=0
+--! config wdt_access CFG=1
+--! config wdt_debug_reset CFG=2
+--! arch
+  rstn_sys_i <= rstn_ext_i and rstn_dbg_i and rstn_o;
+--! stim
+  -- procs
+    constant pwd : std_ulogic_vector(31 downto 0) := x"709D1AB3";
+  -- end procs
+  rstn_dbg_i <= '1';
+  tick(10);
+  rd(x"00000000");
+  wr(x"00000000", x"00000201"); -- enable, timeout = 2
+  rd(x"00000000");
+  tick(100);
+  wr(x"00000004", pwd); -- feed
+  tick(10);
+  wr(x"00000000", x"00000000"); -- disable
+  tick(10);
+  case CFG is
+    when 0 => -- timeout reset
+      wr(x"00000000", x"00000101");
+      tick(20000);
+      rd(x"00000000");
+    when 1 => -- locked: write attempt, then wrong password
+      wr(x"00000000", x"00000F03");
+      rd(x"00000000");
+      wr(x"00000000", x"00000000");
+      tick(20);
+      rd(x"00000000");
+      wr(x"00000000", x"00000F03");
+      wr(x"00000004", x"00000000");
+      tick(20);
+      rd(x"00000000");
+      wr(x"00000004", x"12345678"); -- wrong password while unlocked
+      tick(5);
+      rd(x"00000000");
+    when others =>
+      rstn_dbg_i <= '0';
+      tick(3);
+      rstn_dbg_i <= '1';
+      tick(3);
+      rd(x"00000000");
+  end case;

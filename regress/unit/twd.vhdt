@@ -1,0 +1,210 @@
+--! dut neorv32_twd
+--! generic TWD_RX_FIFO=4
+--! generic TWD_TX_FIFO=4
+--! config twd_fifo4
+--! config twd_fifo1 TWD_RX_FIFO=1 TWD_TX_FIFO=1
+--! decl
+  signal host_sda : std_ulogic := '1';
+--! arch
+  twd_sda_i <= host_sda and twd_sda_o;
+--! stim
+  -- procs
+    constant t : natural := 8; -- half bit time
+    procedure i2c_start is
+    begin
+      host_sda <= '0';
+      tick(t);
+      twd_scl_i <= '0';
+      tick(t);
+    end procedure;
+    procedure i2c_stop is
+    begin
+      host_sda <= '0';
+      tick(t);
+      twd_scl_i <= '1';
+      tick(t);
+      host_sda <= '1';
+      tick(t);
+    end procedure;
+    procedure i2c_clock is
+    begin
+      twd_scl_i <= '1';
+      tick(t);
+      twd_scl_i <= '0';
+      tick(t);
+    end procedure;
+    procedure i2c_write(b : std_ulogic_vector(7 downto 0)) is
+    begin
+      for i in 7 downto 0 loop
+        host_sda <= b(i);
+        tick(t);
+        i2c_clock;
+      end loop;
+      host_sda <= '1';
+      tick(t);
+      i2c_clock;
+    end procedure;
+    procedure i2c_read(ack : std_ulogic) is
+    begin
+      host_sda <= '1';
+      for i in 7 downto 0 loop
+        tick(t);
+        i2c_clock;
+      end loop;
+      host_sda <= not ack;
+      tick(t);
+      i2c_clock;
+      host_sda <= '1';
+    end procedure;
+    constant base : std_ulogic_vector(31 downto 0) := x"00000251"; -- enable, address 0x25
+  -- end procs
+  twd_scl_i <= '1';
+  tick(5);
+  rd(x"00000000");
+  wr(x"00000000", base);
+  rd(x"00000000");
+  -- write to this device
+  i2c_start;
+  i2c_write(x"4A"); -- address 0x25, write
+  i2c_write(x"11");
+  i2c_write(x"22");
+  i2c_stop;
+  rd(x"00000000");
+  rd(x"00000004");
+  rd(x"00000004");
+  rd(x"00000000");
+  wr(x"00000000", base or x"60000000"); -- acknowledge begin and end
+  -- read from this device
+  wr(x"00000004", x"000000A5");
+  wr(x"00000004", x"0000005A");
+  rd(x"00000000");
+  i2c_start;
+  i2c_write(x"4B");
+  i2c_read('1');
+  i2c_read('0');
+  i2c_stop;
+  rd(x"00000000");
+  wr(x"00000000", base or x"60000000");
+  -- another device is addressed
+  i2c_start;
+  i2c_write(x"90");
+  i2c_write(x"33");
+  i2c_stop;
+  -- repeated start, then a read with an empty TX FIFO
+  i2c_start;
+  i2c_write(x"4A");
+  host_sda <= '1';
+  tick(t);
+  twd_scl_i <= '1';
+  tick(t);
+  i2c_start;
+  i2c_write(x"4B");
+  i2c_read('0');
+  i2c_stop;
+  -- every interrupt enable, and the dummy-byte option
+  for i in 0 to 5 loop
+    wr(x"00000000", base or std_ulogic_vector(to_unsigned(2 ** (11 + i), 32)));
+    rd(x"00000000");
+    i2c_start;
+    i2c_write(x"4A");
+    i2c_write(randv(8));
+    i2c_stop;
+    tick(4);
+    rd(x"00000000");
+    wr(x"00000000", base or x"00000006");
+    wr(x"00000000", base or x"60000000");
+    tick(2);
+  end loop;
+  wr(x"00000000", base or x"00000008"); -- fsel
+  i2c_start;
+  i2c_write(x"4B");
+  i2c_read('1');
+  i2c_stop;
+  -- fill the RX FIFO, so the next byte is refused
+  wr(x"00000000", base);
+  i2c_start;
+  i2c_write(x"4A");
+  for i in 0 to TWD_RX_FIFO + 2 loop
+    i2c_write(randv(8));
+    rd(x"00000000");
+  end loop;
+  i2c_stop;
+  -- stop and start conditions within the address, the acknowledge and the data phase
+  wr(x"00000000", base);
+  i2c_start;
+  host_sda <= '1'; tick(t); i2c_clock;
+  i2c_stop;
+  i2c_start;
+  host_sda <= '1'; tick(t); i2c_clock;
+  host_sda <= '1'; tick(t);
+  twd_scl_i <= '1'; tick(t);
+  host_sda <= '0'; tick(t);
+  twd_scl_i <= '0'; tick(t);
+  i2c_stop;
+  i2c_start;
+  i2c_write(x"4B");
+  for i in 7 downto 0 loop
+    tick(t);
+    i2c_clock;
+  end loop;
+  -- stop instead of the host acknowledge
+  host_sda <= '0'; tick(t);
+  twd_scl_i <= '1'; tick(t);
+  host_sda <= '1'; tick(t);
+  i2c_start;
+  i2c_write(x"4B");
+  for i in 7 downto 0 loop
+    tick(t);
+    i2c_clock;
+  end loop;
+  -- start instead of the host acknowledge
+  host_sda <= '1'; tick(t);
+  twd_scl_i <= '1'; tick(t);
+  host_sda <= '0'; tick(t);
+  twd_scl_i <= '0'; tick(t);
+  i2c_stop;
+  -- repeated start after the host refused a byte
+  wr(x"00000004", x"000000A5");
+  i2c_start;
+  i2c_write(x"4B");
+  i2c_read('0');
+  host_sda <= '1'; tick(t);
+  twd_scl_i <= '1'; tick(t);
+  host_sda <= '0'; tick(t);
+  twd_scl_i <= '0'; tick(t);
+  i2c_stop;
+  -- disable in each phase
+  i2c_start;
+  host_sda <= '1'; tick(t); i2c_clock;
+  wr(x"00000000", x"00000000");
+  tick(4);
+  i2c_stop;
+  wr(x"00000000", base);
+  i2c_start;
+  for i in 7 downto 0 loop
+    host_sda <= std_ulogic'val(2 + (16#4A# / 2 ** i) mod 2);
+    tick(t);
+    i2c_clock;
+  end loop;
+  wr(x"00000000", x"00000000");
+  tick(4);
+  i2c_stop;
+  wr(x"00000000", base);
+  i2c_start;
+  i2c_write(x"4A");
+  for i in 7 downto 0 loop
+    host_sda <= '1';
+    tick(t);
+    i2c_clock;
+  end loop;
+  wr(x"00000000", x"00000000");
+  tick(4);
+  i2c_stop;
+  wr(x"00000000", base);
+  -- disable within a transfer
+  i2c_start;
+  i2c_write(x"4A");
+  wr(x"00000000", x"00000000");
+  tick(4);
+  i2c_stop;
+  fuzz(3, 200);

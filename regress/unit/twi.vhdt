@@ -1,0 +1,94 @@
+--! dut neorv32_twi
+--! generic FIFO_DEPTH=4
+--! config twi_fifo4
+--! config twi_fifo1 FIFO_DEPTH=1
+--! decl
+  signal dev_sda : std_ulogic := '1';
+  signal dev_scl : std_ulogic := '1';
+--! arch
+  twi_sda_i <= twi_sda_o and dev_sda;
+  twi_scl_i <= twi_scl_o and dev_scl;
+--! stim
+  -- procs
+    variable d : std_ulogic_vector(31 downto 0);
+    procedure wait_idle is
+    begin
+      loop
+        rd(x"00000000", d);
+        exit when d(31) = '0';
+        tick(4);
+      end loop;
+    end procedure;
+    constant c_start : std_ulogic_vector(31 downto 0) := x"00000200";
+    constant c_stop  : std_ulogic_vector(31 downto 0) := x"00000400";
+    function c_data(b : std_ulogic_vector(7 downto 0); mack : std_ulogic) return std_ulogic_vector is
+    begin
+      return x"0000" & "00000" & "11" & mack & b; -- data command is 3 in bits 10:9, bit 8 master ack
+    end function;
+  -- end procs
+  tick(5);
+  rd(x"00000000");
+  wr(x"00000000", x"00000001"); -- enable, fastest clock
+  rd(x"00000000");
+  wr(x"00000004", c_start);
+  wait_idle;
+  wr(x"00000004", c_data(x"A5", '0'));
+  wait_idle;
+  rd(x"00000004");
+  rd(x"00000000"); -- nack flag
+  wr(x"00000000", x"01000001"); -- clear nack
+  dev_sda <= '0'; -- device acknowledges everything and reads 0
+  wr(x"00000004", c_data(x"3C", '1'));
+  wait_idle;
+  rd(x"00000004");
+  rd(x"00000000");
+  dev_sda <= '1';
+  wr(x"00000004", c_stop);
+  wait_idle;
+  -- clock stretching by the device
+  wr(x"00000004", c_start);
+  wr(x"00000004", c_data(x"FF", '0'));
+  tick(5);
+  dev_scl <= '0';
+  tick(200);
+  dev_scl <= '1';
+  wait_idle;
+  wr(x"00000004", c_stop);
+  wait_idle;
+  rd(x"00000004");
+  -- bus claimed by someone else, interrupt clear
+  dev_sda <= '0';
+  tick(6);
+  dev_scl <= '0';
+  tick(6);
+  rd(x"00000000");
+  dev_scl <= '1';
+  tick(6);
+  dev_sda <= '1';
+  tick(6);
+  rd(x"00000000");
+  wr(x"00000000", x"02000001");
+  -- every clock setting
+  for p in 0 to 7 loop
+    wr(x"00000000", std_ulogic_vector(to_unsigned(1 + p * 2, 32)));
+    wr(x"00000004", c_start);
+    wr(x"00000004", c_data(x"81", '0'));
+    wr(x"00000004", c_stop);
+    tick(2 ** (p / 2 + 6));
+    wr(x"00000000", x"00000000");
+    tick(3);
+  end loop;
+  wr(x"00000000", x"000000F1");
+  rd(x"00000000");
+  wr(x"00000000", x"00000001");
+  for i in 0 to FIFO_DEPTH + 2 loop
+    wr(x"00000004", c_data(randv(8), '0'));
+    rd(x"00000000");
+  end loop;
+  wait_idle;
+  for i in 0 to FIFO_DEPTH + 2 loop
+    rd(x"00000004");
+    rd(x"00000000");
+  end loop;
+  wr(x"00000000", x"00000000");
+  fuzz(3, 200);

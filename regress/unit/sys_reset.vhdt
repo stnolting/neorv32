@@ -1,0 +1,21 @@
+--! dut neorv32_sys_reset
+--! reset none
+--! stim
+  rstn_ext_i <= '0';
+  tick(3);
+  rstn_ext_i <= '1';
+  rstn_wdt_i <= '1';
+  rstn_dbg_i <= '1';
+  tick(16);
+  rstn_wdt_i <= '0';
+  tick;
+  rstn_wdt_i <= '1';
+  tick(12);
+  rstn_dbg_i <= '0';
+  tick;
+  rstn_dbg_i <= '1';
+  tick(12);
+  rstn_ext_i <= '0';
+  tick(3);
+  rstn_ext_i <= '1';
+  tick(12);

@@ -1,0 +1,9 @@
+--! dut neorv32_bus_reg
+--! arch
+  mem: entity neorv32.regress_bus_mem port map (clk_i => clk_i, req_i => device_req_o, rsp_o => device_rsp_i);
+--! stim
+  tick(4);
+  for i in 1 to 200 loop
+    bus_xfer(clk_i, host_req_i, host_rsp_o, randv(4) & x"00000" & randv(8), randv(32), randv(1)(0), randv(4), limit => 6);
+    tick(rndn(2));
+  end loop;

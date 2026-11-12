@@ -1,0 +1,53 @@
+name: 'Regression'
+
+# Reports RTL behaviour changes. This workflow is advisory: it never fails a push or a pull
+# request. If behaviour changed, it adds a warning and a summary. See regress/README.md.
+
+on:
+  push:
+    paths:
+      - 'rtl/**'
+      - 'sim/**'
+      - 'regress/**'
+      - '.github/workflows/Regression.yml'
+  pull_request:
+    paths:
+      - 'rtl/**'
+      - 'sim/**'
+      - 'regress/**'
+      - '.github/workflows/Regression.yml'
+  workflow_dispatch:
+
+jobs:
+
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    name: 'behaviour check'
+
+    steps:
+
+    - name: '🧰 Repository Checkout'
+      uses: actions/checkout@v7
+
+    - name: '📦 Restore pinned tools'
+      uses: actions/cache@v4
+      with:
+        path: ~/tools
+        key: regress-tools-${{ runner.os }}-${{ hashFiles('regress/tools.sh') }}
+
+    - name: '📦 Install pinned tools'
+      run: bash regress/tools.sh install
+
+    - name: '🚧 Run regression'
+      run: |
+        eval "$(bash regress/tools.sh env)"
+        python3 regress/run.py --advisory --build "$RUNNER_TEMP/regress" --report regress-report
+
+    - name: '📤 Upload report and new baselines'
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: regress-report
+        path: regress-report
+        if-no-files-found: warn

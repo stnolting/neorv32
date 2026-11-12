@@ -1,0 +1,53 @@
+--! dut neorv32_xbus
+--! generic REGSTAGE_EN=true
+--! config xbus_reg
+--! config xbus_noreg REGSTAGE_EN=false
+--! decl
+  signal mode : natural := 0;
+--! arch
+  responder: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      xbus_ack_i <= '0';
+      xbus_err_i <= '0';
+      xbus_dat_i <= (others => '0');
+      if (xbus_cyc_o = '1') and (xbus_stb_o = '1') then
+        xbus_ack_i <= bool_to_ulogic_f(mode = 0);
+        xbus_err_i <= bool_to_ulogic_f(mode = 1);
+        xbus_dat_i <= xbus_adr_o xor x"FFFF0000";
+      end if;
+    end if;
+  end process;
+--! stim
+  tick(5);
+  for i in 0 to 15 loop
+    wr(randv(32), randv(32), std_ulogic_vector(to_unsigned(i, 4)));
+    rd(randv(32));
+  end loop;
+  -- bursts
+  bus_req_i.burst <= '1';
+  for i in 0 to 7 loop
+    rd(std_ulogic_vector(to_unsigned(i * 4, 32)));
+  end loop;
+  bus_req_i.burst <= '0';
+  rd(x"00000020");
+  -- meta data variants
+  for i in 0 to 7 loop
+    bus_req_i.meta <= "00" & std_ulogic_vector(to_unsigned(i, 3));
+    rd(x"00000040");
+  end loop;
+  mode <= 1;
+  rd(x"00000100");
+  wr(x"00000100", x"11111111");
+  -- timeout by the bus keeper
+  mode <= 2;
+  bus_req_i.rw <= '0';
+  bus_req_i.addr <= x"00000200";
+  bus_req_i.stb <= '1';
+  tick;
+  bus_req_i.stb <= '0';
+  tick(8);
+  bus_term_i <= '1';
+  tick;
+  bus_term_i <= '0';
+  tick(4);

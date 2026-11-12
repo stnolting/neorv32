@@ -1,0 +1,73 @@
+--! dut neorv32_cpu_lsu
+--! generic HART_ID=0
+--! generic AMO_EN=true
+--! config lsu_amo
+--! config lsu_plain AMO_EN=false
+--! config lsu_hart1 HART_ID=1
+--! arch
+  mem: entity neorv32.regress_bus_mem generic map (LATENCY => 2) port map (clk_i => clk_i, req_i => dbus_req_o, rsp_o => dbus_rsp_i);
+--! stim
+  -- procs
+    procedure memop(a, d : std_ulogic_vector(31 downto 0); f3 : std_ulogic_vector(2 downto 0); wri : std_ulogic;
+                     amo : std_ulogic := '0'; f12 : std_ulogic_vector(11 downto 0) := x"000") is
+    begin
+      addr_i <= a;
+      wdata_i <= d;
+      ctrl_i.ir_funct3 <= f3;
+      ctrl_i.ir_funct12 <= f12;
+      ctrl_i.ir_opcode <= "0" & amo & "0" & wri & amo & "11";
+      ctrl_i.lsu_rd <= not wri;
+      ctrl_i.lsu_wr <= wri;
+      ctrl_i.lsu_mo_en <= '1';
+      tick;
+      ctrl_i.lsu_mo_en <= '0';
+      ctrl_i.lsu_req <= '1';
+      tick;
+      ctrl_i.lsu_req <= '0';
+      for i in 1 to 40 loop
+        tick;
+        exit when wait_o = '0';
+      end loop;
+      ctrl_i.lsu_mi_en <= '1';
+      tick;
+      ctrl_i.lsu_mi_en <= '0';
+      tick;
+    end procedure;
+  -- end procs
+  tick(4);
+  for f in 0 to 7 loop
+    for o in 0 to 3 loop
+      memop(std_ulogic_vector(to_unsigned(16#40# + o, 32)), randv(32), std_ulogic_vector(to_unsigned(f, 3)), '1');
+      memop(std_ulogic_vector(to_unsigned(16#40# + o, 32)), randv(32), std_ulogic_vector(to_unsigned(f, 3)), '0');
+    end loop;
+  end loop;
+  -- bus error, pmp fault and bus error on load and store
+  memop(x"E0000000", x"00000000", "010", '0');
+  memop(x"E0000000", x"00000000", "010", '1');
+  pmp_fault_i <= '1';
+  memop(x"00000000", x"00000000", "010", '0');
+  memop(x"00000000", x"00000000", "010", '1');
+  pmp_fault_i <= '0';
+  -- atomics
+  for f in 0 to 31 loop
+    memop(x"00000080", randv(32), "010", '0', '1', std_ulogic_vector(to_unsigned(f, 5)) & "0000000");
+  end loop;
+  -- trap while a lock is held
+  addr_i <= x"00000040";
+  ctrl_i.ir_opcode <= "0101111";
+  ctrl_i.ir_funct12 <= x"000";
+  ctrl_i.lsu_mo_en <= '1';
+  tick;
+  ctrl_i.lsu_mo_en <= '0';
+  ctrl_i.cpu_trap <= '1';
+  tick;
+  ctrl_i.cpu_trap <= '0';
+  -- fence requests
+  ctrl_i.lsu_fence <= '1';
+  tick;
+  ctrl_i.lsu_fence <= '0';
+  ctrl_i.cpu_priv <= '1';
+  ctrl_i.lsu_priv <= '1';
+  ctrl_i.cpu_debug <= '1';
+  memop(x"00000000", x"00000000", "010", '0');
+  tick(3);
