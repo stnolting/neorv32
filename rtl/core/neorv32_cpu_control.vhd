@@ -167,6 +167,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal ebreak_trig  : std_ulogic; -- environment break exception trigger
   signal trap_env     : std_ulogic_vector(6 downto 0); -- environment call cause-value helper
   signal retire_start : std_ulogic; -- start of instruction retire tracking
+  signal retire_done  : std_ulogic; -- end of instruction retire tracking
   signal retired      : std_ulogic; -- tracked instruction has retired
 
 begin
@@ -557,7 +558,7 @@ begin
     if (rstn_i = '0') then
       retire_start <= '0';
     elsif rising_edge(clk_i) then
-      if (exec.state = S_DISPATCH) or (exec.state = S_RESTART) then -- instruction completed or does not commit (#1685)
+      if (retire_done = '1') then -- instruction completed
         retire_start <= '0';
       elsif (exec.state = S_EXECUTE) then -- instruction started
         retire_start <= '1';
@@ -565,8 +566,11 @@ begin
     end if;
   end process;
 
+  -- end of tracking --
+  retire_done <= '1' when (exec.state = S_DISPATCH) or (exec.state = S_RESTART) else '0';
+
   -- instruction has retired: execution completed without any sync. exception --
-  retired <= '1' when (retire_start = '1') and (exec.state = S_DISPATCH) and (exc_fire = '0') else '0';
+  retired <= '1' when (retire_start = '1') and (retire_done = '1') and (exc_fire = '0') else '0';
 
 
   -- ****************************************************************************************************************************
