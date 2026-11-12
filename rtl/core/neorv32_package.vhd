@@ -665,6 +665,7 @@ package neorv32_package is
     rf_wb_en     : std_ulogic; -- write back enable
     rf_rs1       : std_ulogic_vector(4 downto 0);  -- source register 1 address
     rf_rs2       : std_ulogic_vector(4 downto 0);  -- source register 2 address
+    rf_rs3       : std_ulogic_vector(4 downto 0);  -- source register 3 address
     rf_rd        : std_ulogic_vector(4 downto 0);  -- destination register address
     rf_zero      : std_ulogic;                     -- allow/force write access to x0
     -- alu --
@@ -716,6 +717,7 @@ package neorv32_package is
     rf_wb_en     => '0',
     rf_rs1       => (others => '0'),
     rf_rs2       => (others => '0'),
+    rf_rs3       => (others => '0'),
     rf_rd        => (others => '0'),
     rf_zero      => '0',
     alu_op       => (others => '0'),
