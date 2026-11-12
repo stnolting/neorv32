@@ -457,7 +457,7 @@ begin
 
       when S_SYSTEM => -- CSR/ENVIRONMENT operation; no effect if illegal instruction
       -- ------------------------------------------------------------
-        exec_nxt.state <= S_DISPATCH; -- default
+        exec_nxt.state <= S_RESTART; -- default: issue restart to let side-effects kick in
         if (or_reduce_f(exc_buf(exc_ialign_c downto exc_iaccess_c)) = '0') then -- non-illegal instruction
           if (funct3_v = funct3_env_c) then -- environment instruction
             case exec.ir(instr_imm12_lsb_c+2 downto instr_imm12_lsb_c) is -- three LSBs are sufficient here
