@@ -70,6 +70,31 @@ always compile-time-static.
 
 
 :sectnums:
+===== RISC-V R4-Type Instructions
+
+The R4-type instructions are very similar to R-type instructions, `funct7` gets replaced by `funct2` and `rs3`.
+R4-type instructions operate on three source registers `rs1`, `rs2` and `rs3` and return the processing result via
+the destination register `rd`. The actual operation can be defined by using the `funct2` and `funct3` bit fields.
+These immediates can also be used to pass additional data to the CFU like offsets, look-up-tables addresses or
+shift-amounts. However, the actual functionality is entirely user-defined. Note that all immediate values are
+always compile-time-static.
+
+.R-Type Instruction Format
+[wavedrom, format="png", align="center"]
+----
+{reg: [
+  {bits: 7, name: 'opcode', type: 1},
+  {bits: 5, name: 'rd'      },
+  {bits: 3, name: 'funct3', type: 1},
+  {bits: 5, name: 'rs1'     },
+  {bits: 5, name: 'rs2'     },
+  {bits: 2, name: 'funct2', type: 1},
+  {bits: 5, name: 'rs3'     }
+]}
+----
+
+
+:sectnums:
 ===== RISC-V I-Type Instructions
 
 The I-type instructions operate on one source register `rs1` and a 12-bit immediate operand `im12` and return
