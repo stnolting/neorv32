@@ -60,7 +60,7 @@ void neorv32_twd_irq_config(int enable, uint32_t irq_mask) {
     NEORV32_TWD->CTRL |= irq_mask & mask;
   }
   else {
-    NEORV32_TWD->CTRL &= irq_mask & mask;
+    NEORV32_TWD->CTRL &= ~(irq_mask & mask);
   }
 }
 
