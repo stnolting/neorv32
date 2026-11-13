@@ -1,0 +1,40 @@
+--! dut neorv32_cpu_regfile
+--! generic AWIDTH=5
+--! generic ARCHSEL=0
+--! config regfile_32_a0 ARCHSEL=0
+--! config regfile_32_a1 ARCHSEL=1
+--! config regfile_32_a2 ARCHSEL=2
+--! config regfile_32_a3 ARCHSEL=3
+--! config regfile_16_a0 AWIDTH=4 ARCHSEL=0
+--! config regfile_16_a1 AWIDTH=4 ARCHSEL=1
+--! config regfile_16_a2 AWIDTH=4 ARCHSEL=2
+--! config regfile_16_a3 AWIDTH=4 ARCHSEL=3
+--! stim
+  tick(4);
+  for r in 0 to 31 loop
+    rd_addr_i <= std_ulogic_vector(to_unsigned(r, 5));
+    rd_data_i <= randv(32);
+    rd_we_i <= '1';
+    tick;
+  end loop;
+  rd_we_i <= '0';
+  for r in 0 to 31 loop
+    rs1_addr_i <= std_ulogic_vector(to_unsigned(r, 5));
+    rs2_addr_i <= std_ulogic_vector(to_unsigned(31 - r, 5));
+    tick;
+  end loop;
+  -- x0 write with force flag
+  zero_i <= '1';
+  rd_addr_i <= (others => '0');
+  rd_data_i <= x"12345678";
+  rd_we_i <= '1';
+  tick;
+  zero_i <= '0';
+  for i in 1 to 500 loop
+    rd_addr_i <= randv(5);
+    rd_data_i <= randv(32);
+    rd_we_i <= randv(1)(0);
+    rs1_addr_i <= randv(5);
+    rs2_addr_i <= randv(5);
+    tick;
+  end loop;

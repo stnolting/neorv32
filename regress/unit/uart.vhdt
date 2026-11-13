@@ -1,0 +1,163 @@
+--! dut neorv32_uart
+--! generic RX_FIFO_DEPTH=4
+--! generic TX_FIFO_DEPTH=4
+--! config uart_fifo4
+--! config uart_fifo1 RX_FIFO_DEPTH=1 TX_FIFO_DEPTH=1
+--! config uart_fifo16 RX_FIFO_DEPTH=16 TX_FIFO_DEPTH=2
+--! decl
+  signal loopback : std_ulogic := '1';
+  signal noise    : std_ulogic := '1';
+--! arch
+  uart_rxd_i <= (uart_txd_o or (not loopback)) and noise;
+--! stim
+  -- procs
+    variable d : std_ulogic_vector(31 downto 0);
+    constant ctrl_a : std_ulogic_vector(31 downto 0) := x"00000000";
+    constant baud_a : std_ulogic_vector(31 downto 0) := x"00000004";
+    constant data_a : std_ulogic_vector(31 downto 0) := x"00000008";
+    -- control word: enables, simulation mode, flow control, interrupt selects
+    function ctrl(rx, tx : std_ulogic; rx_irq, tx_irq : natural := 0;
+                  sim, rts, cts : std_ulogic := '0') return std_ulogic_vector is
+      variable c : std_ulogic_vector(31 downto 0) := (others => '0');
+    begin
+      c(0) := rx;
+      c(1) := tx;
+      c(2) := sim;
+      c(3) := rts;
+      c(4) := cts;
+      c(17 downto 16) := std_ulogic_vector(to_unsigned(rx_irq, 2));
+      c(19 downto 18) := std_ulogic_vector(to_unsigned(tx_irq, 2));
+      return c;
+    end function;
+    procedure tx_done is
+    begin
+      loop
+        rd(ctrl_a, d);
+        exit when d(15) = '0';
+        tick(20);
+      end loop;
+    end procedure;
+  -- end procs
+  tick(5);
+  rd(ctrl_a);
+  rd(baud_a);
+  wr(baud_a, x"00000001"); -- baud divider 1, prescaler 0
+  rd(baud_a);
+  wr(ctrl_a, ctrl('1', '1'));
+  rd(ctrl_a);
+  for b in 0 to 7 loop
+    wr(data_a, std_ulogic_vector(to_unsigned(16#55# + b * 37, 32)));
+    rd(ctrl_a);
+  end loop;
+  tx_done;
+  tick(200);
+  for b in 0 to 9 loop
+    rd(data_a);
+    rd(ctrl_a);
+  end loop;
+  -- every RX and TX interrupt select, with the FIFOs passing empty, half and full
+  for r in 0 to 3 loop
+    for t in 0 to 3 loop
+      wr(ctrl_a, ctrl('1', '1', r, t));
+      rd(ctrl_a);
+      for b in 0 to RX_FIFO_DEPTH + TX_FIFO_DEPTH + 1 loop
+        wr(x"0000000C", randv(32)); -- the data register is mirrored at +12
+        rd(ctrl_a);
+      end loop;
+      tx_done;
+      tick(100);
+      rd(ctrl_a);
+      for b in 0 to RX_FIFO_DEPTH + 1 loop
+        rd(data_a);
+        rd(ctrl_a);
+      end loop;
+    end loop;
+  end loop;
+  -- overflow, which clears once there is space again
+  wr(ctrl_a, ctrl('1', '1'));
+  for b in 0 to 2 * RX_FIFO_DEPTH + 3 loop
+    wr(data_a, randv(32));
+    tx_done;
+    tick(50);
+  end loop;
+  rd(ctrl_a);
+  rd(data_a);
+  rd(ctrl_a);
+  for b in 0 to RX_FIFO_DEPTH loop
+    rd(data_a);
+  end loop;
+  -- receiver disabled, transmitter enabled, and the other way round
+  wr(ctrl_a, ctrl('0', '1', 1, 1));
+  wr(data_a, x"000000A5");
+  tx_done;
+  rd(ctrl_a);
+  wr(ctrl_a, ctrl('1', '0', 1, 1));
+  wr(data_a, x"0000005A");
+  tick(200);
+  rd(ctrl_a);
+  wr(ctrl_a, ctrl('1', '1'));
+  tx_done;
+  rd(data_a);
+  -- hardware flow control: RTS from the receive FIFO level, CTS stops the transmitter
+  wr(ctrl_a, ctrl('1', '1', 0, 0, '0', '1', '1'));
+  uart_ctsn_i <= '1';
+  wr(data_a, x"000000A5");
+  tick(100);
+  rd(ctrl_a);
+  uart_ctsn_i <= '0';
+  tx_done;
+  for b in 0 to RX_FIFO_DEPTH + 2 loop
+    wr(data_a, randv(32));
+    tx_done;
+    tick(50);
+    rd(ctrl_a);
+  end loop;
+  for b in 0 to RX_FIFO_DEPTH + 2 loop
+    rd(data_a);
+  end loop;
+  wr(ctrl_a, ctrl('0', '1', 0, 0, '0', '1', '1')); -- RTS with the receiver off
+  tick(4);
+  -- framing: a glitch that is gone at the centre of the start bit, and a frame with a low stop bit
+  wr(baud_a, x"00000014"); -- divider 20
+  wr(ctrl_a, ctrl('1', '1'));
+  loopback <= '0';
+  noise <= '0';
+  tick(6);
+  noise <= '1';
+  tick(100);
+  rd(ctrl_a);
+  wr(baud_a, x"00000001");
+  loopback <= '0';
+  noise <= '0';
+  tick(3);
+  noise <= '1';
+  tick(60);
+  noise <= '0';
+  tick(200);
+  noise <= '1';
+  tick(100);
+  rd(ctrl_a);
+  rd(data_a);
+  loopback <= '1';
+  -- simulation output: printable, line feed, carriage return and a non-printable character
+  wr(ctrl_a, ctrl('1', '1', 0, 0, '1'));
+  rd(ctrl_a);
+  wr(data_a, x"00000041");
+  wr(data_a, x"000000C1");
+  wr(data_a, x"0000000D");
+  wr(data_a, x"0000000A");
+  tick(5);
+  wr(ctrl_a, x"00000000");
+  tick(5);
+  rd(ctrl_a);
+  -- every prescaler with a large divider
+  for p in 0 to 7 loop
+    wr(baud_a, std_ulogic_vector(to_unsigned(p * 65536 + 3, 32)));
+    rd(baud_a);
+    wr(ctrl_a, ctrl('1', '1'));
+    wr(data_a, x"000000FF");
+    tick(600);
+    wr(ctrl_a, x"00000000");
+    tick(4);
+  end loop;
+  fuzz(4, 300);

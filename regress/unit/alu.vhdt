@@ -1,0 +1,103 @@
+--! dut neorv32_cpu_alu
+--! generic RISCV_ISA_M=true
+--! generic RISCV_ISA_Zba=true
+--! generic RISCV_ISA_Zbb=true
+--! generic RISCV_ISA_Zbc=true
+--! generic RISCV_ISA_Zbkb=true
+--! generic RISCV_ISA_Zbkc=true
+--! generic RISCV_ISA_Zbkx=true
+--! generic RISCV_ISA_Zbs=true
+--! generic RISCV_ISA_Zfinx=true
+--! generic RISCV_ISA_Zibi=true
+--! generic RISCV_ISA_Zicond=true
+--! generic RISCV_ISA_Zknd=true
+--! generic RISCV_ISA_Zkne=true
+--! generic RISCV_ISA_Zknh=true
+--! generic RISCV_ISA_Zksed=true
+--! generic RISCV_ISA_Zksh=true
+--! generic RISCV_ISA_Zmmul=true
+--! generic RISCV_ISA_Xcfu=true
+--! generic FAST_MUL_EN=true
+--! generic FAST_MUL_REGS=1
+--! generic FAST_SHIFT_EN=true
+--! config alu_full
+--! config alu_min RISCV_ISA_M=false RISCV_ISA_Zba=false RISCV_ISA_Zbb=false RISCV_ISA_Zbc=false RISCV_ISA_Zbkb=false RISCV_ISA_Zbkc=false RISCV_ISA_Zbkx=false RISCV_ISA_Zbs=false RISCV_ISA_Zfinx=false RISCV_ISA_Zibi=false RISCV_ISA_Zicond=false RISCV_ISA_Zknd=false RISCV_ISA_Zkne=false RISCV_ISA_Zknh=false RISCV_ISA_Zksed=false RISCV_ISA_Zksh=false RISCV_ISA_Zmmul=false RISCV_ISA_Xcfu=false FAST_MUL_EN=false FAST_SHIFT_EN=false
+--! decl
+  signal cp_done : std_ulogic;
+--! arch
+  cp_done <= done_o;
+--! stim
+  -- procs
+  --! include alu_ops.inc
+  -- end procs
+  tick(4);
+  -- plain ALU operations with every operand select
+  for o in 0 to 7 loop
+    ctrl_i.alu_op <= std_ulogic_vector(to_unsigned(o, 3));
+    for m in 0 to 15 loop
+      ctrl_i.alu_sub <= std_ulogic'val(2 + m mod 2);
+      ctrl_i.alu_opa_mux <= std_ulogic'val(2 + (m / 2) mod 2);
+      ctrl_i.alu_opb_mux <= std_ulogic'val(2 + (m / 4) mod 2);
+      ctrl_i.alu_unsigned <= std_ulogic'val(2 + (m / 8) mod 2);
+      for c in corner_c'range loop
+        rs1_i <= corner_c(c);
+        rs2_i <= corner_c((c + m) mod 15);
+        ctrl_i.pc_cur <= randv(32);
+        ctrl_i.alu_imm <= randv(32);
+        tick;
+      end loop;
+    end loop;
+  end loop;
+  ctrl_i.alu_op <= "010"; -- co-processor result
+  -- Zibi comparison: rs2 field as immediate
+  for t in 0 to 7 loop
+    ctrl_i.ir_funct3 <= std_ulogic_vector(to_unsigned(t, 3));
+    for s in 0 to 31 loop
+      ctrl_i.rf_rs2 <= std_ulogic_vector(to_unsigned(s, 5));
+      rs1_i <= std_ulogic_vector(to_unsigned(s, 32));
+      tick;
+      rs1_i <= x"FFFFFFFF";
+      tick;
+    end loop;
+  end loop;
+  cp_sweep(0);
+  -- CFU and FPU triggers
+  for i in 0 to 20 loop
+    ctrl_i.ir_opcode <= "0001011";
+    ctrl_i.ir_funct3 <= std_ulogic_vector(to_unsigned(i mod 8, 3));
+    rs1_i <= randv(32);
+    rs2_i <= randv(32);
+    ctrl_i.alu_cp_cfu <= '1';
+    tick;
+    ctrl_i.alu_cp_cfu <= '0';
+    for n in 0 to 50 loop
+      tick;
+      exit when cp_done = '1';
+    end loop;
+    tick;
+  end loop;
+  ctrl_i.ir_opcode <= "1010011";
+  ctrl_i.ir_funct12 <= x"000";
+  ctrl_i.ir_funct3 <= "000";
+  rs1_i <= x"3F800000";
+  rs2_i <= x"40000000";
+  ctrl_i.alu_cp_fpu <= '1';
+  tick;
+  ctrl_i.alu_cp_fpu <= '0';
+  for n in 0 to 100 loop
+    tick;
+    exit when cp_done = '1';
+  end loop;
+  -- CSR read-back
+  ctrl_i.csr_we <= '1';
+  ctrl_i.csr_addr <= x"001";
+  ctrl_i.csr_wdata <= x"0000001F";
+  tick;
+  ctrl_i.csr_we <= '0';
+  ctrl_i.csr_re <= '1';
+  for a in 1 to 3 loop
+    ctrl_i.csr_addr <= std_ulogic_vector(to_unsigned(a, 12));
+    tick(2);
+  end loop;
+  ctrl_i.csr_re <= '0';
+  tick(2);

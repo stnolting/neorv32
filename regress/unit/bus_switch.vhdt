@@ -1,0 +1,27 @@
+--! dut neorv32_bus_switch
+--! generic ROUND_ROBIN_EN=false
+--! generic A_READ_ONLY=false
+--! generic B_READ_ONLY=false
+--! config switch_prio
+--! config switch_rr ROUND_ROBIN_EN=true
+--! config switch_a_ro A_READ_ONLY=true
+--! config switch_b_ro B_READ_ONLY=true
+--! arch
+  mem: entity neorv32.regress_bus_mem generic map (LATENCY => 2) port map (clk_i => clk_i, req_i => x_req_o, rsp_o => x_rsp_i);
+  host_b: process
+    variable s : rng_t := rng_seed_f(99);
+    variable v : std_ulogic_vector(63 downto 0);
+  begin
+    wait until rising_edge(clk_i);
+    rng_next(s, v);
+    if v(3 downto 0) = "0000" then
+      wait until rising_edge(clk_i);
+    end if;
+    bus_xfer(clk_i, b_req_i, b_rsp_o, v(31 downto 0) and x"F00000FF", v(63 downto 32), v(40), v(44 downto 41), burst => v(45), lock => v(46), limit => 100);
+  end process;
+--! stim
+  tick(4);
+  for i in 1 to 800 loop
+    bus_xfer(clk_i, a_req_i, a_rsp_o, randv(32) and x"F00000FF", randv(32), randv(1)(0), randv(4), burst => randv(1)(0), lock => randv(1)(0), limit => 100);
+    tick(rndn(3));
+  end loop;

@@ -1,0 +1,31 @@
+--! dut neorv32_prim_cnt
+--! generic CWIDTH=64
+--! config cnt_0 CWIDTH=0
+--! config cnt_16 CWIDTH=16
+--! config cnt_32 CWIDTH=32
+--! config cnt_40 CWIDTH=40
+--! config cnt_64 CWIDTH=64
+--! stim
+  tick(4);
+  oe_i <= '1';
+  inc_i <= '1';
+  tick(5);
+  we_i <= "01";
+  data_i <= x"FFFFFFFE";
+  tick;
+  we_i <= "10";
+  data_i <= x"00000005";
+  tick;
+  we_i <= "00";
+  tick(8);
+  oe_i <= '0';
+  tick(2);
+  oe_i <= '1';
+  inc_i <= '0';
+  tick(2);
+  we_i <= "11";
+  data_i <= x"FFFFFFFF";
+  tick;
+  we_i <= "00";
+  inc_i <= '1';
+  tick(4);

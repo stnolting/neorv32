@@ -1,0 +1,39 @@
+--! dut neorv32_pwm
+--! generic NUM_CHANNELS=8
+--! config pwm_0 NUM_CHANNELS=0
+--! config pwm_1 NUM_CHANNELS=1
+--! config pwm_8 NUM_CHANNELS=8
+--! config pwm_32 NUM_CHANNELS=32
+--! stim
+  -- procs
+    function chn(s : natural) return std_ulogic_vector is
+    begin
+      return std_ulogic_vector(to_unsigned(128 + s * 4, 32));
+    end function;
+  -- end procs
+  tick(5);
+  for r in 0 to 3 loop
+    rd(std_ulogic_vector(to_unsigned(r * 4, 32)));
+  end loop;
+  if NUM_CHANNELS > 0 then
+    for c in 0 to NUM_CHANNELS-1 loop
+      wr(chn(c), std_ulogic_vector(to_unsigned(16#10000# * (c * 31 mod 256) + c * 5 + 1, 32)));
+      rd(chn(c));
+    end loop;
+    wr(x"00000000", x"FFFFFFFF");
+    wr(x"00000004", x"FFFFFFFF");
+    rd(x"00000000");
+    rd(x"00000004");
+    rd(x"00000008");
+    rd(x"0000000C");
+    for p in 0 to 7 loop
+      for c in 0 to NUM_CHANNELS-1 loop
+        wr(x"00000008", std_ulogic_vector(to_unsigned(p * 16#01010101#, 32)));
+        wr(x"0000000C", std_ulogic_vector(to_unsigned((7 - p) * 16#01010101#, 32)));
+      end loop;
+      tick(3000);
+    end loop;
+    wr(x"00000000", x"00000000");
+    tick(50);
+  end if;
+  fuzz(8, 500);

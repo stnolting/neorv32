@@ -1,0 +1,85 @@
+--! dut neorv32_debug_dtm
+--! generic IDCODE_VERSION=x"1"
+--! generic IDCODE_PARTID=x"CAFE"
+--! generic IDCODE_MANID="00000000000"
+--! decl
+  signal slow_dm : boolean := false;
+--! arch
+  dm: process
+  begin
+    wait until rising_edge(clk_i);
+    dmi_rsp_i.ack <= '0';
+    if dmi_req_o.op /= dmi_op_nop_c then
+      if slow_dm then
+        wait for 300 us;
+        wait until rising_edge(clk_i);
+      end if;
+      dmi_rsp_i.ack <= '1';
+      dmi_rsp_i.data <= x"A5A5" & dmi_req_o.data(15 downto 0);
+    end if;
+  end process;
+--! stim
+  -- procs
+    variable tv : std_ulogic_vector(31 downto 0);
+    procedure pulse(tms, tdi : std_ulogic) is
+    begin
+      jtag_tms_i <= tms;
+      jtag_tdi_i <= tdi;
+      tick(4);
+      jtag_tck_i <= '1';
+      tick(4);
+      jtag_tck_i <= '0';
+    end procedure;
+    procedure shift_ir(v : std_ulogic_vector(4 downto 0)) is
+    begin
+      pulse('1', '0'); pulse('1', '0'); pulse('0', '0'); pulse('0', '0'); -- run/idle to shift-IR
+      for i in 0 to 3 loop
+        pulse('0', v(i));
+      end loop;
+      pulse('1', v(4));
+      pulse('1', '0'); pulse('0', '0');
+    end procedure;
+    procedure shift_dr(v : std_ulogic_vector) is
+      constant x : std_ulogic_vector(v'length - 1 downto 0) := v;
+    begin
+      pulse('1', '0'); pulse('0', '0'); pulse('0', '0'); -- run/idle to shift-DR
+      for i in 0 to x'length - 2 loop
+        pulse('0', x(i));
+      end loop;
+      pulse('1', x(x'length - 1));
+      pulse('1', '0'); pulse('0', '0');
+    end procedure;
+  -- end procs
+  tick(4);
+  jtag_reset(jtag_tck_i, jtag_tms_i, jtag_tdi_i, jtag_tdo_o);
+  dmi_write(jtag_tck_i, jtag_tms_i, jtag_tdi_i, jtag_tdo_o, "0010000", x"00000001");
+  dmi_read(jtag_tck_i, jtag_tms_i, jtag_tdi_i, jtag_tdo_o, "0010001", tv);
+  -- two requests while the module is busy give the sticky error, dtmcs clears it
+  tick(20);
+  slow_dm <= true;
+  tick(2);
+  shift_ir("10001");
+  shift_dr("0010000" & x"00000001" & "01");
+  shift_dr("0010000" & x"00000002" & "10");
+  tick(40);
+  shift_dr("0010000" & x"00000003" & "10");
+  shift_ir("10000");
+  shift_dr(x"00010000"); -- dmireset
+  shift_dr(x"00020000"); -- dmihardreset
+  shift_ir("00001");
+  shift_dr(x"00000000");
+  shift_ir("11111");
+  shift_dr(x"00000000");
+  wait for 330 us;
+  slow_dm <= false;
+  tick(10);
+  -- random pin wiggling walks all TAP states and instructions
+  for i in 1 to 6000 loop
+    jtag_tms_i <= randv(1)(0);
+    jtag_tdi_i <= randv(1)(0);
+    tick(3);
+    jtag_tck_i <= '1';
+    tick(4);
+    jtag_tck_i <= '0';
+    tick(3);
+  end loop;

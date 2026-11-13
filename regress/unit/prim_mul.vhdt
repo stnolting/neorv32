@@ -1,0 +1,20 @@
+--! dut neorv32_prim_mul
+--! generic DWIDTH=32
+--! generic NUM_REGS=1
+--! config mul_1
+--! config mul_2 NUM_REGS=2
+--! config mul_3 NUM_REGS=3
+--! stim
+  tick(4);
+  for i in 1 to 500 loop
+    en_i <= '1';
+    opa_i <= randv(32);
+    opb_i <= randv(32);
+    opas_i <= randv(1)(0);
+    opbs_i <= randv(1)(0);
+    tick;
+    if (i mod 7) = 0 then
+      en_i <= '0';
+      tick(2);
+    end if;
+  end loop;

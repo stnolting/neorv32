@@ -1,0 +1,38 @@
+--! dut neorv32_cpu_alu_fpu_f2i
+--! generic FPU_SUBNORMAL_SUPPORT=false
+--! config fpu_f2i
+--! config fpu_f2i_sub FPU_SUBNORMAL_SUPPORT=true
+--! stim
+  tick(4);
+  for i in 1 to 3000 loop
+    rmode_i <= randv(3);
+    funct_i <= randv(1)(0);
+    sign_i <= randv(1)(0);
+    exponent_i <= std_ulogic_vector(to_unsigned(100 + rndn(70), 8));
+    if rndn(7) = 0 then
+      exponent_i <= randv(8);
+    end if;
+    mantissa_i <= randv(23);
+    class_i <= (others => '0');
+    if rndn(1) = 0 then
+      class_i(rndn(9)) <= '1';
+    else
+      class_i(6) <= '1';
+    end if;
+    start_i <= '1';
+    tick;
+    start_i <= '0';
+    if rndn(31) = 0 then
+      tick(rndn(8));
+      abort_i <= '1';
+      tick;
+      abort_i <= '0';
+      tick(2);
+    else
+      for n in 0 to 100 loop
+        tick;
+        exit when done_o = '1';
+      end loop;
+      tick;
+    end if;
+  end loop;

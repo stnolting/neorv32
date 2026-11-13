@@ -1,0 +1,29 @@
+--! dut neorv32_prim_fifo
+--! generic AWIDTH=2
+--! generic DWIDTH=8
+--! generic OUTGATE=false
+--! generic ASYNCRD=false
+--! config fifo_a0 AWIDTH=0
+--! config fifo_a0_gate AWIDTH=0 OUTGATE=true
+--! config fifo_a0_async AWIDTH=0 ASYNCRD=true
+--! config fifo_a0_async_gate AWIDTH=0 ASYNCRD=true OUTGATE=true
+--! config fifo_a2 AWIDTH=2
+--! config fifo_a2_gate AWIDTH=2 OUTGATE=true
+--! config fifo_a2_async AWIDTH=2 ASYNCRD=true
+--! config fifo_a2_async_gate AWIDTH=2 ASYNCRD=true OUTGATE=true
+--! stim
+  tick(4);
+  for m in 0 to 3 loop
+    for i in 1 to 300 loop
+      wdata_i <= randv(8);
+      we_i <= bool_to_ulogic_f(rndn(3) <= m);
+      re_i <= bool_to_ulogic_f(rndn(3) <= 3 - m);
+      tick;
+    end loop;
+    clear_i <= '1';
+    tick;
+    clear_i <= '0';
+  end loop;
+  we_i <= '0';
+  re_i <= '0';
+  tick(4);

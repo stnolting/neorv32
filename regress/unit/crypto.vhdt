@@ -1,0 +1,19 @@
+--! dut neorv32_cpu_alu_crypto
+--! generic EN_ZKND=true
+--! generic EN_ZKNE=true
+--! generic EN_ZKNH=true
+--! generic EN_ZKSED=true
+--! generic EN_ZKSH=true
+--! config crypto_all
+--! config crypto_none EN_ZKND=false EN_ZKNE=false EN_ZKNH=false EN_ZKSED=false EN_ZKSH=false
+--! decl
+  signal cp_done : std_ulogic;
+--! arch
+  cp_done <= valid_o;
+--! stim
+  -- procs
+  --! include alu_ops.inc
+  -- end procs
+  tick(4);
+  cp_exhaustive(12);
+  cp_sweep(4);

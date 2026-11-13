@@ -1,0 +1,3 @@
+--! dut neorv32_sys_clock
+--! stim
+  tick(10000);

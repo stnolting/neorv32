@@ -1,0 +1,70 @@
+--! dut xbus2axi4_bridge
+--! clock clk
+--! reset resetn
+--! generic BURST_EN=true
+--! generic BURST_LEN=16
+--! config axi_burst
+--! config axi_single BURST_EN=false
+--! arch
+  slave: entity neorv32.regress_axi_slave port map (
+    clk => clk, resetn => resetn,
+    awaddr => m_axi_awaddr, awlen => m_axi_awlen, awvalid => m_axi_awvalid, awready => m_axi_awready,
+    wlast => m_axi_wlast, wvalid => m_axi_wvalid, wready => m_axi_wready,
+    araddr => m_axi_araddr, arlen => m_axi_arlen, arvalid => m_axi_arvalid, arready => m_axi_arready,
+    rdata => m_axi_rdata, rresp => m_axi_rresp, rlast => m_axi_rlast, rvalid => m_axi_rvalid, rready => m_axi_rready,
+    bresp => m_axi_bresp, bvalid => m_axi_bvalid, bready => m_axi_bready);
+--! stim
+  -- procs
+    variable n : natural;
+    procedure single(a, d : std_ulogic_vector(31 downto 0); w : std_ulogic) is
+    begin
+      xbus_req_i <= (addr => a, data => d, cti => "000", tag => randv(3), we => w, sel => randv(4), stb => '1', cyc => '1');
+      tick;
+      xbus_req_i.stb <= '0';
+      for i in 0 to 60 loop
+        wait until falling_edge(clk);
+        exit when (xbus_rsp_o.ack = '1') or (xbus_rsp_o.err = '1');
+      end loop;
+      tick;
+      xbus_req_i.cyc <= '0';
+      tick;
+    end procedure;
+    procedure burst(a : std_ulogic_vector(31 downto 0); w : std_ulogic) is
+    begin
+      for b in 0 to 3 loop
+        xbus_req_i <= (addr => std_ulogic_vector(unsigned(a) + b * 4), data => randv(32), cti => "010", tag => "000", we => w, sel => "1111", stb => '1', cyc => '1');
+        if b = 3 then
+          xbus_req_i.cti <= "111";
+        end if;
+        tick;
+        xbus_req_i.stb <= '0';
+        for i in 0 to 60 loop
+          wait until falling_edge(clk);
+          exit when (xbus_rsp_o.ack = '1') or (xbus_rsp_o.err = '1');
+        end loop;
+        tick;
+      end loop;
+      xbus_req_i.cyc <= '0';
+      tick(2);
+    end procedure;
+  -- end procs
+  tick(4);
+  for i in 1 to 100 loop
+    single(randv(4) & x"00000" & randv(8), randv(32), randv(1)(0));
+    if BURST_EN then
+      burst(x"00000100", randv(1)(0));
+    end if;
+  end loop;
+  single(x"E0000000", x"00000000", '0');
+  single(x"E0000000", x"00000000", '1');
+  if BURST_EN then
+    burst(x"E0000000", '0');
+    burst(x"E0000000", '1');
+  end if;
+  -- an unsupported cycle type is ignored
+  xbus_req_i <= (addr => x"00000000", data => x"00000000", cti => "001", tag => "000", we => '0', sel => "1111", stb => '1', cyc => '1');
+  tick;
+  xbus_req_i.stb <= '0';
+  tick(5);
+  xbus_req_i.cyc <= '0';
+  tick(5);

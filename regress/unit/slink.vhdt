@@ -1,0 +1,68 @@
+--! dut neorv32_slink
+--! generic RX_FIFO_DEPTH=4
+--! generic TX_FIFO_DEPTH=4
+--! config slink_4
+--! config slink_1 RX_FIFO_DEPTH=1 TX_FIFO_DEPTH=1
+--! config slink_8_2 RX_FIFO_DEPTH=8 TX_FIFO_DEPTH=2
+--! stim
+  -- procs
+    procedure rx_word(d : std_ulogic_vector(31 downto 0); l : std_ulogic) is
+    begin
+      slink_rx_data_i  <= d;
+      slink_rx_last_i  <= l;
+      slink_rx_valid_i <= '1';
+      tick;
+      slink_rx_valid_i <= '0';
+    end procedure;
+  -- end procs
+  tick(5);
+  rd(x"00000000");
+  wr(x"00000000", x"00000003"); -- enable both directions
+  rd(x"00000000");
+  -- every interrupt select
+  for r in 0 to 3 loop
+    for t in 0 to 3 loop
+      wr(x"00000000", std_ulogic_vector(to_unsigned(3 + r * 65536 + t * 262144, 32)));
+      rx_word(randv(32), '0');
+      rx_word(randv(32), '1');
+      tick(2);
+      rd(x"00000000");
+      rd(x"00000000");
+      rd(x"00000008");
+      rd(x"00000000");
+      rd(x"00000008");
+      rd(x"00000000");
+      wr(x"00000008", randv(32));
+      wr(x"0000000C", randv(32)); -- with last flag
+      rd(x"00000000");
+      slink_tx_ready_i <= '1';
+      tick(3);
+      slink_tx_ready_i <= '0';
+      tick(1);
+      rd(x"00000000");
+      wr(x"00000000", x"00000000");
+      tick(2);
+    end loop;
+  end loop;
+  wr(x"00000000", x"00000003");
+  -- fill both FIFOs completely
+  for i in 0 to RX_FIFO_DEPTH + 1 loop
+    rx_word(randv(32), '0');
+    rd(x"00000000");
+  end loop;
+  for i in 0 to TX_FIFO_DEPTH + 1 loop
+    if bus_req_i.stb = '0' then
+      wr(x"00000008", randv(32));
+    end if;
+    rd(x"00000000");
+    exit when i >= TX_FIFO_DEPTH - 1;
+  end loop;
+  slink_tx_ready_i <= '1';
+  for i in 0 to RX_FIFO_DEPTH + 1 loop
+    rd(x"00000008");
+  end loop;
+  rd(x"00000000");
+  tick(8);
+  wr(x"00000000", x"00000000");
+  tick(4);
+  rd(x"00000004");

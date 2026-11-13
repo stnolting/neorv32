@@ -1,0 +1,13 @@
+--! dut neorv32_cache_ram
+--! generic TAG_WIDTH=22
+--! generic IDX_WIDTH=4
+--! generic OFS_WIDTH=4
+--! stim
+  tick(2);
+  for i in 1 to 400 loop
+    addr_i <= randv(32);
+    tag_we_i <= randv(1)(0);
+    data_we_i <= randv(4);
+    data_i <= randv(32);
+    tick;
+  end loop;

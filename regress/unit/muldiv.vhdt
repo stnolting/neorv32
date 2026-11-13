@@ -1,0 +1,24 @@
+--! dut neorv32_cpu_alu_muldiv
+--! generic FAST_MUL_EN=true
+--! generic FAST_MUL_REGS=1
+--! generic DIVISION_EN=true
+--! config muldiv_fast1
+--! config muldiv_fast2 FAST_MUL_REGS=2
+--! config muldiv_fast3 FAST_MUL_REGS=3
+--! config muldiv_serial FAST_MUL_EN=false
+--! config muldiv_nodiv DIVISION_EN=false
+--! decl
+  signal cp_done : std_ulogic;
+--! arch
+  cp_done <= valid_o;
+--! stim
+  -- procs
+  --! include alu_ops.inc
+  -- end procs
+  tick(4);
+  for t in 0 to 7 loop
+    cp_corners('1', std_ulogic_vector(to_unsigned(t, 3)), x"020");
+    for i in 0 to 40 loop
+      cp('1', std_ulogic_vector(to_unsigned(t, 3)), x"020", randv(32), randv(32));
+    end loop;
+  end loop;

@@ -1,0 +1,13 @@
+--! dut neorv32_cpu_alu_cond
+--! decl
+  signal cp_done : std_ulogic;
+--! arch
+  cp_done <= valid_o;
+--! stim
+  -- procs
+  --! include alu_ops.inc
+  -- end procs
+  tick(4);
+  cp_corners('1', "101", x"0E0");
+  cp_corners('1', "111", x"0E0");
+  cp_corners('1', "110", x"0E0");

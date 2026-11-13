@@ -1,0 +1,53 @@
+--! dut neorv32_sysinfo
+--! generic BUS_TMO_INT=16
+--! generic BUS_TMO_EXT=2048
+--! generic NUM_HARTS=2
+--! generic CLOCK_FREQUENCY=100000000
+--! generic BOOT_MODE_SELECT=0
+--! generic INT_BOOTLOADER_EN=true
+--! generic IMEM_EN=true
+--! generic IMEM_ROM=false
+--! generic IMEM_SIZE=16384
+--! generic DMEM_EN=true
+--! generic DMEM_SIZE=8192
+--! generic ICACHE_EN=true
+--! generic ICACHE_NUM_BLOCKS=64
+--! generic DCACHE_EN=true
+--! generic DCACHE_NUM_BLOCKS=32
+--! generic CACHE_BLOCK_SIZE=64
+--! generic CACHE_BURSTS_EN=true
+--! generic CACHE_UC_BASE=x"F"
+--! generic SMC_EN=true
+--! generic XBUS_EN=true
+--! generic OCD_EN=true
+--! generic OCD_AUTH=true
+--! generic IO_GPIO_EN=true
+--! generic IO_CLINT_EN=true
+--! generic IO_UART0_EN=true
+--! generic IO_UART1_EN=true
+--! generic IO_SPI_EN=true
+--! generic IO_SDI_EN=true
+--! generic IO_TWI_EN=true
+--! generic IO_TWD_EN=true
+--! generic IO_PWM_EN=true
+--! generic IO_WDT_EN=true
+--! generic IO_TRNG_EN=true
+--! generic IO_CFS_EN=true
+--! generic IO_NEOLED_EN=true
+--! generic IO_GPTMR_EN=true
+--! generic IO_ONEWIRE_EN=true
+--! generic IO_DMA_EN=true
+--! generic IO_SLINK_EN=true
+--! generic IO_TRACEBUF_EN=true
+--! config sysinfo_all
+--! config sysinfo_none NUM_HARTS=1 BOOT_MODE_SELECT=2 IMEM_EN=false DMEM_EN=false ICACHE_EN=false DCACHE_EN=false INT_BOOTLOADER_EN=false CACHE_BURSTS_EN=false XBUS_EN=false SMC_EN=false OCD_EN=false OCD_AUTH=false IO_GPIO_EN=false IO_CLINT_EN=false IO_UART0_EN=false IO_UART1_EN=false IO_SPI_EN=false IO_SDI_EN=false IO_TWI_EN=false IO_TWD_EN=false IO_PWM_EN=false IO_WDT_EN=false IO_TRNG_EN=false IO_CFS_EN=false IO_NEOLED_EN=false IO_GPTMR_EN=false IO_ONEWIRE_EN=false IO_DMA_EN=false IO_SLINK_EN=false IO_TRACEBUF_EN=false
+--! stim
+  tick(5);
+  for i in 0 to 7 loop
+    rd(std_ulogic_vector(to_unsigned(i * 4, 32)));
+  end loop;
+  wr(x"00000000", x"05F5E100"); -- clock frequency is writable
+  rd(x"00000000");
+  wr(x"00000004", x"FFFFFFFF");
+  rd(x"00000004");
+  fuzz(5, 100);

@@ -1,0 +1,75 @@
+--! dut neorv32_sdi
+--! generic RTX_FIFO=4
+--! config sdi_fifo4
+--! config sdi_fifo1 RTX_FIFO=1
+--! config sdi_fifo8 RTX_FIFO=8
+--! stim
+  -- procs
+    -- send one byte as an SPI host in mode 0, the device answers on sdi_dat_o
+    procedure xfer(b : std_ulogic_vector(7 downto 0)) is
+    begin
+      for i in 7 downto 0 loop
+        sdi_dat_i <= b(i);
+        tick(4);
+        sdi_clk_i <= '1';
+        tick(4);
+        sdi_clk_i <= '0';
+      end loop;
+      tick(2);
+    end procedure;
+  -- end procs
+  sdi_csn_i <= '1';
+  tick(5);
+  rd(x"00000000");
+  wr(x"00000000", x"00000001");
+  rd(x"00000000");
+  wr(x"00000004", x"000000A5"); -- TX data
+  wr(x"00000004", x"0000003C");
+  sdi_csn_i <= '0';
+  tick(4);
+  rd(x"00000000");
+  xfer(x"12");
+  xfer(x"34");
+  sdi_csn_i <= '1';
+  tick(6);
+  rd(x"00000000");
+  rd(x"00000004");
+  rd(x"00000004");
+  rd(x"00000000");
+  -- every interrupt
+  for i in 0 to 2 loop
+    wr(x"00000000", std_ulogic_vector(to_unsigned(2 ** (16 + i) + 1, 32)));
+    sdi_csn_i <= '0';
+    for b in 0 to RTX_FIFO + 1 loop
+      xfer(randv(8));
+    end loop;
+    sdi_csn_i <= '1';
+    tick(8);
+    rd(x"00000000");
+    for b in 0 to RTX_FIFO loop
+      rd(x"00000004");
+    end loop;
+    for b in 0 to RTX_FIFO loop
+      wr(x"00000004", randv(32));
+    end loop;
+    rd(x"00000000");
+    wr(x"00000000", x"00000007"); -- clear both FIFOs
+    rd(x"00000000");
+  end loop;
+  -- FIFOs full, cleared while disabled, chip select dropped within a byte
+  sdi_csn_i <= '0';
+  sdi_dat_i <= '1';
+  sdi_clk_i <= '1';
+  tick(4);
+  sdi_clk_i <= '0';
+  tick(4);
+  sdi_csn_i <= '1';
+  tick(6);
+  -- chip select dropped before the first clock of a byte
+  sdi_csn_i <= '0';
+  tick(8);
+  sdi_csn_i <= '1';
+  tick(6);
+  wr(x"00000000", x"00000000");
+  tick(4);
+  fuzz(3, 200);
