@@ -298,6 +298,8 @@ package neorv32_package is
   constant instr_rs1_msb_c     : natural := 19; -- source register 1 address bit 4
   constant instr_rs2_lsb_c     : natural := 20; -- source register 2 address bit 0
   constant instr_rs2_msb_c     : natural := 24; -- source register 2 address bit 4
+  constant instr_rs3_lsb_c     : natural := 27; -- source register 3 address bit 0
+  constant instr_rs3_msb_c     : natural := 31; -- source register 3 address bit 4
   constant instr_funct7_lsb_c  : natural := 25; -- funct7 bit 0
   constant instr_funct7_msb_c  : natural := 31; -- funct7 bit 6
   constant instr_imm12_lsb_c   : natural := 20; -- immediate12 bit 0
