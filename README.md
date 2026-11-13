@@ -10,7 +10,7 @@
 ![Documentation](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/documentation.yml?branch=main&longCache=true&style=flat-square&label=Documentation&logo=Github%20Actions&logoColor=fff)
 ![Processor](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/processor.yml?branch=main&longCache=true&style=flat-square&label=Processor%20Check&logo=Github%20Actions&logoColor=fff)
 ![Verilog Conversion](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/verilog.yml?branch=main&longCache=true&style=flat-square&label=Verilog%20Conversion&logo=Github%20Actions&logoColor=fff)
-![neorv32-riscv-act](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32-riscv-act/riscv-act.yml?branch=main&longCache=true&style=flat-square&label=RISC-V%20ACT&logo=Github%20Actions&logoColor=fff)
+![RISC-V ACT](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/riscv-act.yml?branch=main&longCache=true&style=flat-square&label=RISC-V%20ACT&logo=Github%20Actions&logoColor=fff)
 
 The NEORV32 processor is a **customizable microcontroller-like system on chip (SoC)** built around the NEORV32
 [RISC-V](https://riscv.org/) CPU that is written in **platform-independent VHDL**. The processor is intended as an auxiliary
@@ -33,12 +33,12 @@ and targets digital design / RISC-V beginners as well as experienced users.
 
 ### Ecosystem
 
-- :recycle: Looking for an **all-Verilog** version? Have a look at the [auto-conversion setup](rtl/verilog).
-- :mag: [Continuous integration](#project-status) to check for regressions.
-- :heavy_check_mark: Passes the official RISC-V [Architectural Certification Tests](https://github.com/stnolting/neorv32-riscv-act).
+- :white_check_mark: RISC-V-compatibility checked by [RISC-V Architectural Certification Tests](riscv-act).
+- :mag: [Continuous integration](https://github.com/stnolting/neorv32/actions) to check for regressions.
 - :open_file_folder: [Exemplary setups](https://github.com/stnolting/neorv32-setups) and community projects
 targeting various FPGA boards and toolchains to get started.
 - :package: The entire processor is also available as [Vivado IP Block](https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block).
+- :recycle: Looking for an **all-Verilog** version? Have a look at the [auto-conversion setup](rtl/verilog).
 - :kite: Upstream [Zephyr](https://docs.zephyrproject.org/latest/boards/others/neorv32/doc/index.html) and
 [FreeRTOS](https://github.com/stnolting/neorv32-freertos) operating system support.
 - :penguin: Capable of [running nommu-Linux](https://github.com/14sea/see_neorv32_run_linux).
