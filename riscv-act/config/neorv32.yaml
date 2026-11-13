@@ -44,16 +44,16 @@ params:
   # A params
   MISALIGNED_AMO: false
   LRSC_RESERVATION_STRATEGY: "reserve naturally-aligned 64-byte region"
-  LRSC_FAIL_ON_VA_SYNONYM: false
   LRSC_MISALIGNED_BEHAVIOR: "always raise misaligned exception"
-  LRSC_FAIL_ON_NON_EXACT_LRSC: true
+  LRSC_FAIL_ON_VA_SYNONYM: false
+  LRSC_FAIL_ON_NON_EXACT_LRSC: false
   MUTABLE_MISA_A: false
   # M params
   MUTABLE_MISA_M: false
   # C params
   MUTABLE_MISA_C: false
   # B params
-  MUTABLE_MISA_B: true
+  MUTABLE_MISA_B: false
   # Zicntr params
   TIME_CSR_IMPLEMENTED: true
   # U params
@@ -69,7 +69,7 @@ params:
   MCOUNTINHIBIT_IMPLEMENTED: true
   MARCHID_IMPLEMENTED: true
   ARCH_ID_VALUE: 0x13
-  MIMPID_IMPLEMENTED: false
+  MIMPID_IMPLEMENTED: true
   VENDOR_ID_BANK: 0x0
   VENDOR_ID_OFFSET: 0x0
   MISALIGNED_LDST: false
@@ -97,7 +97,7 @@ params:
   MTVEC_MODES: [0, 1]
   MTVEC_BASE_ALIGNMENT_DIRECT: 4
   MTVEC_BASE_ALIGNMENT_VECTORED: 128
-  MTVEC_ILLEGAL_WRITE_BEHAVIOR: retain
+  MTVEC_ILLEGAL_WRITE_BEHAVIOR: custom
   MEI_INTR_IMPL: true
   MSI_INTR_IMPL: true
   MTI_INTR_IMPL: true
