@@ -7,12 +7,12 @@ on:
     paths:
       - 'docs/**'
       - 'sw/**'
-      - '.github/workflows/Documentation.yml'
+      - '.github/workflows/documentation.yml'
   pull_request:
     paths:
       - 'docs/**'
       - 'sw/**'
-      - '.github/workflows/Documentation.yml'
+      - '.github/workflows/documentation.yml'
   workflow_dispatch:
 
 permissions:
