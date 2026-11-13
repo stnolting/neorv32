@@ -18,8 +18,9 @@
 // ================================================================================ //
 
 module neorv32_cpu_regfile #(
-  parameter AWIDTH  = 5, // register address width: 4 = 16 registers, 5 = 32 registers
-  parameter ARCHSEL = 2  // register-file architecture style: 0..3
+  parameter AWIDTH     = 5, // register address width: 4 = 16 registers, 5 = 32 registers
+  parameter ARCHSEL    = 2, // register-file architecture style: 0..3
+  parameter RS3_ENABLE = 0  // enable third read port: 0..1
 )(
   // global control
   input         clk_i,      // global clock, rising edge
@@ -34,7 +35,10 @@ module neorv32_cpu_regfile #(
   output [31:0] rs1_data_o, // read data
   // read port 2 (rs2)
   input  [4:0]  rs2_addr_i, // address
-  output [31:0] rs2_data_o  // read data
+  output [31:0] rs2_data_o, // read data
+  // read port 3 (rs3)
+  input  [4:0]  rs3_addr_i, // address
+  output [31:0] rs3_data_o  // read data
 );
 
   localparam NUM_REGS = 2**AWIDTH;
@@ -43,10 +47,12 @@ module neorv32_cpu_regfile #(
   wire [AWIDTH-1:0] rd_addr  = rd_addr_i[AWIDTH-1:0];
   wire [AWIDTH-1:0] rs1_addr = rs1_addr_i[AWIDTH-1:0];
   wire [AWIDTH-1:0] rs2_addr = rs2_addr_i[AWIDTH-1:0];
+  wire [AWIDTH-1:0] rs3_addr = rs3_addr_i[AWIDTH-1:0];
 
-  reg [31:0] rs1_rdata, rs2_rdata;
+  reg [31:0] rs1_rdata, rs2_rdata, rs3_rdata;
   assign rs1_data_o = rs1_rdata;
   assign rs2_data_o = rs2_rdata;
+  assign rs3_data_o = rs3_rdata;
 
   // Architecture Style 0: Register-Based SRAM with Synchronous Read ------------------------
   // -------------------------------------------------------------------------------------------
@@ -68,6 +74,9 @@ module neorv32_cpu_regfile #(
         end
         rs1_rdata <= regfile[addr];
         rs2_rdata <= regfile[rs2_addr];
+        if (RS3_ENABLE == 1) begin // write only when third read port is enabled
+          rs3_rdata <= regfile[rs3_addr];
+        end
       end
 
     end
@@ -101,6 +110,13 @@ module neorv32_cpu_regfile #(
           rs2_rdata <= 32'h00000000;
         end else begin
           rs2_rdata <= regfile[rs2_addr];
+        end
+        if (RS3_ENABLE == 1) begin // write only when third read port is enabled
+          if (rs3_addr == {AWIDTH{1'b0}}) begin
+            rs3_rdata <= 32'h00000000;
+          end else begin
+            rs3_rdata <= regfile[rs3_addr];
+          end
         end
       end
 
@@ -139,6 +155,13 @@ module neorv32_cpu_regfile #(
           rs2_rdata <= 32'h00000000;
         end else begin
           rs2_rdata <= regfile[rs2_addr];
+        end
+        if (RS3_ENABLE == 1) begin // write only when third read port is enabled
+          if (rs3_addr == {AWIDTH{1'b0}}) begin
+            rs3_rdata <= 32'h00000000;
+          end else begin
+            rs3_rdata <= regfile[rs3_addr];
+          end
         end
       end
 
@@ -188,6 +211,13 @@ module neorv32_cpu_regfile #(
           rs2_rdata <= 32'h00000000;
         end else begin
           rs2_rdata <= regfile[rs2_addr];
+        end
+        if (RS3_ENABLE == 1) begin // write only when third read port is enabled
+          if (rs3_addr == {AWIDTH{1'b0}}) begin
+            rs3_rdata <= 32'h00000000;
+          end else begin
+            rs3_rdata <= regfile[rs3_addr];
+          end
         end
       end
 
