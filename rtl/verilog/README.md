@@ -1,6 +1,6 @@
 ## NEORV32 in Verilog
 
-[![Verilog Conversion](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Verilog.yml?branch=main&longCache=true&style=flat-square&label=Verilog%20Conversion&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions/workflows/Verilog.yml)
+[![Verilog Conversion](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/verilog.yml?branch=main&longCache=true&style=flat-square&label=Verilog%20Conversion&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions/workflows/verilog.yml)
 
 You can use [GHDL's synthesis feature](https://ghdl.github.io/ghdl/using/Synthesis.html) to convert
 a preconfigured NEORV32 wrapper setup into a single, synthesizable, **plain-Verilog** module. The
@@ -57,6 +57,6 @@ Example: Replace the default NEORV32 DMEM RAM component by a custom Verilog modu
 for easy customization of the design sources.
 
 > [!NOTE]
-> The [Verilog GH actions workflow](https://github.com/stnolting/neorv32/actions/workflows/Verilog.yml)
+> The [Verilog GH actions workflow](https://github.com/stnolting/neorv32/actions/workflows/verilog.yml)
 automatically converts the pre-configured wrapper and runs Icarus Verilog and Verilator simulations.
 The generated Verilog code can be downloaded as CI Workflow artifact.

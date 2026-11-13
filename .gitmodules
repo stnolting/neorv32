@@ -1,0 +1,5 @@
+[submodule "riscv-act/riscv-arch-test"]
+	path = riscv-act/riscv-arch-test
+	url = https://github.com/riscv/riscv-arch-test.git
+	branch = act4
+	ignore = dirty
