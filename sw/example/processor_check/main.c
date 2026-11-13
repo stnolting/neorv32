@@ -1127,6 +1127,88 @@ int main() {
 
 
   // ----------------------------------------------------------
+  // Test immediate interrupt entry [#1682]
+  // ----------------------------------------------------------
+  PRINT("[%i] IRQ entry timing ", cnt_test);
+
+  if (neorv32_clint_available() && (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U))) {
+    cnt_test++;
+
+    tmp_a = 0; // expected address
+    tmp_b = 0; // test pass logging
+
+    neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+    neorv32_clint_mtimecmp_set(0); // make MTI pending
+
+    // test 1: csrsi mstatus.MIE with mie.MTIE already set
+    neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
+    asm volatile (
+      "csrci mstatus, 1<<3 \n"
+      "li    t0, 1<<7      \n"
+      "csrs  mie, t0       \n" // enable mie.MTI
+      "la    %[exp], 1f    \n"
+      "csrsi mstatus, 1<<3 \n" // enable IRQs [trigger]
+      "1:    nop           \n"
+      : [exp] "=&r" (tmp_a) : : "memory", "t0"
+    );
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MTI) && (neorv32_cpu_csr_read(CSR_MEPC) == tmp_a)) {
+      tmp_b |= 1U << 0;
+    }
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+
+    // test 2: csrs mie.MTIE with mstatus.MIE already set
+    neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
+    asm volatile (
+      "csrwi mie, 0        \n"
+      "csrsi mstatus, 1<<3 \n" // enable IRQs
+      "li    t0, 1<<7      \n"
+      "la    %[exp], 1f    \n"
+      "csrs  mie, t0       \n" // enable mie.MTI [trigger]
+      "1:    nop           \n"
+      : [exp] "=&r" (tmp_a) : : "memory", "t0"
+    );
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MTI) && (neorv32_cpu_csr_read(CSR_MEPC) == tmp_a)) {
+      tmp_b |= 1U << 1;
+    }
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+
+    // test 3: mret to U-mode with mie.MTIE set
+    neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
+    asm volatile (
+      "csrci mstatus, 1<<3 \n"
+      "li    t0, 1<<7      \n"
+      "csrs  mie, t0       \n" // enable mie.MTI
+      "la    %[exp], 1f    \n"
+      "csrw  mepc, %[exp]  \n"
+      "li    t0, 3<<11     \n" // MPP = U-mode
+      "csrc  mstatus, t0   \n"
+      "mret                \n" // switch to U-mode [trigger]
+      "1:    nop           \n"
+      : [exp] "=&r" (tmp_a) : : "memory", "t0"
+    );
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MTI) && (neorv32_cpu_csr_read(CSR_MEPC) == tmp_a)) {
+      tmp_b |= 1U << 2;
+    }
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+
+    // cleanup
+    neorv32_clint_mtimecmp_set(-1);
+    neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
+
+    if (tmp_b == 0b111) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
   // Test pending interrupt
   // ----------------------------------------------------------
   PRINT("[%i] Pending IRQ (MTI) ", cnt_test);
