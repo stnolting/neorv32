@@ -2,7 +2,17 @@ name: 'RISC-V Architectural Certification Tests'
 
 on:
   push:
+    branches:
+      - main
+    paths:
+      - 'riscv-act/**'
+      - 'rtl/core/neorv32_cpu*.vhd'
+      - '.github/workflows/riscv-act.yml'
   pull_request:
+    paths:
+      - 'riscv-act/**'
+      - 'rtl/core/neorv32_cpu*.vhd'
+      - '.github/workflows/riscv-act.yml'
   workflow_dispatch:
 
 jobs:
@@ -19,7 +29,7 @@ jobs:
       uses: actions/checkout@v7
       with:
         fetch-depth: 0
-        submodules: recursive
+        submodules: false
 
     - name: '📂 Submodule checkout'
       run: |
@@ -56,30 +66,30 @@ jobs:
 
     - name: '🔍 Check tools'
       run: |
-        make check
+        make -C riscv-act check
 
     - name: '⚙️ Setup configuration'
       run: |
-        make setup
+        make -C riscv-act setup
 
     - name: '⚙️ Generate tests and coverpoints'
       run: |
-        make tests
+        make -C riscv-act tests
 
     - name: '⚙️ Build ELFs'
       run: |
-        make elfs
+        make -C riscv-act elfs
 
     - name: '⚙️ Setup simulation'
       run: |
-        make sim
+        make -C riscv-act sim
 
     - name: '▶️ Run tests'
       run: |
-        make run
+        make -C riscv-act run
 
     - name: '💾 Archive test report'
       uses: actions/upload-artifact@v7
       with:
         name: test-summary
-        path: riscv-arch-test/work/neorv32/summary.log
+        path: riscv-act/riscv-arch-test/work/neorv32/summary.log
