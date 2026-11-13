@@ -26,8 +26,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_regfile is
   generic (
-    AWIDTH  : natural range 4 to 5; -- address width
-    ARCHSEL : natural range 0 to 3  -- architecture style select
+    AWIDTH     : natural range 4 to 5; -- address width
+    ARCHSEL    : natural range 0 to 3; -- architecture style select
+    RS3_ENABLE : boolean               -- enable third read port
   );
   port (
     -- global control --
@@ -84,7 +85,9 @@ begin
         end if;
         rs1_data_o <= regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0))));
         rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
-        rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
+        if RS3_ENABLE = true then -- only write third read port when enabled
+          rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
+        end if;
       end if;
     end process;
 
@@ -127,10 +130,12 @@ begin
         else
           rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
         end if;
-        if (rs3_addr_i = "00000") then -- reading x0
-          rs3_data_o <= (others => '0');
-        else
-          rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
+        if RS3_ENABLE = true then -- only write third read port when enabled
+          if (rs3_addr_i = "00000") then -- reading x0
+            rs3_data_o <= (others => '0');
+          else
+            rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
+          end if;
         end if;
       end if;
     end process;
@@ -176,7 +181,9 @@ begin
       if rising_edge(clk_i) then
         rs1_data_o <= regfile(to_integer(unsigned(rs1_addr_i(AWIDTH-1 downto 0))));
         rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
-        rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
+        if RS3_ENABLE = true then -- only write third read port when enabled
+          rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
+        end if;
       end if;
     end process;
 
@@ -234,7 +241,9 @@ begin
       if rising_edge(clk_i) then
         rs1_data_o <= regfile(to_integer(unsigned(rs1_addr_i(AWIDTH-1 downto 0))));
         rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
-        rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
+        if RS3_ENABLE = true then -- only write third read port when enabled
+          rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
+        end if;
       end if;
     end process;
 
