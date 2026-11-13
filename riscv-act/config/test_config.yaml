@@ -1,0 +1,6 @@
+name: neorv32
+compiler_exe: riscv-none-elf-gcc # executable name on $PATH or full path to executable
+ref_model_exe: sail_riscv_sim # executable name on $PATH or full path to executable
+udb_config: neorv32.yaml
+linker_script: link.ld
+dut_include_dir: . # Directory containing DUT specific rvmodel_macros.h header
