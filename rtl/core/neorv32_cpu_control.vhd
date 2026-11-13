@@ -167,6 +167,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal ebreak_trig  : std_ulogic; -- environment break exception trigger
   signal trap_env     : std_ulogic_vector(6 downto 0); -- environment call cause-value helper
   signal retire_start : std_ulogic; -- start of instruction retire tracking
+  signal retire_done  : std_ulogic; -- end of instruction retire tracking
   signal retired      : std_ulogic; -- tracked instruction has retired
 
 begin
@@ -457,22 +458,22 @@ begin
 
       when S_SYSTEM => -- CSR/ENVIRONMENT operation; no effect if illegal instruction
       -- ------------------------------------------------------------
-        exec_nxt.state <= S_DISPATCH; -- default
+        exec_nxt.state <= S_RESTART; -- default: issue restart to let side-effects kick in (#1685)
         if (or_reduce_f(exc_buf(exc_ialign_c downto exc_iaccess_c)) = '0') then -- non-illegal instruction
           if (funct3_v = funct3_env_c) then -- environment instruction
             case exec.ir(instr_imm12_lsb_c+2 downto instr_imm12_lsb_c) is -- three LSBs are sufficient here
               when "000"  => ecall          <= '1';         -- ecall
               when "001"  => ebreak         <= '1';         -- ebreak
-              when "010"  => exec_nxt.state <= S_TRAP_EXIT; -- mret/dret
+              when "010"  => exec_nxt.state <= S_TRAP_EXIT; -- xret
               when "101"  => exec_nxt.state <= S_SLEEP;     -- wfi
-              when others => exec_nxt.state <= S_DISPATCH;  -- illegal or CSR operation
+              when others => exec_nxt.state <= S_DISPATCH;  -- unknown
             end case;
           elsif (funct3_v /= funct3_zimop_c) and -- write to CSR if not may-be-operation
                 ((funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c) or (exec.ir(instr_rs1_msb_c downto instr_rs1_lsb_c) /= "00000")) then
             ctrl_nxt.csr_we <= '1'; -- CSRRW[I]: always write CSR; CSRR[S/C][I]: write CSR if rs1/imm5 is NOT zero
           end if;
         end if;
-        -- always write to register file; environment operations have rd = zero so this does not hurt --
+        -- always write to register file; environment/MOP have rd = zero so this does not hurt --
         ctrl_nxt.rf_wb_en <= '1'; -- won't happen if exception
 
       when others => -- S_SLEEP / undefined state: halt CPU
@@ -557,7 +558,7 @@ begin
     if (rstn_i = '0') then
       retire_start <= '0';
     elsif rising_edge(clk_i) then
-      if (exec.state = S_DISPATCH) then -- instruction completed
+      if (retire_done = '1') then -- instruction completed
         retire_start <= '0';
       elsif (exec.state = S_EXECUTE) then -- instruction started
         retire_start <= '1';
@@ -565,8 +566,11 @@ begin
     end if;
   end process;
 
+  -- end of tracking --
+  retire_done <= '1' when (exec.state = S_DISPATCH) or (exec.state = S_RESTART) else '0';
+
   -- instruction has retired: execution completed without any sync. exception --
-  retired <= '1' when (retire_start = '1') and (exec.state = S_DISPATCH) and (exc_fire = '0') else '0';
+  retired <= '1' when (retire_start = '1') and (retire_done = '1') and (exc_fire = '0') else '0';
 
 
   -- ****************************************************************************************************************************
@@ -872,7 +876,6 @@ begin
 
   -- any system interrupt? --
   irq_fire(0) <= '1' when
-    ((exec.state = S_EXECUTE) or (exec.state = S_SLEEP)) and -- trigger system IRQ only in S_EXECUTE state or when in sleep mode
     (or_reduce_f(irq_buf(irq_firq_15_c downto irq_msi_irq_c)) = '1') and -- pending system IRQ
     ((csr.mstatus_mie = '1') or (csr.prv_level = priv_mode_u_c)) and -- IRQ only when in M-mode and MIE=1 OR when in U-mode
     (debug_ctrl.run = '0') and (csr.dcsr_step = '0') else '0'; -- no system IRQs when in debug-mode / during single-stepping

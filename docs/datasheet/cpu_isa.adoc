@@ -145,7 +145,7 @@ The "compressed" ISA extension provides 16-bit encodings of commonly used instru
 | Branch     | `c.beqz` `c.bnez`                                                                                    | not taken: 3, taken: 5 + `T_inst_latency`
 | Jump/call  | `c.jal[r]` `c.j` `c.jr`                                                                              | 5 + `T_inst_latency`
 | Load/store | `c.lw` `c.sw` `c.lwsp` `c.swsp`                                                                      | 4 + `T_data_latency`
-| System     | `c.break`                                                                                            | 7 + `T_inst_latency`
+| System     | `c.break`                                                                                            | 6 + `T_inst_latency`
 |=======================
 
 Note that the NEORV32 `C` ISA extension only includes the `Zca` instructions; i.e. all instructions from `C`
@@ -174,8 +174,8 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 | Jump/call      | `jal[r]`                                                                  | 5 + `T_inst_latency`
 | Load/store     | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 4 + `T_data_latency`
 | Data fence     | `fence`                                                                   | 2 + `T_cache_sync`
-| System         | `ecall` `ebreak` `mret`                                                   | 7 + `T_inst_latency`
-| System         | `wfi`                                                                     | 3
+| System         | `ecall` `ebreak` `mret`                                                   | 6 + `T_inst_latency`
+| System         | `wfi`                                                                     | min  3
 |=======================
 
 .`fence` Instruction
@@ -400,12 +400,6 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 This ISA extensions provides instructions for accessing the <<_control_and_status_registers_csrs>> as well as further
 privileged-architecture extensions. This extension is mandatory and cannot be disabled. Hence, there is no generic
 for enabling/disabling this ISA extension.
-
-.Side-Effects if Destination is Zero-Register
-[NOTE]
-If `rd=x0` for the `csrrw[i]` instructions there will be no actual read access to the according CSR.
-However, access privileges are still enforced so these instruction variants _do_ cause side-effects
-(the RISC-V spec. state that these combinations "shall" not cause any side-effects).
 
 .Instructions and Timing
 [cols="<2,<5,<4"]
@@ -822,7 +816,7 @@ See section <<_on_chip_debugger_ocd>> / <<_cpu_debug_mode>> for more information
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| System | `dret` | 5
+| System | `dret` | 6 + `T_inst_latency`
 |=======================
 
 ==== `Sdtrig` ISA Extension
