@@ -7,9 +7,9 @@
 [![doxygen](https://img.shields.io/badge/SW_API-HTML-ffbd00?longCache=true&style=flat&logo=Doxygen&colorA=273274)](https://stnolting.github.io/neorv32/sw/files.html)
 [![license](https://img.shields.io/github/license/stnolting/neorv32?label=License&style=flat&logo=bsd)](https://github.com/stnolting/neorv32/blob/main/LICENSE)
 \
-![Documentation](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Documentation.yml?branch=main&longCache=true&style=flat-square&label=Documentation&logo=Github%20Actions&logoColor=fff)
-![Processor](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Processor.yml?branch=main&longCache=true&style=flat-square&label=Processor%20Check&logo=Github%20Actions&logoColor=fff)
-![Verilog Conversion](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Verilog.yml?branch=main&longCache=true&style=flat-square&label=Verilog%20Conversion&logo=Github%20Actions&logoColor=fff)
+![Documentation](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/documentation.yml?branch=main&longCache=true&style=flat-square&label=Documentation&logo=Github%20Actions&logoColor=fff)
+![Processor](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/processor.yml?branch=main&longCache=true&style=flat-square&label=Processor%20Check&logo=Github%20Actions&logoColor=fff)
+![Verilog Conversion](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/verilog.yml?branch=main&longCache=true&style=flat-square&label=Verilog%20Conversion&logo=Github%20Actions&logoColor=fff)
 ![neorv32-riscv-act](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32-riscv-act/riscv-act.yml?branch=main&longCache=true&style=flat-square&label=RISC-V%20ACT&logo=Github%20Actions&logoColor=fff)
 
 The NEORV32 processor is a **customizable microcontroller-like system on chip (SoC)** built around the NEORV32
