@@ -1225,8 +1225,9 @@ package neorv32_package is
   -- CPU register file (REGFILE) --
   component neorv32_cpu_regfile
   generic (
-    AWIDTH  : natural range 4 to 5;
-    ARCHSEL : natural range 0 to 3
+    AWIDTH     : natural range 4 to 5;
+    ARCHSEL    : natural range 0 to 3;
+    RS3_ENABLE : boolean
   );
   port (
     clk_i      : in  std_ulogic;

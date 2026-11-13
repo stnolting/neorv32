@@ -406,8 +406,9 @@ begin
   -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
   cpu_regfile_inst: neorv32_cpu_regfile -- component declaration in package file
   generic map (
-    AWIDTH  => rf_awidth_c,    -- address width
-    ARCHSEL => CPU_RF_ARCH_SEL -- architecture style select
+    AWIDTH     => rf_awidth_c,     -- address width
+    ARCHSEL    => CPU_RF_ARCH_SEL, -- architecture style select
+    RS3_ENABLE => RISCV_ISA_Xcfu   -- enable third read port
   )
   port map (
     -- global control --
