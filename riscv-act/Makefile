@@ -9,8 +9,9 @@ JOBS ?= $(shell nproc)
 
 # NEORV32 package file
 DUT_VHDL_PKG = ../rtl/core/neorv32_package.vhd
-# NEORV32 sail configuration file
+# NEORV32 configuration files
 CONFIG_SAIL_JSON = config/sail.json
+CONFIG_NEORV32_YAML = config/neorv32.yaml
 
 # check tools
 check:
@@ -34,11 +35,13 @@ check:
 # setup DUT configuration
 setup:
 	@echo "Setup DUT configuration..."
-	@echo "Updating IMPID value in Sail config..."
 	$(eval HEX := $(shell grep -i 'constant\s\+hw_version_c' $(DUT_VHDL_PKG) | sed -n 's/.*x"\([0-9a-fA-F]\+\)".*/\1/p'))
 	$(eval DEC := $(shell printf "%d" 0x$(HEX)))
-	@echo "NEORV32 hw_version_c = 0x$(HEX) -> Sail impid = $(DEC)"
+	@echo "NEORV32 hw_version_c = 0x$(HEX)"
+	@echo "Updating 'impid' in $(CONFIG_SAIL_JSON)..."
 	@sed -i 's/"impid":\s*[0-9]\+/"impid": $(DEC)/' $(CONFIG_SAIL_JSON)
+	@echo "Updating 'IMP_ID_VALUE' in $(CONFIG_NEORV32_YAML)..."
+	@sed -i 's/IMP_ID_VALUE:\s*0x[0-9a-fA-F]\+/IMP_ID_VALUE: 0x$(HEX)/' $(CONFIG_NEORV32_YAML)
 
 # allow mise to install required tools
 mise:

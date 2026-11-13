@@ -438,7 +438,7 @@
   "platform": {
     "vendorid": 0,
     "archid": 19,
-    "impid": 18024200,
+    "impid": 18024199,
     "hartid": 0,
     // Cache block size, specified as a power of 2.
     "cache_block_size_exp": 6,
