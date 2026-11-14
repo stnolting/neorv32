@@ -421,7 +421,7 @@ and NanoXplore FPGAs. Some pre-configured example setup are available online: ht
 **Processing Speed**
 
 The computational performance of the NEORV32 is evaluated using https://www.eembc.org/coremark/[Core Mark CPU benchmark].
-The NEORV32 CoreMark port can be found in a separate repository: https://github.com/stnolting/neorv32-coremark[neorv32-coremark]
+The NEORV32 CoreMark port can be found in `sw/example/coremark`.
 
 .CoreMark Results
 [cols="<6,^2,^2"]
