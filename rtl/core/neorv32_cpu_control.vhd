@@ -396,11 +396,15 @@ begin
           -- memory fence operations --
           when opcode_fence_c =>
             if (exec.ir(instr_funct3_lsb_c) = '1') then -- fence.i
-              ctrl_nxt.if_fence <= '1'; -- instruction fence
-            else -- fence
-              ctrl_nxt.lsu_fence <= or_reduce_f(exec.ir(31 downto 24)); -- data fence if pred/succ != 0; execute as NOP otherwise
+              ctrl_nxt.fence_x <= '1'; -- instruction execute/fetch fence
+              exec_nxt.state   <= S_FENCE;
+            elsif (or_reduce_f(exec.ir(27 downto 20)) = '1') then -- fence with any PRED/SUCC
+              ctrl_nxt.fence_r <= exec.ir(25) or exec.ir(21); -- PRED.r or SUCC.r
+              ctrl_nxt.fence_w <= exec.ir(24) or exec.ir(20); -- PRED.w or SUCC.w
+              exec_nxt.state   <= S_FENCE;
+            else -- NOP
+              exec_nxt.state <= S_DISPATCH;
             end if;
-            exec_nxt.state <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC (only required for fence.i)
 
           -- FPU: floating-point operations --
           when opcode_fpu_c =>
@@ -505,7 +509,6 @@ begin
   -- instruction fetch --
   ctrl_o.if_reset     <= ctrl_nxt.if_reset; -- this is an ASYNC control signal!
   ctrl_o.if_ready     <= '1' when (exec.state = S_DISPATCH) else '0';
-  ctrl_o.if_fence     <= ctrl.if_fence;
   -- program counter --
   ctrl_o.pc_cur       <= exec.pc(31 downto 1) & '0';
   ctrl_o.pc_nxt       <= exec.pc2(31 downto 1) & '0';
@@ -533,7 +536,10 @@ begin
   ctrl_o.lsu_mo_en    <= '1' when (exec.state = S_MEM_REQ) else '0'; -- write memory output registers
   ctrl_o.lsu_mi_en    <= '1' when (exec.state = S_MEM_RSP) else '0'; -- write memory input registers
   ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.prv_level; -- effective privilege level for loads/stores in M-mode
-  ctrl_o.lsu_fence    <= ctrl.lsu_fence;
+  -- memory ordering --
+  ctrl_o.fence_r      <= ctrl.fence_r;
+  ctrl_o.fence_w      <= ctrl.fence_w;
+  ctrl_o.fence_x      <= ctrl.fence_x;
   -- control and status registers --
   ctrl_o.csr_we       <= ctrl.csr_we;
   ctrl_o.csr_re       <= ctrl.csr_re;

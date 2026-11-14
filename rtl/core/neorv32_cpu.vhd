@@ -92,12 +92,15 @@ entity neorv32_cpu is
     mti_i      : in  std_ulogic;                     -- RISC-V machine timer interrupt
     firq_i     : in  std_ulogic_vector(15 downto 0); -- custom fast interrupts
     dbi_i      : in  std_ulogic;                     -- RISC-V debug halt request interrupt
+    -- memory ordering --
+    fence_r_o  : out std_ulogic;                     -- data read/load (acquire) fence
+    fence_w_o  : out std_ulogic;                     -- data write/store (release) fence
+    fence_x_o  : out std_ulogic;                     -- instruction execute/fetch fence
+    fenced_i   : in  std_ulogic;                     -- fence operation(s) completed
     -- instruction bus interface --
-    ifence_o   : out std_ulogic;                     -- instruction fence
     ibus_req_o : out bus_req_t;                      -- request bus
     ibus_rsp_i : in  bus_rsp_t;                      -- response bus
     -- data bus interface --
-    dfence_o   : out std_ulogic;                     -- data fence
     dbus_req_o : out bus_req_t;                      -- request bus
     dbus_rsp_i : in  bus_rsp_t                       -- response bus
   );
@@ -336,9 +339,10 @@ begin
   -- CPU is sleeping --
   sleep_o <= not ctrl.cnt_event(cnt_event_cy_c);
 
-  -- memory ordering / synchronization --
-  ifence_o <= ctrl.if_fence;
-  dfence_o <= ctrl.lsu_fence;
+  -- memory ordering --
+  fence_r_o <= ctrl.fence_r;
+  fence_w_o <= ctrl.fence_w;
+  fence_x_o <= ctrl.fence_x;
 
 
   -- Hardware Trigger Module (Sdtrig) -------------------------------------------------------
