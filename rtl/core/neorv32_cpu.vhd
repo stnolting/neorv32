@@ -309,6 +309,7 @@ begin
     -- misc --
     frontend_i    => frontend,    -- front-end status and data
     hwtrig_i      => hwtrig,      -- hardware trigger
+    fenced_i      => fenced_i,    -- fence operation(s) completed
     -- data path interface --
     alu_cp_done_i => alu_cp_done, -- ALU iterative operation done
     alu_cmp_i     => alu_cmp,     -- comparator status

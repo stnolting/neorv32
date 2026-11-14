@@ -72,6 +72,7 @@ entity neorv32_cpu_control is
     -- misc --
     frontend_i    : in  if_bus_t;                       -- front-end status and data
     hwtrig_i      : in  std_ulogic;                     -- hardware trigger
+    fenced_i      : in  std_ulogic;                     -- fence operation(s) completed
     -- data path interface --
     alu_cp_done_i : in  std_ulogic;                     -- ALU iterative operation done
     alu_cmp_i     : in  std_ulogic_vector(1 downto 0);  -- comparator status
@@ -93,7 +94,7 @@ end entity;
 architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- execution micro sequencer --
-  type exec_state_t is (S_RESTART, S_DISPATCH, S_TRAP_ENTER, S_TRAP_EXIT, S_EXECUTE,
+  type exec_state_t is (S_RESTART, S_DISPATCH, S_TRAP_ENTER, S_TRAP_EXIT, S_EXECUTE, S_FENCE,
                         S_ALU_WAIT, S_BRANCH, S_MEM_REQ, S_MEM_RSP, S_SYSTEM, S_SLEEP);
   type exec_t is record
     state : exec_state_t;
@@ -169,6 +170,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal retire_start : std_ulogic; -- start of instruction retire tracking
   signal retire_done  : std_ulogic; -- end of instruction retire tracking
   signal retired      : std_ulogic; -- tracked instruction has retired
+  signal fenced       : std_ulogic; -- fence operation(s) completed
 
 begin
 
@@ -204,16 +206,18 @@ begin
       exec.ci    <= '0';
       exec.pc    <= BOOT_ADDR(31 downto 2) & "00"; -- 32-bit-aligned boot address
       exec.pc2   <= BOOT_ADDR(31 downto 2) & "00";
+      fenced     <= '1';
     elsif rising_edge(clk_i) then
-      ctrl <= ctrl_nxt;
-      exec <= exec_nxt;
+      ctrl   <= ctrl_nxt;
+      exec   <= exec_nxt;
+      fenced <= fenced_i;
     end if;
   end process;
 
 
   -- Execution Micro Sequencer Comb ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  exec_comb: process(exec, env_pend, exc_fire, ecause, exc_buf, irq_buf, debug_ctrl, hwtrig_i,
+  exec_comb: process(exec, fenced, env_pend, exc_fire, ecause, exc_buf, irq_buf, debug_ctrl, hwtrig_i,
                      frontend_i, csr, ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken)
     variable opcode_v : std_ulogic_vector(6 downto 0);
     variable funct7_v : std_ulogic_vector(6 downto 0);
@@ -416,6 +420,16 @@ begin
             exec_nxt.state <= S_SYSTEM;
 
         end case;
+
+      when S_FENCE => -- wait for fences to complete
+      -- ------------------------------------------------------------
+        if (fenced = '1') then
+          if (exec.ir(instr_funct3_lsb_c) = '1') then
+            exec_nxt.state <= S_RESTART; -- fence.i: reset instruction fetch & IPB via branch to next-PC
+          else
+            exec_nxt.state <= S_DISPATCH; -- fence
+          end if;
+        end if;
 
       when S_ALU_WAIT => -- wait for multi-cycle ALU co-processor operation to finish or trap
       -- ------------------------------------------------------------
