@@ -106,7 +106,26 @@ end entity;
 
 architecture neorv32_core_complex_rtl of neorv32_core_complex is
 
-  signal cpu_i_fence, cpu_d_fence, icache_sync, dcache_sync : std_ulogic;
+  -- memory ordering arbiter --
+  component neorv32_core_complex_ordering
+  port (
+    -- global control --
+    rstn_i    : in  std_ulogic;
+    clk_i     : in  std_ulogic;
+    -- CPU interface --
+    ifence_i  : in  std_ulogic;
+    dfence_i  : in  std_ulogic;
+    fenced_o  : out std_ulogic;
+    -- Cache interface --
+    ic_sync_o : out std_ulogic;
+    ic_sync_i : in  std_ulogic;
+    dc_sync_o : out std_ulogic;
+    dc_sync_i : in  std_ulogic
+  );
+  end component;
+
+  signal cpu_fence_r, cpu_fence_w, cpu_fence_x, cpu_ifence, cpu_dfence, cpu_fenced : std_ulogic;
+  signal icache_sync, icache_syncd, dcache_sync, dcache_syncd : std_ulogic;
   signal cpu_i_req, cpu_d_req, icache_req, dcache_req, bus_req : bus_req_t;
   signal cpu_i_rsp, cpu_d_rsp, icache_rsp, dcache_rsp, bus_rsp : bus_rsp_t;
 
@@ -179,13 +198,44 @@ begin
     mti_i      => mti_i,
     firq_i     => firq_i,
     dbi_i      => dbi_i,
-    ifence_o   => cpu_i_fence,
+    fence_r_o  => cpu_fence_r,
+    fence_w_o  => cpu_fence_w,
+    fence_x_o  => cpu_fence_x,
+    fenced_i   => cpu_fenced,
     ibus_req_o => cpu_i_req,
     ibus_rsp_i => cpu_i_rsp,
-    dfence_o   => cpu_d_fence,
     dbus_req_o => cpu_d_req,
     dbus_rsp_i => cpu_d_rsp
   );
+
+  -- Cache Synchronization Arbiter ----------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  ordering_arbiter:
+  if ICACHE_EN or DCACHE_EN generate
+    neorv32_core_complex_ordering_inst: neorv32_core_complex_ordering
+    port map (
+      rstn_i    => rstn_i,
+      clk_i     => clk_i,
+      ifence_i  => cpu_ifence,
+      dfence_i  => cpu_dfence,
+      fenced_o  => cpu_fenced,
+      ic_sync_o => icache_sync,
+      ic_sync_i => icache_syncd,
+      dc_sync_o => dcache_sync,
+      dc_sync_i => dcache_syncd
+    );
+  end generate;
+
+  ordering_none:
+  if not (ICACHE_EN or DCACHE_EN) generate
+    icache_sync <= '0';
+    dcache_sync <= '0';
+    cpu_fenced  <= '1';
+  end generate;
+
+  -- TODO: implement fine-grained d-cache flush/invalidate --
+  cpu_ifence <= cpu_fence_x;
+  cpu_dfence <= cpu_fence_r or cpu_fence_w;
 
   -- Instruction Cache ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -203,20 +253,19 @@ begin
       clk_i      => clk_i,
       rstn_i     => rstn_i,
       sync_i     => icache_sync,
+      sync_o     => icache_syncd,
       host_req_i => cpu_i_req,
       host_rsp_o => cpu_i_rsp,
       bus_req_o  => icache_req,
       bus_rsp_i  => icache_rsp
     );
-    -- fence.i => clear I$
-    icache_sync <= cpu_i_fence;
   end generate;
 
   icache_disabled:
   if not ICACHE_EN generate
-    icache_sync <= '0';
-    icache_req  <= cpu_i_req;
-    cpu_i_rsp   <= icache_rsp;
+    icache_syncd <= '1';
+    icache_req   <= cpu_i_req;
+    cpu_i_rsp    <= icache_rsp;
   end generate;
 
   -- Data Cache -----------------------------------------------------------------------------
@@ -235,21 +284,19 @@ begin
       clk_i      => clk_i,
       rstn_i     => rstn_i,
       sync_i     => dcache_sync,
+      sync_o     => dcache_syncd,
       host_req_i => cpu_d_req,
       host_rsp_o => cpu_d_rsp,
       bus_req_o  => dcache_req,
       bus_rsp_i  => dcache_rsp
     );
-    -- fence   => flush D$
-    -- fence.i => clear I$ and flush D$ (so I$ gets updated data; #1540)
-    dcache_sync <= cpu_d_fence or cpu_i_fence;
   end generate;
 
   dcache_disabled:
   if not DCACHE_EN generate
-    dcache_sync <= '0';
-    dcache_req  <= cpu_d_req;
-    cpu_d_rsp   <= dcache_rsp;
+    dcache_syncd <= '1';
+    dcache_req   <= cpu_d_req;
+    cpu_d_rsp    <= dcache_rsp;
   end generate;
 
   -- Instruction/Data Bus Switch ------------------------------------------------------------
@@ -258,7 +305,7 @@ begin
   generic map (
     ROUND_ROBIN_EN => false, -- use prioritizing arbitration
     A_READ_ONLY    => false,
-    B_READ_ONLY    => true   -- instruction fetch is read-only
+    B_READ_ONLY    => true -- instruction fetch is read-only
   )
   port map (
     clk_i   => clk_i,
@@ -292,5 +339,116 @@ begin
     bus_req_o <= bus_req;
     bus_rsp   <= bus_rsp_i;
   end generate;
+
+end architecture;
+
+
+-- ================================================================================ --
+-- NEORV32 SoC - CPU Core Complex Memory Ordering Arbiter                           --
+-- -------------------------------------------------------------------------------- --
+-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
+-- Copyright (c) NEORV32 contributors.                                              --
+-- Copyright (c) Stephan Nolting. All rights reserved.                              --
+-- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
+-- SPDX-License-Identifier: BSD-3-Clause                                            --
+-- ================================================================================ --
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity neorv32_core_complex_ordering is
+  port (
+    -- global control --
+    rstn_i    : in  std_ulogic; -- reset, async, low-active
+    clk_i     : in  std_ulogic; -- clock
+    -- CPU interface --
+    ifence_i  : in  std_ulogic; -- instruction fence, single-shot
+    dfence_i  : in  std_ulogic; -- data fence, single-shot
+    fenced_o  : out std_ulogic; -- operation(s) done, single-shot
+    -- Cache interface --
+    ic_sync_o : out std_ulogic; -- i-cache synchronization request, single-shot
+    ic_sync_i : in  std_ulogic; -- i-cache synchronization completed
+    dc_sync_o : out std_ulogic; -- d-cache synchronization request, single-shot
+    dc_sync_i : in  std_ulogic  -- d-cache synchronization completed
+  );
+end entity;
+
+architecture neorv32_core_complex_ordering_rtl of neorv32_core_complex_ordering is
+
+  type state_t is (S_IDLE, S_DC_SYNC, S_DC_WAIT, S_IC_SYNC, S_IC_WAIT, S_DONE);
+  signal state, state_nxt : state_t;
+  signal ifence, ifence_nxt : std_ulogic;
+
+begin
+
+  -- arbiter sync --
+  arbiter_sync: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      state  <= S_IDLE;
+      ifence <= '0';
+    elsif rising_edge(clk_i) then
+      state  <= state_nxt;
+      ifence <= ifence_nxt;
+    end if;
+  end process;
+
+  -- arbiter comb --
+  arbiter_comb: process(state, ifence, ifence_i, dfence_i, ic_sync_i, dc_sync_i)
+  begin
+    -- defaults --
+    state_nxt  <= state;
+    ifence_nxt <= ifence;
+    fenced_o   <= '0';
+    ic_sync_o  <= '0';
+    dc_sync_o  <= '0';
+    -- fsm --
+    case state is
+
+      -- wait for requests ..
+      when S_IDLE =>
+        ifence_nxt <= ifence_i;
+        if (ifence_i = '1') or (dfence_i = '1') then
+          state_nxt <= S_DC_SYNC;
+        end if;
+
+      -- trigger d-cache flush --
+      when S_DC_SYNC =>
+        dc_sync_o <= '1';
+        state_nxt <= S_DC_WAIT;
+
+      -- wait for synchronization to complete --
+      when S_DC_WAIT =>
+        if (dc_sync_i = '1') then
+          if (ifence = '1') then
+            state_nxt <= S_IC_SYNC;
+          else
+            state_nxt <= S_DONE;
+          end if;
+        end if;
+
+      -- trigger i-cache clear --
+      when S_IC_SYNC =>
+        ic_sync_o <= '1';
+        state_nxt <= S_IC_WAIT;
+
+      -- wait for synchronization to complete --
+      when S_IC_WAIT =>
+        if (ic_sync_i = '1') then
+          state_nxt <= S_DONE;
+        end if;
+
+      -- signal "done" to CPU --
+      when S_DONE =>
+        fenced_o  <= '1';
+        state_nxt <= S_IDLE;
+
+      -- undefined --
+      when others =>
+        state_nxt <= S_IDLE;
+
+    end case;
+  end process;
 
 end architecture;
