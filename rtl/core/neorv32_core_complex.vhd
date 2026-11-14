@@ -113,19 +113,19 @@ architecture neorv32_core_complex_rtl of neorv32_core_complex is
     rstn_i    : in  std_ulogic;
     clk_i     : in  std_ulogic;
     -- CPU interface --
-    ifence_i  : in  std_ulogic;
-    dfence_i  : in  std_ulogic;
-    fenced_o  : out std_ulogic;
+    fence_i   : in  std_ulogic_vector(2 downto 0);
+    fence_o   : out std_ulogic;
     -- Cache interface --
-    ic_sync_o : out std_ulogic;
+    ic_sync_o : out std_ulogic_vector(1 downto 0);
     ic_sync_i : in  std_ulogic;
-    dc_sync_o : out std_ulogic;
+    dc_sync_o : out std_ulogic_vector(1 downto 0);
     dc_sync_i : in  std_ulogic
   );
   end component;
 
-  signal cpu_fence_r, cpu_fence_w, cpu_fence_x, cpu_ifence, cpu_dfence, cpu_fenced : std_ulogic;
-  signal icache_sync, icache_syncd, dcache_sync, dcache_syncd : std_ulogic;
+  signal cpu_fence : std_ulogic_vector(2 downto 0);
+  signal icache_sync, dcache_sync : std_ulogic_vector(1 downto 0);
+  signal icache_syncd, dcache_syncd, cpu_fenced : std_ulogic;
   signal cpu_i_req, cpu_d_req, icache_req, dcache_req, bus_req : bus_req_t;
   signal cpu_i_rsp, cpu_d_rsp, icache_rsp, dcache_rsp, bus_rsp : bus_rsp_t;
 
@@ -198,9 +198,7 @@ begin
     mti_i      => mti_i,
     firq_i     => firq_i,
     dbi_i      => dbi_i,
-    fence_r_o  => cpu_fence_r,
-    fence_w_o  => cpu_fence_w,
-    fence_x_o  => cpu_fence_x,
+    fence_o    => cpu_fence,
     fenced_i   => cpu_fenced,
     ibus_req_o => cpu_i_req,
     ibus_rsp_i => cpu_i_rsp,
@@ -216,9 +214,8 @@ begin
     port map (
       rstn_i    => rstn_i,
       clk_i     => clk_i,
-      ifence_i  => cpu_ifence,
-      dfence_i  => cpu_dfence,
-      fenced_o  => cpu_fenced,
+      fence_i   => cpu_fence,
+      fence_o   => cpu_fenced,
       ic_sync_o => icache_sync,
       ic_sync_i => icache_syncd,
       dc_sync_o => dcache_sync,
@@ -228,14 +225,10 @@ begin
 
   ordering_none:
   if not (ICACHE_EN or DCACHE_EN) generate
-    icache_sync <= '0';
-    dcache_sync <= '0';
+    icache_sync <= (others => '0');
+    dcache_sync <= (others => '0');
     cpu_fenced  <= '1';
   end generate;
-
-  -- TODO: implement fine-grained d-cache flush/invalidate --
-  cpu_ifence <= cpu_fence_x;
-  cpu_dfence <= cpu_fence_r or cpu_fence_w;
 
   -- Instruction Cache ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -263,7 +256,7 @@ begin
 
   icache_disabled:
   if not ICACHE_EN generate
-    icache_syncd <= '1';
+    icache_syncd <= '1'; -- always synchronized
     icache_req   <= cpu_i_req;
     cpu_i_rsp    <= icache_rsp;
   end generate;
@@ -294,7 +287,7 @@ begin
 
   dcache_disabled:
   if not DCACHE_EN generate
-    dcache_syncd <= '1';
+    dcache_syncd <= '1'; -- always synchronized
     dcache_req   <= cpu_d_req;
     cpu_d_rsp    <= dcache_rsp;
   end generate;
