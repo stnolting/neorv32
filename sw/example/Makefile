@@ -5,7 +5,7 @@ TOPTARGETS := elf exe clean clean_all check info all
 
 SUBDIRS := $(wildcard */.)
 EXCLDIR := $(wildcard ~*/.)
-SUBDIRS := $(filter-out $(EXCLDIR), $(SUBDIRS))
+SUBDIRS := $(filter-out $(EXCLDIR) coremark/.,$(SUBDIRS))
 
 $(TOPTARGETS): $(SUBDIRS)
 $(SUBDIRS):
