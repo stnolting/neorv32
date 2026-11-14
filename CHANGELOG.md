@@ -23,14 +23,15 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 * :test_tube: new experimental feature
 * :warning: changes that might impact compatibility with previous versions
 * :lock: security/safety-related
-* :rocket: official release
+* :rocket: release
 * Date format is dd.mm.yyyy
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 14.11.2026 | [**1.13.8**](https://github.com/stnolting/neorv32/releases/tag/v1.13.8) | :rocket: **New release** | |
 | 14.11.2026 | 1.13.7.10 | :bug: FPU: fix `fcvt` sticky bit and sign of exact zero sum in RDN mode | [#1692](https://github.com/stnolting/neorv32/pull/1692) |
 | 14.11.2026 | 1.13.7.9 | :bug: fix `fence.i` instruction not waiting for d-cache write-back | [#1684](https://github.com/stnolting/neorv32/pull/1684) |
-| 12.11.2026 | 1.13.7.8 | :bug: fix interrupt entry logic (RISC-V-compliance issue) | [#1685](https://github.com/stnolting/neorv32/pull/1685) |
+| 12.11.2026 | 1.13.7.8 | :bug: fix interrupt entry timing (RISC-V-compliance issue) | [#1685](https://github.com/stnolting/neorv32/pull/1685) |
 | 11.11.2026 | 1.13.7.7 | CPU: remove non-synthesizable statement | [#1683](https://github.com/stnolting/neorv32/pull/1683) |
 | 07.11.2026 | 1.13.7.6 | :warning: rework UART modules | [#1680](https://github.com/stnolting/neorv32/pull/1680) |
 | 03.11.2026 | 1.13.7.5 | minor rtl fixes and cleanups | [#1667](https://github.com/stnolting/neorv32/pull/1677) |
