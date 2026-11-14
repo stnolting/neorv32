@@ -72,7 +72,7 @@ entity neorv32_cpu_control is
     -- misc --
     frontend_i    : in  if_bus_t;                       -- front-end status and data
     hwtrig_i      : in  std_ulogic;                     -- hardware trigger
-    fenced_i      : in  std_ulogic;                     -- fence operation(s) completed
+    fenced_i      : in  std_ulogic;                     -- fence operation completed
     -- data path interface --
     alu_cp_done_i : in  std_ulogic;                     -- ALU iterative operation done
     alu_cmp_i     : in  std_ulogic_vector(1 downto 0);  -- comparator status
@@ -170,7 +170,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal retire_start : std_ulogic; -- start of instruction retire tracking
   signal retire_done  : std_ulogic; -- end of instruction retire tracking
   signal retired      : std_ulogic; -- tracked instruction has retired
-  signal fenced       : std_ulogic; -- fence operation(s) completed
+  signal fenced       : std_ulogic; -- fence operation completed
 
 begin
 

@@ -96,7 +96,7 @@ entity neorv32_cpu is
     fence_r_o  : out std_ulogic;                     -- data read/load (acquire) fence
     fence_w_o  : out std_ulogic;                     -- data write/store (release) fence
     fence_x_o  : out std_ulogic;                     -- instruction execute/fetch fence
-    fenced_i   : in  std_ulogic;                     -- fence operation(s) completed
+    fenced_i   : in  std_ulogic;                     -- fence operation completed
     -- instruction bus interface --
     ibus_req_o : out bus_req_t;                      -- request bus
     ibus_rsp_i : in  bus_rsp_t;                      -- response bus
@@ -312,7 +312,7 @@ begin
     -- misc --
     frontend_i    => frontend,    -- front-end status and data
     hwtrig_i      => hwtrig,      -- hardware trigger
-    fenced_i      => fenced_i,    -- fence operation(s) completed
+    fenced_i      => fenced_i,    -- fence operation completed
     -- data path interface --
     alu_cp_done_i => alu_cp_done, -- ALU iterative operation done
     alu_cmp_i     => alu_cmp,     -- comparator status
