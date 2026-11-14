@@ -106,7 +106,6 @@ end entity;
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- auto-configuration --
-  constant trace_log_c   : string  := "neorv32_trace" & natural'image(HART_ID) & ".log"; -- simulation trace log file
   constant rf_awidth_c   : natural := sel_natural_f(RISCV_ISA_E, 4, 5); -- register file address width
   constant any_amo_c     : boolean := RISCV_ISA_Zaamo or RISCV_ISA_Zalrsc; -- any AMO extension available
   constant riscv_a_c     : boolean := RISCV_ISA_Zaamo and RISCV_ISA_Zalrsc; -- A: atomic memory operations
@@ -568,12 +567,26 @@ begin
     trace <= trace_port_terminate_c;
   end generate;
 
-  -- simulation-only trace logger --
-  sim_trace_enabled:
-  if TRACE_SIMLOG_EN and is_simulation_c generate
+  -- simulation-only trace logger - CPU0 --
+  sim_trace0_enabled:
+  if TRACE_SIMLOG_EN and is_simulation_c and (HART_ID = 0) generate
     trace_simlog_inst: entity neorv32.neorv32_cpu_trace_simlog
     generic map (
-      LOG_FILE => trace_log_c
+      LOG_FILE => "neorv32_trace0.log"
+    )
+    port map (
+      clk_i   => clk_i,
+      rstn_i  => rstn_i,
+      trace_i => trace
+    );
+  end generate;
+
+  -- simulation-only trace logger - CPU1 --
+  sim_trace1_enabled:
+  if TRACE_SIMLOG_EN and is_simulation_c and (HART_ID = 1) generate
+    trace_simlog_inst: entity neorv32.neorv32_cpu_trace_simlog
+    generic map (
+      LOG_FILE => "neorv32_trace1.log"
     )
     port map (
       clk_i   => clk_i,

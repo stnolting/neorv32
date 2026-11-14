@@ -67,7 +67,7 @@ void neorv32_pwm_ch_enable_mask(uint32_t mask) {
  **************************************************************************/
 void neorv32_pwm_ch_disable_mask(uint32_t mask) {
 
-  NEORV32_PWM->ENABLE &= mask;
+  NEORV32_PWM->ENABLE &= ~mask;
 }
 
 /**********************************************************************//**

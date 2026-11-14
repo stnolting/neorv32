@@ -23,11 +23,11 @@ on:
       - main
     paths:
       - 'rtl/**'
-      - '.github/workflows/Verilog.yml'
+      - '.github/workflows/verilog.yml'
   pull_request:
     paths:
       - 'rtl/**'
-      - '.github/workflows/Verilog.yml'
+      - '.github/workflows/verilog.yml'
   workflow_dispatch:
 
 jobs:

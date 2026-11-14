@@ -123,6 +123,8 @@ neorv32                   - Project home folder
 │  ├─ figures             - Figures and logos
 │  └─ userguide           - AsciiDoc sources for the NEORV32 user guide
 │
+├─ riscv-act              - Port of the RISC-V Architectural Certification Tests (ACT)
+│
 ├─ rtl                    - HDL sources
 │  ├─ core                - Core sources of the CPU & SoC
 │  ├─ system_integration  - System wrappers and bridges for advanced SoC connectivity
@@ -446,8 +448,7 @@ mix of a specific applications and also on the available CPU extensions, tuning 
 === RISC-V Compatibility
 
 The NEORV32 CPU passes the official **RISC-V Architectural Certification Tests (ACTs)** to "_certify it faithfully
-implements the RISC-V specification_". The NEORV32 port of this test framework is available at
-https://github.com/stnolting/neorv32-riscv-act.
+implements the RISC-V specification_". The NEORV32 port of this test framework is available in `riscv-act/`.
 
 ++++
 <details>
