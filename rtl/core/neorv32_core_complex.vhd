@@ -348,30 +348,41 @@ end architecture;
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+
+library neorv32;
+use neorv32.neorv32_package.all;
 
 entity neorv32_core_complex_ordering is
   port (
     -- global control --
-    rstn_i    : in  std_ulogic; -- reset, async, low-active
-    clk_i     : in  std_ulogic; -- clock
+    rstn_i    : in  std_ulogic;                    -- reset, async, low-active
+    clk_i     : in  std_ulogic;                    -- clock
     -- CPU interface --
-    ifence_i  : in  std_ulogic; -- instruction fence, single-shot
-    dfence_i  : in  std_ulogic; -- data fence, single-shot
-    fenced_o  : out std_ulogic; -- operation(s) done, single-shot
+    fence_i   : in  std_ulogic_vector(2 downto 0); -- fence request (r/w/x)
+    fence_o   : out std_ulogic;                    -- operation(s) done, single-shot
     -- Cache interface --
-    ic_sync_o : out std_ulogic; -- i-cache synchronization request, single-shot
-    ic_sync_i : in  std_ulogic; -- i-cache synchronization completed
-    dc_sync_o : out std_ulogic; -- d-cache synchronization request, single-shot
-    dc_sync_i : in  std_ulogic  -- d-cache synchronization completed
+    ic_sync_o : out std_ulogic_vector(1 downto 0); -- i-cache synchronization request, single-shot
+    ic_sync_i : in  std_ulogic;                    -- i-cache synchronization completed
+    dc_sync_o : out std_ulogic_vector(1 downto 0); -- d-cache synchronization request, single-shot
+    dc_sync_i : in  std_ulogic                     -- d-cache synchronization completed
   );
 end entity;
 
 architecture neorv32_core_complex_ordering_rtl of neorv32_core_complex_ordering is
 
+  -- fence request layout --
+  constant fence_r_c : natural := 0; -- data read/load (acquire) fence
+  constant fence_w_c : natural := 1; -- data write/store (release) fence
+  constant fence_x_c : natural := 2; -- instruction execute/fetch fence
+
+  -- cache sync command layout --
+  constant cmd_inv_c : natural := 0; -- invalidate all clean blocks
+  constant cmd_fls_c : natural := 1; -- write-back all dirty blocks
+
+  -- arbiter --
   type state_t is (S_IDLE, S_DC_SYNC, S_DC_WAIT, S_IC_SYNC, S_IC_WAIT, S_DONE);
-  signal state, state_nxt : state_t;
-  signal ifence, ifence_nxt : std_ulogic;
+  signal state, state_nxt : state_t; -- fsm
+  signal fence, fence_nxt : std_ulogic_vector(2 downto 0); -- buffered fence request
 
 begin
 
@@ -379,62 +390,63 @@ begin
   arbiter_sync: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      state  <= S_IDLE;
-      ifence <= '0';
+      state <= S_IDLE;
+      fence <= (others => '0');
     elsif rising_edge(clk_i) then
-      state  <= state_nxt;
-      ifence <= ifence_nxt;
+      state <= state_nxt;
+      fence <= fence_nxt;
     end if;
   end process;
 
   -- arbiter comb --
-  arbiter_comb: process(state, ifence, ifence_i, dfence_i, ic_sync_i, dc_sync_i)
+  arbiter_comb: process(state, fence, fence_i, ic_sync_i, dc_sync_i)
   begin
     -- defaults --
-    state_nxt  <= state;
-    ifence_nxt <= ifence;
-    fenced_o   <= '0';
-    ic_sync_o  <= '0';
-    dc_sync_o  <= '0';
+    state_nxt <= state;
+    fence_nxt <= fence;
+    fence_o   <= '0';
+    ic_sync_o <= (others => '0');
+    dc_sync_o <= (others => '0');
     -- fsm --
     case state is
 
-      -- wait for requests ..
+      -- wait for requests --
       when S_IDLE =>
-        ifence_nxt <= ifence_i;
-        if (ifence_i = '1') or (dfence_i = '1') then
+        fence_nxt <= fence_i;
+        if (or_reduce_f(fence_i) = '1') then
           state_nxt <= S_DC_SYNC;
         end if;
 
-      -- trigger d-cache flush --
+      -- D$: trigger synchronization --
       when S_DC_SYNC =>
-        dc_sync_o <= '1';
-        state_nxt <= S_DC_WAIT;
+        dc_sync_o(cmd_inv_c) <= fence(fence_r_c);
+        dc_sync_o(cmd_fls_c) <= fence(fence_x_c) or fence(fence_w_c);
+        state_nxt            <= S_DC_WAIT;
 
-      -- wait for synchronization to complete --
+      -- D$: wait for completion --
       when S_DC_WAIT =>
         if (dc_sync_i = '1') then
-          if (ifence = '1') then
+          if (fence(fence_x_c) = '1') then
             state_nxt <= S_IC_SYNC;
           else
             state_nxt <= S_DONE;
           end if;
         end if;
 
-      -- trigger i-cache clear --
+      -- I$: trigger invalidation --
       when S_IC_SYNC =>
-        ic_sync_o <= '1';
-        state_nxt <= S_IC_WAIT;
+        ic_sync_o(cmd_inv_c) <= '1';
+        state_nxt            <= S_IC_WAIT;
 
-      -- wait for synchronization to complete --
+      -- I$: wait for completion --
       when S_IC_WAIT =>
         if (ic_sync_i = '1') then
           state_nxt <= S_DONE;
         end if;
 
-      -- signal "done" to CPU --
+      -- fence request completed --
       when S_DONE =>
-        fenced_o  <= '1';
+        fence_o   <= '1';
         state_nxt <= S_IDLE;
 
       -- undefined --
