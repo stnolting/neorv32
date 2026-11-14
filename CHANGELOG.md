@@ -28,6 +28,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 14.11.2026 | 1.13.7.9 | :bug: fix `fence.i` instruction not waiting for d-cache write-back | [#1684](https://github.com/stnolting/neorv32/pull/1684) |
 | 12.11.2026 | 1.13.7.8 | :bug: fix interrupt entry logic (RISC-V-compliance issue) | [#1685](https://github.com/stnolting/neorv32/pull/1685) |
 | 11.11.2026 | 1.13.7.7 | CPU: remove non-synthesizable statement | [#1683](https://github.com/stnolting/neorv32/pull/1683) |
 | 07.11.2026 | 1.13.7.6 | :warning: rework UART modules | [#1680](https://github.com/stnolting/neorv32/pull/1680) |
