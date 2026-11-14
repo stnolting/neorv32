@@ -51,6 +51,29 @@ static inline uint32_t __attribute__ ((always_inline)) RISCV_INSTR_R_TYPE(const 
 }
 
 /**********************************************************************//**
+ * Emit a RISC-V R4-type instruction.
+ *
+ * @param[in] opcode Opcode (7-bit).
+ * @param[in] funct3 Function select (3-bit).
+ * @param[in] funct2 Function select (2-bit).
+ * @param[in] rs1 Register source operand 1 (32-bit).
+ * @param[in] rs2 Register source operand 2 (32-bit).
+ * @param[in] rs3 Register source operand 3 (32-bit).
+ * @return Instruction result (destination register rd, 32-bit).
+ **************************************************************************/
+static inline uint32_t __attribute__ ((always_inline)) RISCV_INSTR_R4_TYPE(const int opcode, const int funct3, const int funct2, uint32_t rs1, uint32_t rs2, uint32_t rs3) {
+
+  register uint32_t __rd;
+  register uint32_t __rs1 = rs1;
+  register uint32_t __rs2 = rs2;
+  register uint32_t __rs3 = rs3;
+
+  asm volatile (".insn r4 %4 %5 %6 %0 %1 %2 %3" : "=r"(__rd) : "r"(__rs1), "r"(__rs2), "r"(__rs3), "i"(opcode), "i"(funct3), "i"(funct2));
+
+  return __rd;
+}
+
+/**********************************************************************//**
  * Emit a RISC-V I-type instruction.
  *
  * @param[in] opcode Opcode (7-bit).
