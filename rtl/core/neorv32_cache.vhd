@@ -30,14 +30,14 @@ entity neorv32_cache is
     NUM_BLOCKS : natural range 1 to 4096;       -- number of cache blocks, has to be a power of 2
     BLOCK_SIZE : natural range 4 to 1024;       -- cache block size in bytes, has to be a power of 2
     UC_BEGIN   : std_ulogic_vector(3 downto 0); -- begin of uncached address space (4 MSBs of address)
-    READ_ONLY  : boolean;                       -- cache is read-only accesses for host
+    READ_ONLY  : boolean;                       -- cache is read-only for host
     BURSTS_EN  : boolean                        -- enable issuing of burst transfers
   );
   port (
     clk_i      : in  std_ulogic; -- global clock, rising edge
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     sync_i     : in  std_ulogic; -- perform full synchronization with main memory
-    busy_o     : out std_ulogic; -- synchronization pending or in progress
+    sync_o     : out std_ulogic; -- synchronization completed, single-shot
     host_req_i : in  bus_req_t;  -- host request
     host_rsp_o : out bus_rsp_t;  -- host response
     bus_req_o  : out bus_req_t;  -- bus request
@@ -174,6 +174,9 @@ begin
     bus_req_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_width_c-1 downto 0) & "00"; -- cache access
     bus_req_o.ben  <= (others => '1'); -- cache updates use full-word accesses only
 
+    -- status --
+    sync_o <= '0';
+
     -- fsm --
     case ctrl.state is
 
@@ -245,7 +248,8 @@ begin
       when S_SYNC_START => -- start synchronization
       -- ------------------------------------------------------------
         ctrl_nxt.pnd_syn <= '0'; -- sync request accepted
-        if READ_ONLY then
+        if READ_ONLY then -- sync done immediately
+          sync_o         <= '1';
           ctrl_nxt.state <= S_IDLE;
         else
           ctrl_nxt.sync  <= '1'; -- syncing in progress
@@ -287,6 +291,7 @@ begin
           cache_o.vld  <= ctrl.bus_err; -- keep block valid if there was a bus error (skip block)
           ctrl_nxt.idx <= std_ulogic_vector(unsigned(ctrl.idx) + 1);
           if (and_reduce_f(ctrl.idx) = '1') then -- all blocks checked
+            sync_o         <= '1';
             ctrl_nxt.state <= S_IDLE;
           else -- access next block
             ctrl_nxt.state <= S_SYNC_DELAY;
@@ -570,9 +575,6 @@ begin
     data_i    => cache_o.data,
     data_o    => cache_i.data
   );
-
-  -- synchronization pending or in progress --
-  busy_o <= ctrl.pnd_syn or ctrl.sync or sync_i;
 
   -- cache hit --
   cache_i.hit <= '1' when ((cache_i.tag(tag_width_c-1 downto 0) = host_req_i.addr(31 downto 31-(tag_width_c-1))) and
