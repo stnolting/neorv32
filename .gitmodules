@@ -3,3 +3,7 @@
 	url = https://github.com/riscv/riscv-arch-test.git
 	branch = act4
 	ignore = dirty
+[submodule "sw/example/coremark/coremark"]
+	path = sw/example/coremark/coremark
+	url = https://github.com/eembc/coremark.git
+	ignore = dirty
