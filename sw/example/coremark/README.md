@@ -1,4 +1,4 @@
-# NEORV32 CoreMark® Port
+# CoreMark® Port
 
 Out-of-tree port of the _Embedded Microprocessor Benchmark Consortium_
 [CoreMark®](https://github.com/eembc/coremark) benchmark.

@@ -1,0 +1,97 @@
+<<<
+:sectnums:
+== Software and Operating System Support
+
+:sectnums:
+=== Rust
+
+The easiest way to get started writing Rust for the NEORV32 is via the
+https://crates.io/crates/embassy-neorv32[embassy-neorv32] crate which provides RISC-V runtime
+support and a safe, high-level hardware abstraction layer (HAL) for interacting with various
+hardware peripherals. https://github.com/embassy-rs/embassy[Embassy] is a lightweight async
+executor popular among the embedded Rust community; however, the HAL is designed to work with any
+async executor. Additionally, the HAL provides blocking methods for interacting with most supported
+peripherals, so not even an executor is needed. Check out the
+https://github.com/kurtjd/neorv32-rs/tree/main/embassy-neorv32/examples[examples] to see how it can
+be used!
+
+.Supported Peripherals
+[NOTE]
+Although the most common/important NEORV32 peripherals are supported by the HAL, not all of them are
+yet. Please check the README for an up-to-date list of supported peripherals. If a peripheral that
+you need is currently unsupported, please open an issue. Or better yet, PRs are highly welcome and
+encouraged ;)
+
+Rust HALs are typically designed to be safe and ergonomic to use, though at the cost of some
+flexibility. When finer-grained control is needed, the peripheral access crate (PAC) provided by
+https://crates.io/crates/neorv32-pac[neorv32-pac] can be used standalone or alongside the HAL. PACs
+act as thin wrappers around raw peripheral register access, and thus offer no higher-level
+abstractions or safety guarantees, but provide maximum flexibility in using the hardware.
+
+
+:sectnums:
+=== MicroPython
+
+A simple out-of-tree port of https://github.com/micropython/micropython[MicroPython]
+for the NEORV32 RISC-V Processor can be found in a separate repository:
+https://github.com/stnolting/neorv32-micropython
+
+.Work-In-Progress
+[NOTE]
+This port is still under development. Hence, it supports just some simple modules and
+methods yet. However, it is already fully operational.
+
+.MicroPython REPL Console
+[source, python]
+----
+MicroPython v1.25.0 on 2025-04-20; neorv32-default with neorv32
+Type "help()" for more information.
+>>> help("modules")
+__main__          collections       machine           sys
+array             gc                micropython       time
+builtins          io                struct
+Plus any modules on the filesystem
+----
+
+.Basic build-in Modules
+[source, python]
+----
+>>> import machine
+>>> machine.info()
+NEORV32 version 1.11.2.9
+Clock: 150000000 Hz
+MISA:  0x40901105
+MXISA: 0x66006cd3
+SoC:   0x480ba97b
+>>> import time
+>>> time.localtime()
+(2025, 4, 20, 19, 52, 46, 6, 110)
+>>> import builtins
+>>> builtins.neorv32.help()
+neorv32 - helper functions:
+  gpio_pin_set(pin, level)       - Set GPIO.output [pin] to [level]
+  gpio_pin_toggle(pin)           - Toggle GPIO.output [pin]
+  systick_set_callback(callback) - Call [callback] from SysTICK IRQ
+  help()                         - Show this text
+----
+
+
+:sectnums:
+== FreeRTOS
+
+A NEORV32-specific port and a simple demo for FreeRTOS (https://github.com/FreeRTOS/FreeRTOS) are
+available in `sw/example/freeRTOS`.
+
+
+:sectnums:
+=== Zephyr RTOS
+
+The NEORV32 processor is supported by upstream Zephyr RTOS: https://docs.zephyrproject.org/latest/boards/others/neorv32/doc/index.html
+
+[IMPORTANT]
+The absolute path to the NEORV32 executable image generator binary (`.../neorv32/sw/image_gen`) has to be added to the `PATH` variable
+so the Zephyr build system can generate executables and memory-initialization images.
+
+[NOTE]
+Zephyr OS port provided by GitHub user https://github.com/henrikbrixandersen[henrikbrixandersen]
+(see https://github.com/stnolting/neorv32/discussions/172).

@@ -87,9 +87,9 @@ that provides hands-on tutorials to get you started.
 
 **OS Support**
 
-* FreeRTOS port: https://github.com/stnolting/neorv32-freertos
-* Upstream Zephyr support: https://docs.zephyrproject.org/latest/boards/others/neorv32/doc/index.html
-* MicroPython port: https://github.com/stnolting/neorv32-micropython
+* FreeRTOS port
+* Upstream Zephyr support
+* Linux port (no-mmu)
 
 **Extensibility and Customization**
 

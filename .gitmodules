@@ -1,9 +1,13 @@
-[submodule "riscv-act/riscv-arch-test"]
+[submodule "riscv-arch-test"]
 	path = riscv-act/riscv-arch-test
 	url = https://github.com/riscv/riscv-arch-test.git
 	branch = act4
 	ignore = dirty
-[submodule "sw/example/coremark/coremark"]
+[submodule "coremark"]
 	path = sw/example/coremark/coremark
 	url = https://github.com/eembc/coremark.git
+	ignore = dirty
+[submodule "FreeRTOS-Kernel"]
+	path = sw/example/freeRTOS/FreeRTOS-Kernel
+	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
 	ignore = dirty
