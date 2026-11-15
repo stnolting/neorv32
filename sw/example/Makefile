@@ -5,7 +5,7 @@ TOPTARGETS := elf exe clean clean_all check info all
 
 SUBDIRS := $(wildcard */.)
 EXCLDIR := $(wildcard ~*/.)
-SUBDIRS := $(filter-out $(EXCLDIR) coremark/.,freeRTOS/.,$(SUBDIRS))
+SUBDIRS := $(filter-out $(EXCLDIR) coremark/. freeRTOS/.,$(SUBDIRS))
 
 $(TOPTARGETS): $(SUBDIRS)
 $(SUBDIRS):
