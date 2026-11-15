@@ -7,3 +7,7 @@
 	path = sw/example/coremark/coremark
 	url = https://github.com/eembc/coremark.git
 	ignore = dirty
+[submodule "sw/example/freeRTOS/FreeRTOS-Kernel"]
+	path = sw/example/freeRTOS/FreeRTOS-Kernel
+	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
+	ignore = dirty
