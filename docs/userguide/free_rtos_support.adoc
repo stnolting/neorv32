@@ -1,6 +1,0 @@
-<<<
-:sectnums:
-== FreeRTOS Support
-
-A NEORV32-specific port and a simple demo for FreeRTOS (https://github.com/FreeRTOS/FreeRTOS) are
-available in a separate repository on GitHub: https://github.com/stnolting/neorv32-freertos
