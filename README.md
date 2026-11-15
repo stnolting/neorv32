@@ -40,7 +40,7 @@ targeting various FPGA boards and toolchains to get started.
 - :package: The entire processor is also available as [Vivado IP Block](https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block).
 - :recycle: Looking for an **all-Verilog** version? Have a look at the [auto-conversion setup](rtl/verilog).
 - :kite: Upstream [Zephyr](https://docs.zephyrproject.org/latest/boards/others/neorv32/doc/index.html) and
-[FreeRTOS](https://github.com/stnolting/neorv32-freertos) operating system support.
+[FreeRTOS](sw/example/freeRTOS) operating system support.
 - :penguin: Capable of [running nommu-Linux](https://github.com/14sea/see_neorv32_run_linux).
 - :building_construction: [LiteX](https://github.com/enjoy-digital/litex/wiki/CPUs#risc-v---neorv32) SoC builder integration.
 - :gear: [MicroPython](https://github.com/stnolting/neorv32-micropython) port, [Ada](https://github.com/GNAT-Academic-Program/neorv32-hal) support, and
@@ -173,7 +173,7 @@ for advanced debugging, profiling or verification
 ### Size and Performance
 
 The NEORV32 processor is optimized for minimal size. However, the actual size (silicon area or FPGA resources)
-depends on the specific configuration. For example, an RTOS-capable setup based on a `rv32imc_Zicsr_Zicntr` CPU
+depends on the specific configuration. For example, an OS-capable setup based on a `rv32imc_Zicsr_Zicntr` CPU
 configuration requires about 2300 LUTs and 1000 FFs and can run at up to 130 MHz (implementation results for an
 Altera Cyclone IV E `EP4CE22F17C6` FPGA). This configuration provides a [CoreMark](sw/example/coremark) score of 95
 (0.95 CoreMarks/MHz). The corresponding dual-core version achieves a CoreMark score of 190 (1.9 CoreMarks/MHz).
