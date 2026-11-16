@@ -1,0 +1,248 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/riscv/riscv-unified-db/main/spec/schemas/config_schema.json
+---
+$schema: config_schema.json#
+kind: architecture configuration
+type: fully configured
+name: neorv32
+description: NEORV32 max configuration
+implemented_extensions:
+  - { name: A, version: "= 2.1.0" }
+  - { name: B, version: "= 1.0.0" }
+  - { name: C, version: "= 2.0" }
+  - { name: I, version: "= 2.1" }
+  - { name: M, version: "= 2.0" }
+  - { name: U, version: "= 1.0.0" }
+  - { name: Sm, version: "= 1.13.0" }
+  - { name: Smcntrpmf, version: "= 1.0.0" }
+  - { name: Zaamo, version: "= 1.0.0" }
+  - { name: Zalrsc, version: "= 1.0.0" }
+  - { name: Zba, version: "= 1.0.0" }
+  - { name: Zbb, version: "= 1.0.0" }
+  - { name: Zbc, version: "= 1.0.0" }
+  - { name: Zbkb, version: "= 1.0.0" }
+  - { name: Zbkc, version: "= 1.0.0" }
+  - { name: Zbkx, version: "= 1.0.0" }
+  - { name: Zbs, version: "= 1.0.0" }
+  - { name: Zca, version: "= 1.0.0" }
+  - { name: Zcb, version: "= 1.0.0" }
+  - { name: Zcmop, version: "= 1.0.0" }
+  - { name: Zicntr, version: "= 2.0" }
+  - { name: Zicond, version: "= 1.0.0" }
+  - { name: Zicsr, version: "= 2.0" }
+  - { name: Zifencei, version: "= 2.0.0" }
+  - { name: Zihpm, version: "= 2.0.0" }
+  - { name: Zimop, version: "= 1.0.0" }
+  - { name: Zmmul, version: "= 1.0.0" }
+  - { name: Zknd, version: "= 1.0.0" }
+  - { name: Zkne, version: "= 1.0.0" }
+  - { name: Zknh, version: "= 1.0.0" }
+  - { name: Zksed, version: "= 1.0.0" }
+  - { name: Zksh, version: "= 1.0.0" }
+  - { name: Zkt, version: "= 1.0.0" }
+
+params:
+  # A params
+  MISALIGNED_AMO: false
+  LRSC_RESERVATION_STRATEGY: "reserve naturally-aligned 64-byte region"
+  LRSC_MISALIGNED_BEHAVIOR: "always raise misaligned exception"
+  LRSC_FAIL_ON_VA_SYNONYM: false
+  LRSC_FAIL_ON_NON_EXACT_LRSC: false
+  MUTABLE_MISA_A: false
+  # M params
+  MUTABLE_MISA_M: false
+  # C params
+  MUTABLE_MISA_C: false
+  # B params
+  MUTABLE_MISA_B: false
+  # Zicntr params
+  TIME_CSR_IMPLEMENTED: true
+  # U params
+  MUTABLE_MISA_U: false
+  U_MODE_ENDIANNESS: little
+  UXLEN: [32]
+  TRAP_ON_ECALL_FROM_U: true
+  # Sm params
+  MXLEN: 32
+  PRECISE_SYNCHRONOUS_EXCEPTIONS: true
+  TRAP_ON_ECALL_FROM_M: true
+  TRAP_ON_EBREAK: true
+  MCOUNTINHIBIT_IMPLEMENTED: true
+  MARCHID_IMPLEMENTED: true
+  ARCH_ID_VALUE: 0x13
+  MIMPID_IMPLEMENTED: true
+  IMP_ID_VALUE: 0x01130707
+  VENDOR_ID_BANK: 0x0
+  VENDOR_ID_OFFSET: 0x0
+  MISALIGNED_LDST: false
+  MISALIGNED_LDST_EXCEPTION_PRIORITY: high
+  TRAP_ON_ILLEGAL_WLRL: false
+  TRAP_ON_UNIMPLEMENTED_INSTRUCTION: true
+  TRAP_ON_RESERVED_INSTRUCTION: true
+  TRAP_ON_UNIMPLEMENTED_CSR: true
+  REPORT_VA_IN_MTVAL_ON_BREAKPOINT: false
+  REPORT_VA_IN_MTVAL_ON_LOAD_MISALIGNED: true
+  REPORT_VA_IN_MTVAL_ON_STORE_AMO_MISALIGNED: true
+  REPORT_VA_IN_MTVAL_ON_INSTRUCTION_MISALIGNED: true
+  REPORT_VA_IN_MTVAL_ON_LOAD_ACCESS_FAULT: true
+  REPORT_VA_IN_MTVAL_ON_STORE_AMO_ACCESS_FAULT: true
+  REPORT_VA_IN_MTVAL_ON_INSTRUCTION_ACCESS_FAULT: false
+  REPORT_ENCODING_IN_MTVAL_ON_ILLEGAL_INSTRUCTION: true
+  MTVAL_WIDTH: 32
+  CONFIG_PTR_ADDRESS: 0
+  PMA_GRANULARITY: 3 # Not explicit in config
+  PHYS_ADDR_WIDTH: 32
+  M_MODE_ENDIANNESS: little
+  MISA_CSR_IMPLEMENTED: true
+  NON_STANDARD_EXTENSION_IMPLEMENTED: true
+  MTVEC_ACCESS: rw
+  MTVEC_MODES: [0, 1]
+  MTVEC_BASE_ALIGNMENT_DIRECT: 4
+  MTVEC_BASE_ALIGNMENT_VECTORED: 128
+  MTVEC_ILLEGAL_WRITE_BEHAVIOR: custom
+  MEI_INTR_IMPL: true
+  MSI_INTR_IMPL: true
+  MTI_INTR_IMPL: true
+  WFI_U_MODE: true
+  WFI_FINITE: false
+  NUM_PMP_ENTRIES: 16
+  PMP_GRANULARITY: 2 # granularity = 2**(GRAIN+2)
+  NUM_USABLE_PMP_ENTRIES: 16
+  PMP_NA4_SUPPORTED: true
+  PMP_NAPOT_SUPPORTED: true
+  PMP_TOR_SUPPORTED: true
+  # Counters
+  HPM_COUNTER_EN:
+    [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+    ]
+  HPM_COUNTER3_WIDTH: 64
+  HPM_COUNTER4_WIDTH: 64
+  HPM_COUNTER5_WIDTH: 64
+  HPM_COUNTER6_WIDTH: 64
+  HPM_COUNTER7_WIDTH: 64
+  HPM_COUNTER8_WIDTH: 64
+  HPM_COUNTER9_WIDTH: 64
+  HPM_COUNTER10_WIDTH: 64
+  HPM_COUNTER11_WIDTH: 64
+  HPM_COUNTER12_WIDTH: 64
+  HPM_COUNTER13_WIDTH: 64
+  HPM_COUNTER14_WIDTH: 64
+  HPM_COUNTER15_WIDTH: 64
+  HPM_COUNTER16_WIDTH: 64
+  HPM_COUNTER17_WIDTH: 64
+  HPM_COUNTER18_WIDTH: 64
+  HPM_COUNTER19_WIDTH: 64
+  HPM_COUNTER20_WIDTH: 64
+  HPM_COUNTER21_WIDTH: 64
+  HPM_COUNTER22_WIDTH: 64
+  HPM_COUNTER23_WIDTH: 64
+  HPM_COUNTER24_WIDTH: 64
+  HPM_COUNTER25_WIDTH: 64
+  HPM_COUNTER26_WIDTH: 64
+  HPM_COUNTER27_WIDTH: 64
+  HPM_COUNTER28_WIDTH: 64
+  HPM_COUNTER29_WIDTH: 64
+  HPM_COUNTER30_WIDTH: 64
+  HPM_COUNTER31_WIDTH: 64
+  HPM_EVENTS: [0]
+  COUNTINHIBIT_EN:
+    [
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+    ]
+  MCOUNTENABLE_EN:
+    [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+    ]

@@ -93,12 +93,15 @@ entity neorv32_cpu is
     mti_i      : in  std_ulogic;                     -- RISC-V machine timer interrupt
     firq_i     : in  std_ulogic_vector(15 downto 0); -- custom fast interrupts
     dbi_i      : in  std_ulogic;                     -- RISC-V debug halt request interrupt
+    -- memory ordering --
+    fence_r_o  : out std_ulogic;                     -- data read/load (acquire) fence
+    fence_w_o  : out std_ulogic;                     -- data write/store (release) fence
+    fence_x_o  : out std_ulogic;                     -- instruction execute/fetch fence
+    fenced_i   : in  std_ulogic;                     -- fence operation completed
     -- instruction bus interface --
-    ifence_o   : out std_ulogic;                     -- instruction fence
     ibus_req_o : out bus_req_t;                      -- request bus
     ibus_rsp_i : in  bus_rsp_t;                      -- response bus
     -- data bus interface --
-    dfence_o   : out std_ulogic;                     -- data fence
     dbus_req_o : out bus_req_t;                      -- request bus
     dbus_rsp_i : in  bus_rsp_t                       -- response bus
   );
@@ -107,7 +110,6 @@ end entity;
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- auto-configuration --
-  constant trace_log_c   : string  := "neorv32_trace" & natural'image(HART_ID) & ".log"; -- simulation trace log file
   constant rf_awidth_c   : natural := sel_natural_f(RISCV_ISA_E, 4, 5); -- register file address width
   constant any_amo_c     : boolean := RISCV_ISA_Zaamo or RISCV_ISA_Zalrsc; -- any AMO extension available
   constant riscv_a_c     : boolean := RISCV_ISA_Zaamo and RISCV_ISA_Zalrsc; -- A: atomic memory operations
@@ -327,6 +329,7 @@ begin
     -- misc --
     frontend_i    => frontend,    -- front-end status and data
     hwtrig_i      => hwtrig,      -- hardware trigger
+    fenced_i      => fenced_i,    -- fence operation completed
     -- data path interface --
     alu_cp_done_i => alu_cp_done, -- ALU iterative operation done
     alu_cmp_i     => alu_cmp,     -- comparator status
@@ -355,9 +358,10 @@ begin
   -- CPU is sleeping --
   sleep_o <= not ctrl.cnt_event(cnt_event_cy_c);
 
-  -- memory ordering / synchronization --
-  ifence_o <= ctrl.if_fence;
-  dfence_o <= ctrl.lsu_fence;
+  -- memory ordering --
+  fence_r_o <= ctrl.fence_r;
+  fence_w_o <= ctrl.fence_w;
+  fence_x_o <= ctrl.fence_x;
 
 
   -- Hardware Trigger Module (Sdtrig) -------------------------------------------------------
@@ -647,12 +651,26 @@ begin
     trace <= trace_port_terminate_c;
   end generate;
 
-  -- simulation-only trace logger --
-  sim_trace_enabled:
-  if TRACE_SIMLOG_EN and is_simulation_c generate
+  -- simulation-only trace logger - CPU0 --
+  sim_trace0_enabled:
+  if TRACE_SIMLOG_EN and is_simulation_c and (HART_ID = 0) generate
     trace_simlog_inst: entity neorv32.neorv32_cpu_trace_simlog
     generic map (
-      LOG_FILE => trace_log_c
+      LOG_FILE => "neorv32_trace0.log"
+    )
+    port map (
+      clk_i   => clk_i,
+      rstn_i  => rstn_i,
+      trace_i => trace
+    );
+  end generate;
+
+  -- simulation-only trace logger - CPU1 --
+  sim_trace1_enabled:
+  if TRACE_SIMLOG_EN and is_simulation_c and (HART_ID = 1) generate
+    trace_simlog_inst: entity neorv32.neorv32_cpu_trace_simlog
+    generic map (
+      LOG_FILE => "neorv32_trace1.log"
     )
     port map (
       clk_i   => clk_i,

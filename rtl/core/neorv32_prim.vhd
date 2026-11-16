@@ -450,8 +450,8 @@ end entity;
 architecture neorv32_prim_cnt_rtl of neorv32_prim_cnt is
 
   signal count : std_ulogic_vector(63 downto 0);
-  signal carry, incen : std_ulogic_vector(0 downto 0);
-  signal inc_lo, inc_hi : std_ulogic_vector(32 downto 0);
+  signal carry : std_ulogic_vector(0 downto 0);
+  signal inc   : std_ulogic_vector(32 downto 0);
 
 begin
 
@@ -460,32 +460,28 @@ begin
   counter_core: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      incen <= (others => '0');
       count <= (others => '0');
       carry <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- increment enable --
-      incen(0) <= inc_i;
       -- low-word --
       if (we_i(0) = '1') then
         count(31 downto 0) <= data_i;
       else
-        count(31 downto 0) <= inc_lo(31 downto 0);
+        count(31 downto 0) <= inc(31 downto 0);
       end if;
       -- low-to-high carry --
-      carry(0) <= inc_lo(32);
+      carry(0) <= inc(32);
       -- high-word --
       if (we_i(1) = '1') then
         count(63 downto 32) <= data_i;
       else
-        count(63 downto 32) <= inc_hi(31 downto 0);
+        count(63 downto 32) <= std_ulogic_vector(unsigned(count(63 downto 32)) + unsigned(carry));
       end if;
     end if;
   end process;
 
-  -- increments --
-  inc_lo <= std_ulogic_vector(unsigned('0' & count(31 downto  0)) + unsigned(incen));
-  inc_hi <= std_ulogic_vector(unsigned('0' & count(63 downto 32)) + unsigned(carry));
+  -- low-word increment --
+  inc <= (std_ulogic_vector(unsigned('0' & count(31 downto 0)) + 1)) when (inc_i = '1') else ('0' & count(31 downto 0));
 
   -- Output Gating and Trimming -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

@@ -183,16 +183,16 @@ begin
 
   -- Counter Increment ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  counter_increment: process(ctrl_i, hpmevent, cnt_we, inhibit, pmf_inh)
+  counter_increment: process(rstn_i, clk_i)
   begin
-    if (ctrl_i.cpu_debug = '1') then -- no increment when in debug-mode
+    if (rstn_i = '0') then
       cnt_inc <= (others => '0');
-    else -- no increment during CSR-write, when inhibited or when mode-filtered
-      cnt_inc(0) <= ctrl_i.cnt_event(cnt_event_cy_c) and (not or_reduce_f(cnt_we(0))) and (not inhibit(0)) and (not pmf_inh(0)); -- CY
+    elsif rising_edge(clk_i) then -- no increment when in debug-mode, during writes, if inhibited or when mode-filtered
+      cnt_inc(0) <= ctrl_i.cnt_event(cnt_event_cy_c) and (not ctrl_i.cpu_debug) and (not or_reduce_f(cnt_we(0))) and (not inhibit(0)) and (not pmf_inh(0)); -- CY
       cnt_inc(1) <= '0'; -- undefined
-      cnt_inc(2) <= ctrl_i.cnt_event(cnt_event_ir_c) and (not or_reduce_f(cnt_we(2))) and (not inhibit(2)) and (not pmf_inh(1)); -- IR
+      cnt_inc(2) <= ctrl_i.cnt_event(cnt_event_ir_c) and (not ctrl_i.cpu_debug) and (not or_reduce_f(cnt_we(2))) and (not inhibit(2)) and (not pmf_inh(1)); -- IR
       for i in 3 to 31 loop
-        cnt_inc(i) <= or_reduce_f(ctrl_i.cnt_event and hpmevent(i)) and (not or_reduce_f(cnt_we(i))) and (not inhibit(i)); -- HPM
+        cnt_inc(i) <= or_reduce_f(ctrl_i.cnt_event and hpmevent(i)) and (not or_reduce_f(cnt_we(i))) and (not ctrl_i.cpu_debug) and (not inhibit(i)); -- HPM
       end loop;
     end if;
   end process;

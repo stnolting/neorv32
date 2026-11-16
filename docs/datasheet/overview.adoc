@@ -87,9 +87,9 @@ that provides hands-on tutorials to get you started.
 
 **OS Support**
 
-* FreeRTOS port: https://github.com/stnolting/neorv32-freertos
-* Upstream Zephyr support: https://docs.zephyrproject.org/latest/boards/others/neorv32/doc/index.html
-* MicroPython port: https://github.com/stnolting/neorv32-micropython
+* FreeRTOS port
+* Upstream Zephyr support
+* Linux port (no-mmu)
 
 **Extensibility and Customization**
 
@@ -122,6 +122,8 @@ neorv32                   - Project home folder
 │  ├─ datasheet           - AsciiDoc sources for the NEORV32 data sheet
 │  ├─ figures             - Figures and logos
 │  └─ userguide           - AsciiDoc sources for the NEORV32 user guide
+│
+├─ riscv-act              - Port of the RISC-V Architectural Certification Tests (ACT)
 │
 ├─ rtl                    - HDL sources
 │  ├─ core                - Core sources of the CPU & SoC
@@ -419,7 +421,7 @@ and NanoXplore FPGAs. Some pre-configured example setup are available online: ht
 **Processing Speed**
 
 The computational performance of the NEORV32 is evaluated using https://www.eembc.org/coremark/[Core Mark CPU benchmark].
-The NEORV32 CoreMark port can be found in a separate repository: https://github.com/stnolting/neorv32-coremark[neorv32-coremark]
+The NEORV32 CoreMark port can be found in `sw/example/coremark`.
 
 .CoreMark Results
 [cols="<6,^2,^2"]
@@ -446,8 +448,7 @@ mix of a specific applications and also on the available CPU extensions, tuning 
 === RISC-V Compatibility
 
 The NEORV32 CPU passes the official **RISC-V Architectural Certification Tests (ACTs)** to "_certify it faithfully
-implements the RISC-V specification_". The NEORV32 port of this test framework is available at
-https://github.com/stnolting/neorv32-riscv-act.
+implements the RISC-V specification_". The NEORV32 port of this test framework is available in `riscv-act/`.
 
 ++++
 <details>
