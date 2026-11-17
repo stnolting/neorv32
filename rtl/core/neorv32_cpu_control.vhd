@@ -398,9 +398,9 @@ begin
             if (exec.ir(instr_funct3_lsb_c) = '1') then -- fence.i
               ctrl_nxt.fence_x <= '1'; -- instruction execute/fetch fence
               exec_nxt.state   <= S_FENCE;
-            elsif (or_reduce_f(exec.ir(27 downto 20)) = '1') then -- fence with any PRED/SUCC
-              ctrl_nxt.fence_r <= exec.ir(25) or exec.ir(21); -- PRED.r or SUCC.r
-              ctrl_nxt.fence_w <= exec.ir(24) or exec.ir(20); -- PRED.w or SUCC.w
+            elsif (or_reduce_f(exec.ir(25 downto 24) or exec.ir(21 downto 20)) = '1') then -- fence with any PRED.rw/SUCC.rw
+              ctrl_nxt.fence_r <= exec.ir(25) or exec.ir(21); -- PRED.r or SUCC.r: data read/load (acquire) fence
+              ctrl_nxt.fence_w <= exec.ir(24) or exec.ir(20); -- PRED.w or SUCC.w: data write/store (release) fence
               exec_nxt.state   <= S_FENCE;
             else -- NOP
               exec_nxt.state <= S_DISPATCH;

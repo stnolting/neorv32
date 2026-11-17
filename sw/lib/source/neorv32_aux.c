@@ -448,9 +448,9 @@ void neorv32_aux_print_hw_config(void) {
 
   neorv32_uart0_printf("CPU I-cache:         ");
   if ((soc >> SYSINFO_SOC_ICACHE) & 1U) {
-    neorv32_uart0_printf("%u bytes (%ux%u)", ic_num_blocks*c_block_size, ic_num_blocks, c_block_size);
-    neorv32_uart0_printf(" , %s", ((cache >> SYSINFO_CACHE_BURSTS_EN) & 1U) ? "bursts enabled" : "no bursts");
-    neorv32_uart0_printf(", uncached: 0x%x..0x%x\n", uncached_beg, uncached_end);
+    neorv32_uart0_printf("%u bytes (%ux%u), ", ic_num_blocks*c_block_size, ic_num_blocks, c_block_size);
+    neorv32_uart0_printf("%s, ", ((cache >> SYSINFO_CACHE_BURSTS_EN) & 1U) ? "bursts enabled" : "no bursts");
+    neorv32_uart0_printf("uncached: 0x%x..0x%x\n", uncached_beg, uncached_end);
   }
   else {
     neorv32_uart0_printf("none\n");
@@ -458,9 +458,9 @@ void neorv32_aux_print_hw_config(void) {
 
   neorv32_uart0_printf("CPU D-cache:         ");
   if ((soc >> SYSINFO_SOC_DCACHE) & 1U) {
-    neorv32_uart0_printf("%u bytes (%ux%u)", dc_num_blocks*c_block_size, dc_num_blocks, c_block_size);
-    neorv32_uart0_printf(" , %s", ((cache >> SYSINFO_CACHE_BURSTS_EN) & 1U) ? "bursts enabled" : "no bursts");
-    neorv32_uart0_printf(", uncached: 0x%x..0x%x\n", uncached_beg, uncached_end);
+    neorv32_uart0_printf("%u bytes (%ux%u), ", dc_num_blocks*c_block_size, dc_num_blocks, c_block_size);
+    neorv32_uart0_printf("%s, ", ((cache >> SYSINFO_CACHE_BURSTS_EN) & 1U) ? "bursts enabled" : "no bursts");
+    neorv32_uart0_printf("uncached: 0x%x..0x%x\n", uncached_beg, uncached_end);
   }
   else {
     neorv32_uart0_printf("none\n");

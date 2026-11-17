@@ -34,14 +34,14 @@ entity neorv32_cache is
     BURSTS_EN  : boolean                        -- enable issuing of burst transfers
   );
   port (
-    clk_i      : in  std_ulogic; -- global clock, rising edge
-    rstn_i     : in  std_ulogic; -- global reset, low-active, async
-    sync_i     : in  std_ulogic; -- perform full synchronization with main memory
-    sync_o     : out std_ulogic; -- synchronization completed, single-shot
-    host_req_i : in  bus_req_t;  -- host request
-    host_rsp_o : out bus_rsp_t;  -- host response
-    bus_req_o  : out bus_req_t;  -- bus request
-    bus_rsp_i  : in  bus_rsp_t   -- bus response
+    clk_i      : in  std_ulogic;                    -- global clock, rising edge
+    rstn_i     : in  std_ulogic;                    -- global reset, low-active, async
+    sync_i     : in  std_ulogic_vector(1 downto 0); -- sync request: 00=NOP, 01=invalidate, 10=flush, 11=both
+    sync_o     : out std_ulogic;                    -- synchronization completed, single-shot
+    host_req_i : in  bus_req_t;                     -- host request
+    host_rsp_o : out bus_rsp_t;                     -- host response
+    bus_req_o  : out bus_req_t;                     -- bus request
+    bus_rsp_i  : in  bus_rsp_t                      -- bus response
   );
 end entity;
 
@@ -82,11 +82,11 @@ architecture neorv32_cache_rtl of neorv32_cache is
     S_WRITE_START, S_WRITE_REQ, S_WRITE_RSP, S_WRITE_WAIT, S_WRITE_BURST, S_WRITE_DONE
   );
   type ctrl_t is record
-    state   : state_t;    -- FSM state
-    sync    : std_ulogic; -- synchronization operation in progress
+    state   : state_t; -- FSM state
+    sync    : std_ulogic_vector(1 downto 0); -- synchronization operation in progress
     bus_err : std_ulogic; -- bus error accumulator
     pnd_req : std_ulogic; -- pending bus request
-    pnd_syn : std_ulogic; -- pending synchronization request
+    pnd_syn : std_ulogic_vector(1 downto 0); -- pending synchronization request
     pnd_bp  : std_ulogic; -- pending bypass bus request
     bp_req  : std_ulogic; -- cache bypass bus request (STB)
     hit     : std_ulogic; -- forced cache hit (to skip status update latency)
@@ -117,10 +117,10 @@ begin
   begin
     if (rstn_i = '0') then
       ctrl.state   <= S_IDLE;
-      ctrl.sync    <= '0';
+      ctrl.sync    <= (others => '0');
       ctrl.bus_err <= '0';
       ctrl.pnd_req <= '0';
-      ctrl.pnd_syn <= '0';
+      ctrl.pnd_syn <= (others => '0');
       ctrl.pnd_bp  <= '0';
       ctrl.bp_req  <= '0';
       ctrl.hit     <= '0';
@@ -187,9 +187,9 @@ begin
       when S_IDLE => -- wait for request
       -- ------------------------------------------------------------
         ctrl_nxt.bus_err <= '0'; -- reset bus error flag
-        ctrl_nxt.sync    <= '0'; -- reset sync-in-progress flag
+        ctrl_nxt.sync    <= (others => '0'); -- reset sync-in-progress flag
         ctrl_nxt.pnd_bp  <= '0'; -- default: no bypass request
-        if (ctrl.pnd_syn = '1') then -- pending sync request: invalidate clean blocks & write-back dirty blocks
+        if (or_reduce_f(ctrl.pnd_syn) = '1') then -- pending sync request
           ctrl_nxt.state <= S_SYNC_START;
         elsif (host_req_i.stb = '1') or (ctrl.pnd_req = '1') then -- (pending) access request
           if (unsigned(host_req_i.addr(31 downto 28)) >= unsigned(UC_BEGIN)) or (host_req_i.amo = '1') then
@@ -247,14 +247,15 @@ begin
 
       when S_SYNC_START => -- start synchronization
       -- ------------------------------------------------------------
-        ctrl_nxt.pnd_syn <= '0'; -- sync request accepted
-        if READ_ONLY then -- sync done immediately
+        ctrl_nxt.pnd_syn <= (others => '0'); -- sync request accepted
+        ctrl_nxt.sync    <= ctrl.pnd_syn; -- syncing in progress
+        if READ_ONLY then -- sync is done immediately
           sync_o         <= '1';
           ctrl_nxt.state <= S_IDLE;
         else
-          ctrl_nxt.sync  <= '1'; -- syncing in progress
-          ctrl_nxt.idx   <= (others => '0');
-          ctrl_nxt.state <= S_SYNC_DELAY;
+          ctrl_nxt.idx     <= (others => '0');
+          ctrl_nxt.ofs_int <= (others => '0');
+          ctrl_nxt.state   <= S_SYNC_DELAY;
         end if;
 
       when S_SYNC_DELAY => -- cache read access latency
@@ -266,29 +267,30 @@ begin
           ctrl_nxt.state <= S_IDLE;
         end if;
 
-      when S_SYNC_CHECK => -- check if current block is dirty
+      when S_SYNC_CHECK => -- check block according to sync request
       -- ------------------------------------------------------------
         if not READ_ONLY then
           cache_o.addr     <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
           ctrl_nxt.ofs_ext <= (others => '0');
           ctrl_nxt.ofs_int <= (others => '0');
           ctrl_nxt.bus_err <= '0'; -- reset bus error flag
-          if (cache_i.drt = '1') and (READ_ONLY = false) then -- block is dirty: upload to memory
+          if (cache_i.drt = '1') and (ctrl.sync(1) = '1') then -- dirty & flush: write back block
             ctrl_nxt.state <= S_WRITE_START;
-          else -- block is clean: go to next block
+          elsif (cache_i.drt = '0') and (ctrl.sync(0) = '1') then -- clean & invalidate: invalidate block
+            cache_o.set    <= '1';
+            cache_o.vld    <= '0';
+            ctrl_nxt.state <= S_SYNC_NEXT;
+          else -- nothing to do for this block
             ctrl_nxt.state <= S_SYNC_NEXT;
           end if;
         else
           ctrl_nxt.state <= S_IDLE;
         end if;
 
-      when S_SYNC_NEXT => -- update block status and prepare next block
+      when S_SYNC_NEXT => -- prepare next block
       -- ------------------------------------------------------------
         if not READ_ONLY then
           cache_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
-          cache_o.set  <= '1'; -- update cache block status
-          cache_o.drt  <= ctrl.bus_err; -- block is still dirty if there was a bus error
-          cache_o.vld  <= ctrl.bus_err; -- keep block valid if there was a bus error (skip block)
           ctrl_nxt.idx <= std_ulogic_vector(unsigned(ctrl.idx) + 1);
           if (and_reduce_f(ctrl.idx) = '1') then -- all blocks checked
             sync_o         <= '1';
@@ -482,7 +484,10 @@ begin
         if not READ_ONLY then
           cache_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
           ctrl_nxt.cln <= '1'; -- force cache clean to skip status flag read latency (for S_CHECK only)
-          if (ctrl.sync = '1') then -- block upload caused by cache synchronization
+          if (or_reduce_f(ctrl.sync) = '1') then -- block upload caused by synchronization: update status
+            cache_o.set    <= '1';
+            cache_o.drt    <= ctrl.bus_err; -- still dirty if bus error
+            cache_o.vld    <= ctrl.bus_err or (not ctrl.sync(0)); -- keep valid on error or if flush only
             ctrl_nxt.state <= S_SYNC_NEXT;
           elsif (ctrl.bus_err = '1') then -- block upload caused by cache miss or AMO pre-flush: BUS ERROR during upload
             cache_o.set    <= '1'; -- update cache block status
@@ -515,7 +520,7 @@ begin
     if (rstn_i = '0') then
       valid <= (others => '0');
     elsif rising_edge(clk_i) then
-      if READ_ONLY and (ctrl.state = S_SYNC_START) then -- full parallel clear for i-cache
+      if READ_ONLY and (ctrl.sync(0) = '1') then -- full parallel clear for i-cache
         valid <= (others => '0');
       elsif (cache_o.set = '1') then
         valid(to_integer(unsigned(cache_o.addr(31-tag_width_c downto 2+offset_width_c)))) <= cache_o.vld;

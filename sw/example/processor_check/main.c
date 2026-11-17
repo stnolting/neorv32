@@ -323,10 +323,11 @@ int main() {
 
   // test that we do no crash the core and check if cache flushing works
   store_access_addr[0] = 0x01234567;
-  asm volatile ("fence");
+  asm volatile ("fence r, r");
+  asm volatile ("fence w, w");
   asm volatile ("fence.i");
   store_access_addr[0] += 0x76543210;
-  asm volatile ("fence");
+  asm volatile ("fence rw, rw");
   asm volatile ("fence.i");
   store_access_addr[0] += 0x11111111;
 

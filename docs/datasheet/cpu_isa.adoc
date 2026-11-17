@@ -95,8 +95,8 @@ branches to an unaligned address require additional `2 x T_inst_latency` cycles
 | `T_mul_latency` | <<_cpu_fast_mul_regs>> if <<_cpu_fast_mul_en>> is `true`; 32 otherwise
 | `T_cust_latency` | latency is defined by the custom <<_custom_functions_unit_cfu>> logic; +
 however, the minimum is 1 and the maximum is 512
-| `T_cache_sync` | cycles required to clear/flush the CPU cache(s) (D$ and/or I$); +
-depends on actual cache configuration and main memory latency
+| `T_cache_sync` | cycles required to synchronize (flush/invalidate) the CPU cache(s) (D$ and/or I$); +
+depends on actual cache configuration and main memory latency; zero if no caches are enabled
 |=======================
 
 
@@ -173,17 +173,16 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 | Branch         | `beq` `bne` `blt` `bge` `bltu` `bgeu`                                     | not taken: 3, taken: 5 + `T_inst_latency`
 | Jump/call      | `jal[r]`                                                                  | 5 + `T_inst_latency`
 | Load/store     | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 4 + `T_data_latency`
-| Data fence     | `fence`                                                                   | 2 + `T_cache_sync`
+| Data fence     | `fence`                                                                   | 3 + `T_cache_sync`
 | System         | `ecall` `ebreak` `mret`                                                   | 6 + `T_inst_latency`
 | System         | `wfi`                                                                     | min  3
 |=======================
 
 .`fence` Instruction
 [NOTE]
-The `fence` instruction triggers a load/store memory ordering operation by setting the CPU's
-<<_cpu_top_entity_signals, `dfence_o`>> signal for exactly one cycle. See section
-<<_memory_coherence>> for more information. If both the predecessor (`PREC`) and successor (`SUCC`)
-fields are zero, the instruction is executed as a NOP without triggering any memory ordering.
+The `fence` instruction triggers a load/store <<_memory_coherence>> request. Only the `read` and `write`
+flags of the `PREC` and `SUCC` bit-fields are evaluated. If all flags are zero, the instruction is executed
+as a NOP without triggering any memory ordering.
 
 .`wfi` Instruction
 [NOTE]
@@ -301,16 +300,15 @@ Example: `MARCH=rv32imc_zca_zcb_...`
 ==== `Zifencei` ISA Extension
 
 This instruction is the only standard mechanism to ensure that stores visible to a hart will also be visible to
-its instruction fetch. When executed, the CPU sets its <<_cpu_top_entity_signals, `ifence_o`>> signal for
-exactly one cycle and flushes its instruction prefetch buffer and.
-See section <<_memory_coherence>> for more information.
+its instruction fetch. When executed, the CPU will trigger an instruction fetch <<_memory_coherence>> request
+and will also flush its instruction prefetch buffer.
 
 .Instructions and Timing
 [cols="<2,<5,<4"]
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| Instruction fence | `fence.i` | 2 + `T_cache_sync`
+| Instruction fence | `fence.i` | 3 + `T_cache_sync`
 |=======================
 
 
