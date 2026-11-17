@@ -21,6 +21,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_decompressor is
   generic (
+    RISCV_D  : boolean; -- implement D ISA extension
     ZCB_EN   : boolean; -- enable Zcb ISA extension
     ZCMOP_EN : boolean  -- enable Zcmop ISA extension (requires Zimop ISA extension)
   );
@@ -130,7 +131,57 @@ begin
               illegal <= '1';
             end if;
 
-          when others => -- "011": C.FLW, "111": C.FSW, "001": C.FLS / C.LQ, "101": C.FSD / C.SQ
+          when "011" => -- C.FLW
+          -- --------------------------------------------------------------------------------------
+            if RISCV_D then
+              decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_load_d;
+              decoded(instr_imm12_msb_c  downto instr_imm12_lsb_c)  <= "00000" & instr_i(5) & instr_i(12 downto 10) & instr_i(6) & "00";
+              decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_lw_c;
+              decoded(instr_rs1_msb_c    downto instr_rs1_lsb_c)    <= "01" & instr_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c); -- x8 - x15
+              decoded(instr_rd_msb_c     downto instr_rd_lsb_c)     <= "01" & instr_i(ci_rd_3_msb_c downto ci_rd_3_lsb_c);   -- x8 - x15
+            else
+              illegal <= '1';
+            end if;
+
+          when "111" => -- C.FSW
+          -- --------------------------------------------------------------------------------------
+            if RISCV_D then
+              decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_store_d;
+              decoded(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "00000" & instr_i(5) & instr_i(12); -- immediate
+              decoded(instr_rd_msb_c     downto instr_rd_lsb_c)     <= instr_i(11 downto 10) & instr_i(6) & "00"; -- immediate
+              decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sw_c;
+              decoded(instr_rs1_msb_c    downto instr_rs1_lsb_c)    <= "01" & instr_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c); -- x8 - x15
+              decoded(instr_rs2_msb_c    downto instr_rs2_lsb_c)    <= "01" & instr_i(ci_rs2_3_msb_c downto ci_rs2_3_lsb_c); -- x8 - x15
+            else
+              illegal <= '1';
+            end if;
+
+          when "001" => -- C.FLD
+          -- --------------------------------------------------------------------------------------
+            if RISCV_D then
+              decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_load_d;
+              decoded(instr_imm12_msb_c  downto instr_imm12_lsb_c)  <= "0000" & instr_i(6 downto 5) & instr_i(12 downto 10) & "000";
+              decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_fld;
+              decoded(instr_rs1_msb_c    downto instr_rs1_lsb_c)    <= "01" & instr_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c); -- x8 - x15
+              decoded(instr_rd_msb_c     downto instr_rd_lsb_c)     <= "01" & instr_i(ci_rd_3_msb_c downto ci_rd_3_lsb_c);   -- x8 - x15
+            else
+              illegal <= '1';
+            end if;
+
+          when "101" => -- C.FSD
+          -- --------------------------------------------------------------------------------------
+            if RISCV_D then
+              decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_store_d;
+              decoded(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0000" & instr_i(6 downto 5) & instr_i(12);
+              decoded(instr_rd_msb_c     downto instr_rd_lsb_c)     <= instr_i(11 downto 10) & "000";
+              decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_fsd;
+              decoded(instr_rs1_msb_c    downto instr_rs1_lsb_c)    <= "01" & instr_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c); -- x8 - x15
+              decoded(instr_rs2_msb_c    downto instr_rs2_lsb_c)    <= "01" & instr_i(ci_rs2_3_msb_c downto ci_rs2_3_lsb_c); -- x8 - x15
+            else
+              illegal <= '1';
+            end if;
+
+          when others =>
           -- --------------------------------------------------------------------------------------
             illegal <= '1';
 
@@ -284,19 +335,18 @@ begin
               illegal <= '1';
             end if;
 
-          when "010" | "011" => -- C.LWSP / C.FLWSP
+          when "010" => -- C.LWSP
           -- --------------------------------------------------------------------------------------
             decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_load_c;
             decoded(instr_imm12_msb_c  downto instr_imm12_lsb_c)  <= "0000" & instr_i(3 downto 2) & instr_i(12) & instr_i(6 downto 4) & "00";
             decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_lw_c;
             decoded(instr_rs1_msb_c    downto instr_rs1_lsb_c)    <= "00010"; -- x2 = sp (stack pointer)
             decoded(instr_rd_msb_c     downto instr_rd_lsb_c)     <= instr_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c);
-            if (instr_i(ci_funct3_lsb_c) = '1') or -- C.FLWSP -> illegal
-               (instr_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c) = "00000") then -- rd = 0 -> reserved
+            if (instr_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c) = "00000") then -- rd = 0 -> reserved
               illegal <= '1';
             end if;
 
-          when "110" | "111" => -- C.SWSP / C.FSWSP
+          when "110" => -- C.SWSP
           -- --------------------------------------------------------------------------------------
             decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_store_c;
             decoded(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0000" & instr_i(8 downto 7) & instr_i(12); -- immediate
@@ -304,9 +354,6 @@ begin
             decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sw_c;
             decoded(instr_rs1_msb_c    downto instr_rs1_lsb_c)    <= "00010"; -- x2 = sp (stack pointer)
             decoded(instr_rs2_msb_c    downto instr_rs2_lsb_c)    <= instr_i(ci_rs2_5_msb_c downto ci_rs2_5_lsb_c);
-            if (instr_i(ci_funct3_lsb_c) = '1') then -- C.FSWSP -> illegal
-              illegal <= '1';
-            end if;
 
           when "100" => -- "100": C.JR, C.JALR, C.MV, C.EBREAK, C.ADD
           -- --------------------------------------------------------------------------------------
@@ -342,6 +389,56 @@ begin
                 decoded(instr_rs1_msb_c    downto instr_rs1_lsb_c)    <= instr_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c);
                 decoded(instr_rs2_msb_c    downto instr_rs2_lsb_c)    <= instr_i(ci_rs2_5_msb_c downto ci_rs2_5_lsb_c);
               end if;
+            end if;
+
+          when "011" => -- C.FLWSP
+          -- --------------------------------------------------------------------------------------
+            if RISCV_D then
+              decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_load_d;
+              decoded(instr_imm12_msb_c  downto instr_imm12_lsb_c)  <= "0000" & instr_i(3 downto 2) & instr_i(12) & instr_i(6 downto 4) & "00";
+              decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_lw_c;
+              decoded(instr_rs1_msb_c    downto instr_rs1_lsb_c)    <= "00010"; -- x2 = sp (stack pointer)
+              decoded(instr_rd_msb_c     downto instr_rd_lsb_c)     <= instr_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c);
+            else
+              illegal <= '1';
+            end if;
+
+          when "111" => -- C.FSWSP
+          -- --------------------------------------------------------------------------------------
+            if RISCV_D then
+              decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_store_d;
+              decoded(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0000" & instr_i(8 downto 7) & instr_i(12); -- immediate
+              decoded(instr_rd_msb_c     downto instr_rd_lsb_c)     <= instr_i(11 downto 9) & "00"; -- immediate
+              decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sw_c;
+              decoded(instr_rs1_msb_c    downto instr_rs1_lsb_c)    <= "00010"; -- x2 = sp (stack pointer)
+              decoded(instr_rs2_msb_c    downto instr_rs2_lsb_c)    <= instr_i(ci_rs2_5_msb_c downto ci_rs2_5_lsb_c);
+            else
+              illegal <= '1';
+            end if;
+
+          when "001" => -- C.FLDSP
+          -- --------------------------------------------------------------------------------------
+            if RISCV_D then
+              decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_load_d;
+              decoded(instr_imm12_msb_c  downto instr_imm12_lsb_c)  <= "000" & instr_i(4 downto 2) & instr_i(12) & instr_i(6 downto 5) & "000";
+              decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_fld;
+              decoded(instr_rs1_msb_c    downto instr_rs1_lsb_c)    <= "00010"; -- x2 = sp (stack pointer)
+              decoded(instr_rd_msb_c     downto instr_rd_lsb_c)     <= instr_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c);
+            else
+              illegal <= '1';
+            end if;
+
+          when "101" => -- C.FSDSP
+          -- --------------------------------------------------------------------------------------
+            if RISCV_D then
+              decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_store_d;
+              decoded(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "000" & instr_i(9 downto 7) & instr_i(12); -- immediate
+              decoded(instr_rd_msb_c     downto instr_rd_lsb_c)     <= instr_i(11 downto 10) & "000"; -- immediate
+              decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_fsd;
+              decoded(instr_rs1_msb_c    downto instr_rs1_lsb_c)    <= "00010"; -- x2 = sp (stack pointer)
+              decoded(instr_rs2_msb_c    downto instr_rs2_lsb_c)    <= instr_i(ci_rs2_5_msb_c downto ci_rs2_5_lsb_c);
+            else
+              illegal <= '1';
             end if;
 
           when others => -- "001"/"101": C.FLDSP / C.LQSP, C.FSDSP / C.SQSP -> illegal

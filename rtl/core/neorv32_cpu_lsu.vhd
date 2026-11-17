@@ -27,8 +27,8 @@ entity neorv32_cpu_lsu is
     ctrl_i      : in  ctrl_bus_t; -- main control bus
     -- memory data access interface --
     addr_i      : in  std_ulogic_vector(31 downto 0); -- access address
-    wdata_i     : in  std_ulogic_vector(31 downto 0); -- write data
-    rdata_o     : out std_ulogic_vector(31 downto 0); -- read data
+    wdata_i     : in  std_ulogic_vector(63 downto 0); -- write data
+    rdata_o     : out std_ulogic_vector(63 downto 0); -- read data
     mar_o       : out std_ulogic_vector(31 downto 0); -- current memory address register
     wait_o      : out std_ulogic;                     -- wait for access to complete
     err_o       : out std_ulogic_vector(3 downto 0);  -- alignment/access errors
@@ -45,6 +45,10 @@ architecture neorv32_cpu_lsu_rtl of neorv32_cpu_lsu is
   signal amoop, ben : std_ulogic_vector(3 downto 0);
   signal addr, data : std_ulogic_vector(31 downto 0);
 
+  signal buff_low : std_ulogic_vector(31 downto 0);
+  signal sw_ready : std_ulogic;   -- be ready to switch to the next word with double request
+  signal up_half  : std_ulogic;   -- flag to seperate lower and higher words of the double request
+
 begin
 
   -- Atomic Memory Access -------------------------------------------------------------------
@@ -60,7 +64,7 @@ begin
       elsif rising_edge(clk_i) then
         if (ctrl_i.lsu_mo_en = '1') then
           -- atomic memory access operation --
-          amo <= ctrl_i.ir_opcode(2);
+          amo <= ctrl_i.ir_opcode(3);
           case ctrl_i.ir_funct12(11 downto 7) is
             when "00010" => amoop <= "1000"; -- Zalrsc.LR
             when "00011" => amoop <= "1001"; -- Zalrsc.SC
@@ -76,7 +80,7 @@ begin
           end case;
         end if;
         -- bus locking for read-modify-write operations --
-        if (ctrl_i.lsu_mo_en = '1') and (ctrl_i.ir_opcode(2) = '1') and (ctrl_i.ir_funct12(8) = '0') then
+        if (ctrl_i.lsu_mo_en = '1') and (ctrl_i.ir_opcode(3) = '1') and (ctrl_i.ir_funct12(8) = '0') then
           lock <= '1'; -- set if atomic read-modify-write instruction
         elsif (dbus_rsp_i.ack = '1') or (ctrl_i.cpu_trap = '1') then
           lock <= '0'; -- clear at the end of the bus access
@@ -92,6 +96,27 @@ begin
     amoop <= (others => '0');
     lock  <= '0';
   end generate;
+
+  -- handle the logic of double memory request --
+  d_state : process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      up_half     <= '0';
+      sw_ready    <= '0';
+    elsif rising_edge(clk_i) then
+      -- ensure the memory operation is about double
+      if ctrl_i.rf_d_mem = '1' then
+        sw_ready  <= '1';
+      end if;
+      -- switch between reading/writing upper and lower halves of double
+      if dbus_rsp_i.ack = '1' and sw_ready = '1' and up_half = '0' then
+        up_half   <= '1';
+        sw_ready  <= '0';
+      elsif dbus_rsp_i.ack = '1' and sw_ready = '0' and up_half = '1' then
+        up_half   <= '0';
+      end if;
+    end if;
+  end process;
 
   -- Request --------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -118,12 +143,20 @@ begin
             data <= wdata_i(15 downto 0) & wdata_i(15 downto 0);
             ben  <= addr_i(1) & addr_i(1) & (not addr_i(1)) & (not addr_i(1));
             ma   <= addr_i(0);
+          when "11" => -- double
+            if up_half = '0' then
+              data <= wdata_i(31 downto 0);
+            else
+              data <= wdata_i(63 downto 32);
+            end if;
+            ben  <= (others => '1');
+            ma   <= addr_i(1) or addr_i(0);
           when others => -- word
-            data <= wdata_i;
+            data <= wdata_i(31 downto 0);
             ben  <= (others => '1');
             ma   <= addr_i(1) or addr_i(0);
         end case;
-        if AMO_EN and (ctrl_i.ir_opcode(2) = '1') and (ctrl_i.ir_funct12(8) = '0') then
+        if AMO_EN and (ctrl_i.ir_opcode(3) = '1') and (ctrl_i.ir_funct12(8) = '0') then
           rw <= '0'; -- atomic read-modify-write operations are modified load requests
         else
           rw <= ctrl_i.lsu_wr;
@@ -157,20 +190,30 @@ begin
         case ctrl_i.ir_funct3(1 downto 0) is
           when "00" => -- byte
             case addr(1 downto 0) is
-              when "00"   => rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(7),  24) & dbus_rsp_i.data(7 downto 0);
-              when "01"   => rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(15), 24) & dbus_rsp_i.data(15 downto 8);
-              when "10"   => rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(23), 24) & dbus_rsp_i.data(23 downto 16);
-              when "11"   => rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(31), 24) & dbus_rsp_i.data(31 downto 24);
-              when others => rdata_o <= (others => 'X');
+              when "00"   => rdata_o(31 downto 0) <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(7),  24) & dbus_rsp_i.data(7 downto 0);
+              when "01"   => rdata_o(31 downto 0) <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(15), 24) & dbus_rsp_i.data(15 downto 8);
+              when "10"   => rdata_o(31 downto 0) <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(23), 24) & dbus_rsp_i.data(23 downto 16);
+              when "11"   => rdata_o(31 downto 0) <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(31), 24) & dbus_rsp_i.data(31 downto 24);
+              when others => rdata_o(31 downto 0) <= (others => 'X');
             end case;
+            rdata_o(63 downto 32)   <= (others => '0');
           when "01" => -- half-word
             if (addr(1) = '0') then
-              rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(15), 16) & dbus_rsp_i.data(15 downto 0);
+              rdata_o(31 downto 0) <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(15), 16) & dbus_rsp_i.data(15 downto 0);
             else
-              rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(31), 16) & dbus_rsp_i.data(31 downto 16);
+              rdata_o(31 downto 0)  <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(31), 16) & dbus_rsp_i.data(31 downto 16);
+            end if;
+            rdata_o(63 downto 32)   <= (others => '0');
+          when "11" =>  -- double
+            if up_half = '0' then
+              buff_low <= dbus_rsp_i.data;
+            else
+              rdata_o(31 downto 0)  <= buff_low;
+              rdata_o(63 downto 32) <= dbus_rsp_i.data;
             end if;
           when others => -- word
-            rdata_o <= dbus_rsp_i.data;
+            rdata_o(31 downto 0)    <= dbus_rsp_i.data;
+            rdata_o(63 downto 32)   <= (others => '0');
         end case;
       end if;
     end if;

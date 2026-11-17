@@ -23,6 +23,7 @@ entity neorv32_cpu_frontend is
   generic (
     HART_ID     : natural; -- hardware thread ID
     RISCV_C     : boolean; -- implement C ISA extension
+    RISCV_D     : boolean; -- implement D ISA extension
     RISCV_ZCB   : boolean; -- implement Zcb ISA sub-extension
     RISCV_ZCMOP : boolean  -- implement Zcb ISA sub-extension
   );
@@ -186,6 +187,7 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_cpu_decompressor_inst: entity neorv32.neorv32_cpu_decompressor
     generic map (
+      RISCV_D  => RISCV_D,
       ZCB_EN   => RISCV_ZCB,
       ZCMOP_EN => RISCV_ZCMOP
     )
