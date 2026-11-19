@@ -87,6 +87,8 @@ begin
         rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
         if RS3_ENABLE = true then -- only write third read port when enabled
           rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
+        else
+          rs3_data_o <= (others => '0');
         end if;
       end if;
     end process;
@@ -136,6 +138,8 @@ begin
           else
             rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
           end if;
+        else
+          rs3_data_o <= (others => '0');
         end if;
       end if;
     end process;
@@ -183,6 +187,8 @@ begin
         rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
         if RS3_ENABLE = true then -- only write third read port when enabled
           rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
+        else
+          rs3_data_o <= (others => '0');
         end if;
       end if;
     end process;
@@ -243,6 +249,8 @@ begin
         rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
         if RS3_ENABLE = true then -- only write third read port when enabled
           rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
+        else
+          rs3_data_o <= (others => '0');
         end if;
       end if;
     end process;
