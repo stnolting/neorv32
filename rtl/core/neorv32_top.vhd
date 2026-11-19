@@ -785,8 +785,8 @@ begin
     C_TMO   => 2048, -- maximum SMC transfer duration + safety margin
     -- port D: internal IO --
     D_EN    => true,
-    D_BASE  => mem_io_base_c,
-    D_SIZE  => mem_io_size_c,
+    D_BASE  => io_base_c,
+    D_SIZE  => io_size_c,
     D_TMO   => int_bus_tmo_c,
     -- port X (the void): external bus interface --
     X_EN    => XBUS_EN,
@@ -963,7 +963,7 @@ begin
     -- -------------------------------------------------------------------------------------------
     bus_io_switch_inst: entity neorv32.neorv32_bus_io_switch
     generic map (
-      DEV_SIZE  => mem_io_dev_size_c,
+      DEV_SIZE  => io_dev_size_c,
       DEV_00_EN => bootrom_en_c,      DEV_00_BASE => base_io_bootrom_c,
       DEV_01_EN => false,             DEV_01_BASE => (others => '0'), -- reserved
       DEV_02_EN => false,             DEV_02_BASE => (others => '0'), -- reserved

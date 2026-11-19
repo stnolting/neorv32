@@ -35,12 +35,13 @@ package neorv32_package is
   ;
 
 -- **********************************************************************************************************
--- SoC Peripheral/IO Address Space Layout
+-- SoC-Internal I/O Address Space Layout
 -- **********************************************************************************************************
 
-  constant mem_io_dev_size_c : natural := 64*1024; -- size of a single IO device (bytes)
-  constant mem_io_base_c     : std_ulogic_vector(31 downto 0) := x"ffe00000";
-  constant mem_io_size_c     : natural := 32 * mem_io_dev_size_c;
+  constant io_dev_awidth_c : natural := 16; -- IO device address width
+  constant io_dev_size_c   : natural := 2**io_dev_awidth_c; -- size of a single IO device (bytes)
+  constant io_base_c       : std_ulogic_vector(31 downto 0) := x"ffe00000"; -- IO base address
+  constant io_size_c       : natural := 32 * io_dev_size_c; -- total size of IO space
 
   -- IO Address Map (base address must be aligned to the region's size) --
   constant base_io_bootrom_c  : std_ulogic_vector(31 downto 0) := x"ffe00000";
