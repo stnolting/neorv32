@@ -108,6 +108,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- auto-configuration --
   constant rf_awidth_c   : natural := sel_natural_f(RISCV_ISA_E, 4, 5); -- register file address width
+  constant rf_rs3_en_c   : boolean := RISCV_ISA_Xcfu; -- third register file read port
   constant any_amo_c     : boolean := RISCV_ISA_Zaamo or RISCV_ISA_Zalrsc; -- any AMO extension available
   constant riscv_a_c     : boolean := RISCV_ISA_Zaamo and RISCV_ISA_Zalrsc; -- A: atomic memory operations
   constant riscv_b_c     : boolean := RISCV_ISA_Zba and RISCV_ISA_Zbb and RISCV_ISA_Zbs; -- B: bit manipulation
@@ -409,9 +410,9 @@ begin
   -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
   cpu_regfile_inst: neorv32_cpu_regfile -- component declaration in package file
   generic map (
-    AWIDTH     => rf_awidth_c,     -- address width
-    ARCHSEL    => CPU_RF_ARCH_SEL, -- architecture style select
-    RS3_ENABLE => RISCV_ISA_Xcfu   -- enable third read port
+    AWIDTH  => rf_awidth_c,     -- address width
+    ARCHSEL => CPU_RF_ARCH_SEL, -- architecture style select
+    RS3_EN  => rf_rs3_en_c      -- enable third read port
   )
   port map (
     -- global control --
