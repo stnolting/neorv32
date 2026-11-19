@@ -18,9 +18,9 @@
 // ================================================================================ //
 
 module neorv32_cpu_regfile #(
-  parameter AWIDTH     = 5, // register address width: 4 = 16 registers, 5 = 32 registers
-  parameter ARCHSEL    = 2, // register-file architecture style: 0..3
-  parameter RS3_ENABLE = 0  // enable third read port: 0..1
+  parameter AWIDTH  = 5, // register address width: 4 = 16 registers, 5 = 32 registers
+  parameter ARCHSEL = 2, // register-file architecture style: 0..3
+  parameter RS3_EN  = 0  // enable third read port: 0..1
 )(
   // global control
   input         clk_i,      // global clock, rising edge
@@ -74,7 +74,7 @@ module neorv32_cpu_regfile #(
         end
         rs1_rdata <= regfile[addr];
         rs2_rdata <= regfile[rs2_addr];
-        if (RS3_ENABLE == 1) begin // write only when third read port is enabled
+        if (RS3_EN == 1) begin // optional third read port
           rs3_rdata <= regfile[rs3_addr];
         end
       end
@@ -111,7 +111,7 @@ module neorv32_cpu_regfile #(
         end else begin
           rs2_rdata <= regfile[rs2_addr];
         end
-        if (RS3_ENABLE == 1) begin // write only when third read port is enabled
+        if (RS3_EN == 1) begin // optional third read port
           if (rs3_addr == {AWIDTH{1'b0}}) begin
             rs3_rdata <= 32'h00000000;
           end else begin
@@ -156,7 +156,7 @@ module neorv32_cpu_regfile #(
         end else begin
           rs2_rdata <= regfile[rs2_addr];
         end
-        if (RS3_ENABLE == 1) begin // write only when third read port is enabled
+        if (RS3_EN == 1) begin // optional third read port
           if (rs3_addr == {AWIDTH{1'b0}}) begin
             rs3_rdata <= 32'h00000000;
           end else begin
@@ -212,7 +212,7 @@ module neorv32_cpu_regfile #(
         end else begin
           rs2_rdata <= regfile[rs2_addr];
         end
-        if (RS3_ENABLE == 1) begin // write only when third read port is enabled
+        if (RS3_EN == 1) begin // optional third read port
           if (rs3_addr == {AWIDTH{1'b0}}) begin
             rs3_rdata <= 32'h00000000;
           end else begin
