@@ -230,7 +230,7 @@ begin
   port map (
     -- global control --
     clk_i   => clk_i,
-    rstn_i  => '1', -- not required
+    rstn_i  => '1', -- not required as we have a sync reset
     clear_i => rx_fifo.clear,
     level_o => rx_level,
     -- write port --
@@ -294,7 +294,7 @@ begin
   port map (
     -- global control --
     clk_i   => clk_i,
-    rstn_i  => '1', -- not required
+    rstn_i  => '1', -- not required as we have a sync reset
     clear_i => tx_fifo.clear,
     level_o => tx_level,
     -- write port --

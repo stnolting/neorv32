@@ -151,7 +151,7 @@ begin
   )
   port map (
     clk_i    => clk_i,
-    rstn_i   => rstn_i,
+    rstn_i   => '1', -- not required as we have a sync reset
     enable_i => enable,
     valid_o  => fifo.we,
     data_o   => fifo.wdata
