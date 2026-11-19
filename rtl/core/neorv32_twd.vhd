@@ -244,7 +244,7 @@ begin
   generic map (
     AWIDTH  => rx_size_c,
     DWIDTH  => 8,
-    OUTGATE => false,
+    OUTGATE => true, -- read zero if no data available
     ASYNCRD => false
   )
   port map (

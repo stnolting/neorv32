@@ -218,7 +218,7 @@ begin
   generic map (
     AWIDTH  => log2_fifo_size_c,
     DWIDTH  => 9, -- 1-bit presence status + 8-bit data
-    OUTGATE => false,
+    OUTGATE => true, -- read zero if no data available
     ASYNCRD => false
   )
   port map (

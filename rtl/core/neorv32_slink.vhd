@@ -180,7 +180,7 @@ begin
   generic map (
     AWIDTH  => rx_awidth_c,
     DWIDTH  => 1+32, -- last + data
-    OUTGATE => true, -- to prevent getting X in simulation
+    OUTGATE => true, -- read zero if no data available
     ASYNCRD => false
   )
   port map (

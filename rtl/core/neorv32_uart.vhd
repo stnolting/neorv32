@@ -288,7 +288,7 @@ begin
   generic map (
     AWIDTH  => tx_awidth_c,
     DWIDTH  => 8,
-    OUTGATE => false,
+    OUTGATE => true, -- read zero if no data available
     ASYNCRD => false
   )
   port map (
