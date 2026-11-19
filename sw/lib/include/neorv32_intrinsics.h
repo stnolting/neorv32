@@ -68,7 +68,7 @@ static inline uint32_t __attribute__ ((always_inline)) RISCV_INSTR_R4_TYPE(const
   register uint32_t __rs2 = rs2;
   register uint32_t __rs3 = rs3;
 
-  asm volatile (".insn r4 %4 %5 %6 %0 %1 %2 %3" : "=r"(__rd) : "r"(__rs1), "r"(__rs2), "r"(__rs3), "i"(opcode), "i"(funct3), "i"(funct2));
+  asm volatile (".insn r4 %4, %5, %6, %0, %1, %2, %3" : "=r"(__rd) : "r"(__rs1), "r"(__rs2), "r"(__rs3), "i"(opcode), "i"(funct3), "i"(funct2));
 
   return __rd;
 }
