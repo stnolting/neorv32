@@ -17,6 +17,7 @@ module neorv32_cpu_alu_cfu (
   input  [31:0] inst_i,   // full instruction word
   input  [31:0] rs1_i,    // register source operand 1
   input  [31:0] rs2_i,    // register source operand 2
+  input  [31:0] rs3_i,    // register source operand 3
   // response
   output [31:0] result_o, // operation result
   output        valid_o   // operation done; result valid

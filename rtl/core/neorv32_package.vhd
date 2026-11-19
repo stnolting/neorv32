@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130801"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130802"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -298,6 +298,8 @@ package neorv32_package is
   constant instr_rs1_msb_c     : natural := 19; -- source register 1 address bit 4
   constant instr_rs2_lsb_c     : natural := 20; -- source register 2 address bit 0
   constant instr_rs2_msb_c     : natural := 24; -- source register 2 address bit 4
+  constant instr_rs3_lsb_c     : natural := 27; -- source register 3 address bit 0
+  constant instr_rs3_msb_c     : natural := 31; -- source register 3 address bit 4
   constant instr_funct7_lsb_c  : natural := 25; -- funct7 bit 0
   constant instr_funct7_msb_c  : natural := 31; -- funct7 bit 6
   constant instr_imm12_lsb_c   : natural := 20; -- immediate12 bit 0
@@ -664,6 +666,7 @@ package neorv32_package is
     rf_wb_en     : std_ulogic; -- write back enable
     rf_rs1       : std_ulogic_vector(4 downto 0);  -- source register 1 address
     rf_rs2       : std_ulogic_vector(4 downto 0);  -- source register 2 address
+    rf_rs3       : std_ulogic_vector(4 downto 0);  -- source register 3 address
     rf_rd        : std_ulogic_vector(4 downto 0);  -- destination register address
     rf_zero      : std_ulogic;                     -- allow/force write access to x0
     -- alu --
@@ -717,6 +720,7 @@ package neorv32_package is
     rf_wb_en     => '0',
     rf_rs1       => (others => '0'),
     rf_rs2       => (others => '0'),
+    rf_rs3       => (others => '0'),
     rf_rd        => (others => '0'),
     rf_zero      => '0',
     alu_op       => (others => '0'),
@@ -1227,7 +1231,8 @@ package neorv32_package is
   component neorv32_cpu_regfile
   generic (
     AWIDTH  : natural range 4 to 5;
-    ARCHSEL : natural range 0 to 3
+    ARCHSEL : natural range 0 to 3;
+    RS3_EN  : boolean
   );
   port (
     clk_i      : in  std_ulogic;
@@ -1239,7 +1244,9 @@ package neorv32_package is
     rs1_addr_i : in  std_ulogic_vector(4 downto 0);
     rs1_data_o : out std_ulogic_vector(31 downto 0);
     rs2_addr_i : in  std_ulogic_vector(4 downto 0);
-    rs2_data_o : out std_ulogic_vector(31 downto 0)
+    rs2_data_o : out std_ulogic_vector(31 downto 0);
+    rs3_addr_i : in  std_ulogic_vector(4 downto 0);
+    rs3_data_o : out std_ulogic_vector(31 downto 0)
   );
   end component;
 
@@ -1252,6 +1259,7 @@ package neorv32_package is
     inst_i   : in  std_ulogic_vector(31 downto 0);
     rs1_i    : in  std_ulogic_vector(31 downto 0);
     rs2_i    : in  std_ulogic_vector(31 downto 0);
+    rs3_i    : in  std_ulogic_vector(31 downto 0);
     result_o : out std_ulogic_vector(31 downto 0);
     valid_o  : out std_ulogic
   );

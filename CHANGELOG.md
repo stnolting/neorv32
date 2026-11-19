@@ -28,6 +28,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 19.11.2026 | 1.13.8.2 | CFU: add R4-type instruction support | [#1688](https://github.com/stnolting/neorv32/pull/1688) |
 | 15.11.2026 | 1.13.8.1 | :test_tube: Add fine-grained cache control via fence instructions | [#1693](https://github.com/stnolting/neorv32/pull/1693) |
 | 14.11.2026 | [**1.13.8**](https://github.com/stnolting/neorv32/releases/tag/v1.13.8) | :rocket: **New release** | |
 | 14.11.2026 | 1.13.7.10 | :bug: FPU: fix `fcvt` sticky bit and sign of exact zero sum in RDN mode | [#1692](https://github.com/stnolting/neorv32/pull/1692) |
