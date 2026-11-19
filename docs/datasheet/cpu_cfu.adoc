@@ -128,12 +128,13 @@ instructions:
 [source,c]
 ----
 uint32_t RISCV_INSTR_R_TYPE(int opcode, int funct3, int funct7, uint32_t rs1, uint32_t rs2);
+uint32_t RISCV_INSTR_R4_TYPE(int opcode, int funct3, int funct2, uint32_t rs1, uint32_t rs2, uint32_t rs3);
 uint32_t RISCV_INSTR_I_TYPE(int opcode, int funct3, uint32_t rs1, int imm12);
 ----
 
 These intrinsics always return a 32-bit value of type `uint32_t` (the processing result) which can be
-discarded if not needed. The `funct3`, `funct7` and `im12` bit-fields are used to pass compile-time-static
-literals to the CFU. The `rs1` and `rs2` arguments pass actual runtime data to the CFU via register addresses.
+discarded if not needed. The `funct3`, `funct7` and `imm12` bit-fields are used to pass compile-time-static
+literals to the CFU. The `rs1`, `rs2` and `rs3` arguments pass actual runtime data to the CFU via register addresses.
 These register arguments can be populated with variables or literals; the compiler will add the required code
 to move the data into a register before passing it to the CFU.
 
@@ -142,7 +143,8 @@ to move the data into a register before passing it to the CFU.
 ----
 uint32_t foo = 12345;
 uint32_t res = RISCV_INSTR_I_TYPE(RISCV_OPCODE_CUSTOM1, 0b001, foo, 0xABC);
-res = RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b101, 0b1100110, res, foo);
+uint32_t bar = RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b101, 0b1100110, res, foo);
+bar = RISCV_INSTR_R4_TYPE(RISCV_OPCODE_OP32, 0b110, 0b00, bar, res, foo);
 ----
 
 
