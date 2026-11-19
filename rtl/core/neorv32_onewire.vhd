@@ -156,22 +156,22 @@ begin
   -- read access (asynchronous) --
   bus_read: process(bus_rden, bus_req_i.addr, ctrl, fifo, serial, busy)
   begin
-     bus_rdata <= (others => '0');
-     if (bus_rden = '1') then -- output gating
-       if (bus_req_i.addr(2) = '0') then -- control register
-         bus_rdata(ctrl_en_c)                                  <= ctrl.enable;
-         bus_rdata(ctrl_prsc1_c downto ctrl_prsc0_c)           <= ctrl.clk_prsc;
-         bus_rdata(ctrl_clkdiv7_c downto ctrl_clkdiv0_c)       <= ctrl.clk_div;
-         bus_rdata(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
-         bus_rdata(ctrl_tx_full_c)                             <= not fifo.tx_free;
-         bus_rdata(ctrl_rx_avail_c)                            <= fifo.rx_avail;
-         bus_rdata(ctrl_sense_c)                               <= serial.wire_in(1);
-         bus_rdata(ctrl_busy_c)                                <= fifo.tx_avail or busy;
-       else -- data register
-         bus_rdata(dcmd_msb_c downto dcmd_lsb_c) <= fifo.rx_rdata(7 downto 0);
-         bus_rdata(dcmd_pres_c)                  <= fifo.rx_rdata(8);
-       end if;
-     end if;
+    bus_rdata <= (others => '0');
+    if (bus_rden = '1') then -- output gating
+      if (bus_req_i.addr(2) = '0') then -- control register
+        bus_rdata(ctrl_en_c)                                  <= ctrl.enable;
+        bus_rdata(ctrl_prsc1_c downto ctrl_prsc0_c)           <= ctrl.clk_prsc;
+        bus_rdata(ctrl_clkdiv7_c downto ctrl_clkdiv0_c)       <= ctrl.clk_div;
+        bus_rdata(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
+        bus_rdata(ctrl_tx_full_c)                             <= not fifo.tx_free;
+        bus_rdata(ctrl_rx_avail_c)                            <= fifo.rx_avail;
+        bus_rdata(ctrl_sense_c)                               <= serial.wire_in(1);
+        bus_rdata(ctrl_busy_c)                                <= fifo.tx_avail or busy;
+      else -- data register
+        bus_rdata(dcmd_msb_c downto dcmd_lsb_c) <= fifo.rx_rdata(7 downto 0);
+        bus_rdata(dcmd_pres_c)                  <= fifo.rx_rdata(8);
+      end if;
+    end if;
   end process;
 
   -- bus response --
