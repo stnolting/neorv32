@@ -1,0 +1,40 @@
+--! dut neorv32_cpu_alu_bitmanip
+--! generic FAST_SHIFT=true
+--! generic ZBA=true
+--! generic ZBB=true
+--! generic ZBC=true
+--! generic ZBKB=true
+--! generic ZBKC=true
+--! generic ZBKX=true
+--! generic ZBS=true
+--! config bitmanip_fast
+--! config bitmanip_serial FAST_SHIFT=false
+--! config bitmanip_zba ZBB=false ZBC=false ZBKB=false ZBKC=false ZBKX=false ZBS=false
+--! config bitmanip_zbkc ZBA=false ZBB=false ZBC=false ZBKB=false ZBKX=false ZBS=false
+--! decl
+  signal cp_done : std_ulogic;
+--! arch
+  cp_done <= valid_o;
+  shamt_i <= rs2_i(4 downto 0) when ctrl_i.ir_opcode(5) = '1' else ctrl_i.ir_funct12(4 downto 0);
+  less_i  <= '1' when ((ctrl_i.ir_funct3(1) = '0') and (signed(rs1_i) < signed(rs2_i))) or
+                      ((ctrl_i.ir_funct3(1) = '1') and (unsigned(rs1_i) < unsigned(rs2_i))) else '0';
+--! stim
+  -- procs
+  --! include alu_ops.inc
+  -- end procs
+  tick(4);
+  cp_exhaustive(40);
+  cp_sweep(2);
+  -- known encodings with corner operands
+  cp_corners('1', "111", x"400"); cp_corners('1', "110", x"400"); cp_corners('1', "100", x"400"); -- andn orn xnor
+  cp_corners('1', "100", x"0A0"); cp_corners('1', "101", x"0A0"); cp_corners('1', "110", x"0A0"); cp_corners('1', "111", x"0A0"); -- min max
+  cp_corners('1', "001", x"600"); cp_corners('1', "101", x"600"); -- rol ror
+  cp_corners('0', "001", x"600"); cp_corners('0', "001", x"601"); cp_corners('0', "001", x"602"); -- clz ctz cpop
+  cp_corners('0', "001", x"604"); cp_corners('0', "001", x"605"); cp_corners('1', "100", x"080"); -- sext zext
+  cp_corners('0', "101", x"287"); cp_corners('0', "101", x"698"); cp_corners('0', "101", x"687"); -- orc rev8 brev8
+  cp_corners('1', "001", x"0A0"); cp_corners('1', "010", x"0A0"); cp_corners('1', "011", x"0A0"); -- clmul
+  cp_corners('1', "010", x"200"); cp_corners('1', "100", x"200"); cp_corners('1', "110", x"200"); -- shadd
+  cp_corners('1', "001", x"480"); cp_corners('1', "101", x"480"); cp_corners('1', "001", x"680"); cp_corners('1', "001", x"280"); -- bclr bext binv bset
+  cp_corners('1', "010", x"280"); cp_corners('1', "100", x"280"); -- xperm
+  cp_corners('0', "001", x"08F"); cp_corners('0', "101", x"08F"); -- zip unzip
+  cp_corners('1', "100", x"080"); cp_corners('1', "111", x"080"); -- pack packh

@@ -1,0 +1,119 @@
+--! dut neorv32_cpu_alu_fpu
+--! generic FPU_SUBNORMAL_SUPPORT=false
+--! param ROUNDS : natural := 5
+--! config fpu_a @stop=200ms
+--! config fpu_b SEED=2 @stop=200ms
+--! config fpu_sub FPU_SUBNORMAL_SUPPORT=true SEED=3 @stop=200ms
+--! arch
+  equal_i <= '1' when rs1_i = rs2_i else '0';
+  less_i  <= '1' when (ctrl_i.alu_unsigned = '1' and unsigned(rs1_i) < unsigned(rs2_i)) or
+                      (ctrl_i.alu_unsigned = '0' and signed(rs1_i) < signed(rs2_i)) else '0';
+--! stim
+  -- procs
+    variable op_count : natural := 0;
+    -- a value biased towards the interesting classes
+    impure function fp_value return std_ulogic_vector is
+      variable v : std_ulogic_vector(31 downto 0) := randv(32);
+      variable s : natural := rndn(15);
+    begin
+      case s is
+        when 0 => v(30 downto 0) := (others => '0');                                     -- zero
+        when 1 => v(30 downto 23) := x"FF"; v(22 downto 0) := (others => '0');           -- infinity
+        when 2 => v(30 downto 22) := "111111111";                                        -- quiet NaN
+        when 3 => v(30 downto 22) := "111111110"; v(21) := '1';                          -- signaling NaN
+        when 4 => v(30 downto 23) := x"00";                                              -- subnormal
+        when 5 => v(30 downto 23) := x"00"; v(22 downto 3) := (others => '0');           -- tiny subnormal
+        when 6 => v(30 downto 23) := x"01"; v(22 downto 0) := (others => '0');           -- smallest normal
+        when 7 => v(30 downto 23) := x"FE"; v(22 downto 0) := (others => '1');           -- largest
+        when 8 => v(30 downto 23) := std_ulogic_vector(to_unsigned(127 + rndn(31), 8));  -- integer range
+        when 9 => v(30 downto 23) := std_ulogic_vector(to_unsigned(127 - rndn(31), 8));  -- fractions
+        when 10 => v(30 downto 23) := std_ulogic_vector(to_unsigned(157 + rndn(4), 8));  -- 32-bit limit
+        when 11 => v(30 downto 23) := std_ulogic_vector(to_unsigned(1 + rndn(30), 8));   -- underflow range
+        when 12 => v(30 downto 23) := std_ulogic_vector(to_unsigned(224 + rndn(30), 8)); -- overflow range
+        when 13 => v(22 downto 12) := (others => '1');                                   -- rounding carry
+        when others => null;
+      end case;
+      return v;
+    end function;
+    procedure fop(f12 : std_ulogic_vector(11 downto 0); rm : natural; a, b : std_ulogic_vector(31 downto 0)) is
+    begin
+      ctrl_i.ir_opcode <= "1010011";
+      ctrl_i.ir_funct12 <= f12;
+      ctrl_i.ir_funct3 <= std_ulogic_vector(to_unsigned(rm, 3));
+      rs1_i <= a;
+      rs2_i <= b;
+      ctrl_i.alu_cp_fpu <= '1';
+      tick;
+      ctrl_i.alu_cp_fpu <= '0';
+      op_count := op_count + 1;
+      if (op_count mod 53) = 0 then -- abort at a random point
+        tick(rndn(24));
+        ctrl_i.cpu_trap <= '1';
+        tick;
+        ctrl_i.cpu_trap <= '0';
+        tick(2);
+      else
+        for i in 1 to 100 loop
+          tick;
+          exit when valid_o = '1';
+        end loop;
+        tick;
+      end if;
+      if (op_count mod 256) = 0 then -- read and clear the flags
+        csr_addr_i <= "11";
+        tick;
+        csr_addr_i <= "01";
+        tick;
+        csr_addr_i <= "10";
+        tick;
+        csr_we_i <= '1';
+        csr_addr_i <= "11";
+        csr_wdata_i <= randv(32);
+        tick;
+        csr_we_i <= '0';
+      end if;
+    end procedure;
+    type f12_list_t is array (natural range <>) of std_ulogic_vector(11 downto 0);
+    constant ops_c : f12_list_t := (x"000", x"080", x"100", x"200", x"280", x"A00", x"E00", x"C00", x"C01", x"D00", x"D01");
+  -- end procs
+  tick(4);
+  csr_we_i <= '1';
+  csr_addr_i <= "01";
+  csr_wdata_i <= x"0000001F";
+  tick;
+  csr_addr_i <= "10";
+  csr_wdata_i <= x"00000007";
+  tick;
+  csr_addr_i <= "11";
+  csr_wdata_i <= x"000000FF";
+  tick;
+  csr_we_i <= '0';
+  for a in 0 to 3 loop
+    csr_addr_i <= std_ulogic_vector(to_unsigned(a, 2));
+    tick;
+  end loop;
+  for r in 1 to ROUNDS * 50 loop
+    for o in ops_c'range loop
+      for rm in 0 to 7 loop
+        fop(ops_c(o), rm, fp_value, fp_value);
+      end loop;
+    end loop;
+  end loop;
+  -- values that only differ a little, for near cancellation and rounding
+  for r in 1 to ROUNDS * 200 loop
+    rs1_i <= fp_value;
+    fop(x"080", rndn(4), rs1_i, rs1_i xor (x"000000" & randv(8)));
+    fop(x"000", rndn(4), rs1_i, not rs1_i(31) & rs1_i(30 downto 2) & randv(2));
+    tick;
+  end loop;
+  -- integer conversions on all bit lengths
+  for s in 0 to 31 loop
+    for rm in 0 to 4 loop
+      fop(x"D00", rm, std_ulogic_vector(shift_left(to_unsigned(1, 32), s)) or (randv(32) and std_ulogic_vector(shift_left(to_unsigned(1, 32), s) - 1)), x"00000000");
+      fop(x"D01", rm, std_ulogic_vector(shift_left(to_unsigned(1, 32), s)) or (randv(32) and std_ulogic_vector(shift_left(to_unsigned(1, 32), s) - 1)), x"00000000");
+    end loop;
+  end loop;
+  -- undefined encodings
+  for f in 0 to 127 loop
+    fop(std_ulogic_vector(to_unsigned(f, 7)) & "00001", rndn(7), randv(32), randv(32));
+  end loop;

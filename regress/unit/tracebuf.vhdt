@@ -1,0 +1,65 @@
+--! dut neorv32_tracebuf
+--! generic DUAL_CORE_EN=true
+--! generic TRACE_DEPTH=8
+--! config tracebuf_dual
+--! config tracebuf_single DUAL_CORE_EN=false TRACE_DEPTH=2
+--! arch
+  feed: process
+    variable s : rng_t := rng_seed_f(7);
+    variable v : std_ulogic_vector(31 downto 0);
+    variable pc : unsigned(31 downto 0) := x"00001000";
+    variable n : natural := 0;
+  begin
+    wait until rising_edge(clk_i);
+    rng_next(s, v);
+    n := n + 1;
+    trace0_i.valid    <= v(0) or v(1);
+    trace0_i.delta    <= v(2);
+    trace0_i.trap     <= v(3) and v(4) and v(5);
+    trace0_i.intr     <= v(6) and v(7) and v(8);
+    trace0_i.compr    <= v(9);
+    trace0_i.debug    <= v(10) and v(11) and v(12);
+    pc := pc + 4;
+    if (n mod 64) = 0 then
+      pc := x"00001000";
+    end if;
+    trace0_i.pc_rdata <= std_ulogic_vector(pc);
+    trace0_i.pc_wdata <= std_ulogic_vector(pc + 4);
+    trace1_i.valid    <= v(16);
+    trace1_i.delta    <= v(17);
+    trace1_i.trap     <= v(18) and v(19);
+    trace1_i.intr     <= v(20) and v(21);
+    trace1_i.compr    <= v(22);
+    trace1_i.debug    <= v(23);
+    trace1_i.pc_rdata <= std_ulogic_vector(pc + 16);
+    trace1_i.pc_wdata <= std_ulogic_vector(pc + 20);
+  end process;
+--! stim
+  -- procs
+    variable d : std_ulogic_vector(31 downto 0);
+  -- end procs
+  tick(5);
+  rd(x"00000000");
+  for h in 0 to 1 loop
+    wr(x"00000000", std_ulogic_vector(to_unsigned(1 + h * 2, 32))); -- enable, hart select
+    wr(x"00000000", std_ulogic_vector(to_unsigned(5 + h * 2, 32))); -- start
+    rd(x"00000000");
+    tick(40);
+    wr(x"00000000", std_ulogic_vector(to_unsigned(9 + h * 2, 32))); -- manual stop
+    tick(4);
+    for i in 0 to TRACE_DEPTH + 1 loop
+      rd(x"00000000");
+      rd(x"00000008");
+      rd(x"0000000C");
+    end loop;
+    -- stop by address
+    wr(x"00000004", x"00001040");
+    wr(x"00000000", std_ulogic_vector(to_unsigned(5 + h * 2, 32)));
+    tick(200);
+    rd(x"00000000");
+    wr(x"00000000", std_ulogic_vector(to_unsigned(65 + h * 2, 32))); -- clear interrupt
+    rd(x"00000004");
+    wr(x"00000000", x"00000000");
+    tick(3);
+  end loop;
+  fuzz(4, 100);

@@ -1,0 +1,44 @@
+--! dut neorv32_neoled
+--! generic FIFO_DEPTH=4
+--! config neoled_1 FIFO_DEPTH=1
+--! config neoled_4 FIFO_DEPTH=4
+--! config neoled_16 FIFO_DEPTH=16
+--! stim
+  -- procs
+    variable d : std_ulogic_vector(31 downto 0);
+    procedure wait_idle is
+    begin
+      loop
+        rd(x"00000000", d);
+        exit when d(31) = '0';
+        tick(10);
+      end loop;
+    end procedure;
+  -- end procs
+  tick(5);
+  rd(x"00000000");
+  -- enable, prescaler 0, t_tot = 10, t_0h = 3, t_1h = 7
+  wr(x"00000000", x"0001C6A1");
+  rd(x"00000000");
+  wr(x"00000004", x"000000A5"); -- 8-bit mode
+  wr(x"00000008", x"00C35A0F"); -- 24-bit mode
+  wr(x"0000000C", x"DEADBEEF"); -- 32-bit mode
+  wait_idle;
+  wr(x"00000000", x"00000000");
+  tick(5);
+  wr(x"00000000", x"0001C6A3"); -- prescaler 1
+  for i in 0 to 7 loop
+    wr(std_ulogic_vector(to_unsigned(4 * (1 + i mod 3), 32)), randv(32));
+    rd(x"00000000");
+  end loop;
+  wait_idle;
+  tick(10);
+  -- FIFO fill-up while the shifter runs, then disable mid-frame
+  for i in 0 to 2 * FIFO_DEPTH + 2 loop
+    wr(x"00000008", randv(32));
+    rd(x"00000000");
+  end loop;
+  tick(50);
+  wr(x"00000000", x"00000000");
+  tick(20);
+  fuzz(4, 200);

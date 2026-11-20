@@ -1,0 +1,15 @@
+--! dut neorv32_prim_spram
+--! generic AWIDTH=4
+--! generic DWIDTH=8
+--! generic OUTREG=false
+--! config spram_plain
+--! config spram_outreg OUTREG=true
+--! stim
+  tick(4);
+  for i in 1 to 300 loop
+    en_i <= randv(1)(0);
+    rw_i <= randv(1)(0);
+    addr_i <= randv(4);
+    data_i <= randv(8);
+    tick;
+  end loop;

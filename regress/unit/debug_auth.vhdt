@@ -1,0 +1,20 @@
+--! dut neorv32_debug_auth
+--! stim
+  tick(4);
+  re_i <= '1';
+  tick(2);
+  re_i <= '0';
+  we_i <= '1';
+  wdata_i <= x"00000000";
+  tick;
+  we_i <= '0';
+  tick(2);
+  enable_i <= '1';
+  tick(2);
+  we_i <= '1';
+  wdata_i <= x"00000001";
+  tick;
+  we_i <= '0';
+  tick(4);
+  enable_i <= '0';
+  tick(4);

@@ -1,0 +1,44 @@
+--! dut neorv32_cache
+--! generic NUM_BLOCKS=4
+--! generic BLOCK_SIZE=16
+--! generic UC_BEGIN=x"F"
+--! generic READ_ONLY=false
+--! generic BURSTS_EN=true
+--! config cache_rw
+--! config cache_rw_single BURSTS_EN=false
+--! config cache_ro READ_ONLY=true
+--! config cache_ro_single READ_ONLY=true BURSTS_EN=false
+--! config cache_big NUM_BLOCKS=16 BLOCK_SIZE=64
+--! config cache_one NUM_BLOCKS=1 BLOCK_SIZE=4 BURSTS_EN=false
+--! arch
+  mem: entity neorv32.regress_bus_mem generic map (LATENCY => 2) port map (clk_i => clk_i, req_i => bus_req_o, rsp_o => bus_rsp_i);
+--! stim
+  -- procs
+    variable a : std_ulogic_vector(31 downto 0);
+    variable w : std_ulogic;
+  -- end procs
+  tick(4);
+  for i in 0 to 63 loop
+    bus_xfer(clk_i, host_req_i, host_rsp_o, std_ulogic_vector(to_unsigned(i * 4, 32)), x"00000000", '0');
+  end loop;
+  for i in 1 to 2000 loop
+    a := x"0000" & "000000" & randv(8) & "00";
+    if (i mod 50) = 0 then
+      a(31 downto 28) := x"E"; -- bus error
+    elsif (i mod 50) = 10 then
+      a(31 downto 28) := x"F"; -- uncached
+    end if;
+    w := randv(1)(0);
+    if READ_ONLY then
+      w := '0';
+    end if;
+    bus_xfer(clk_i, host_req_i, host_rsp_o, a, randv(32), w, randv(4), meta => randv(5), limit => 400);
+    if (i mod 200) = 0 then
+      sync_i <= '1';
+      tick;
+      sync_i <= '0';
+    end if;
+    tick(rndn(1));
+  end loop;
+  -- atomic and burst requests reach the bus
+  bus_xfer(clk_i, host_req_i, host_rsp_o, x"F0000004", x"00000001", '0', amo => '1', amoop => "0001", limit => 40);

@@ -1,0 +1,48 @@
+--! dut neorv32_bus_amo_rvs
+--! arch
+  mem: entity neorv32.regress_bus_mem port map (clk_i => clk_i, req_i => sys_req_o, rsp_o => sys_rsp_i);
+--! stim
+  -- procs
+    variable a : std_ulogic_vector(31 downto 0);
+    procedure lr(c : natural; ad : std_ulogic_vector(31 downto 0)) is
+    begin
+      bus_xfer(clk_i, core_req_i, core_rsp_o, ad, x"00000000", '0', meta => '0' & std_ulogic'val(2 + c) & "000", amo => '1', amoop => "1000");
+    end procedure;
+    procedure sc(c : natural; ad, d : std_ulogic_vector(31 downto 0)) is
+    begin
+      bus_xfer(clk_i, core_req_i, core_rsp_o, ad, d, '1', meta => '0' & std_ulogic'val(2 + c) & "000", amo => '1', amoop => "1001");
+    end procedure;
+    procedure wrd(c : natural; ad : std_ulogic_vector(31 downto 0)) is
+    begin
+      bus_xfer(clk_i, core_req_i, core_rsp_o, ad, x"11111111", '1', meta => '0' & std_ulogic'val(2 + c) & "000");
+    end procedure;
+  -- end procs
+  tick(4);
+  lr(0, x"00000040");
+  sc(0, x"00000040", x"12345678"); -- success
+  sc(0, x"00000040", x"87654321"); -- no reservation
+  lr(0, x"00000040");
+  sc(1, x"00000040", x"87654321"); -- wrong core
+  sc(0, x"00000080", x"87654321"); -- wrong address
+  lr(0, x"00000040");
+  wrd(1, x"00000044");              -- reservation gets lost
+  sc(0, x"00000040", x"87654321");
+  lr(0, x"00000040");
+  wrd(1, x"00000100");              -- other address
+  sc(0, x"00000040", x"00000001");
+  lr(0, x"00000040");
+  lr(1, x"00000080");               -- blocked or stolen
+  lr(1, x"00000080");
+  sc(1, x"00000080", x"00000002");
+  lr(1, x"00000080");
+  lr(0, x"00000040");
+  sc(0, x"00000040", x"00000003");
+  bus_xfer(clk_i, core_req_i, core_rsp_o, x"00000080", x"00000000", '0', meta => "00001", amo => '1', amoop => "1000"); -- instruction side
+  for i in 1 to 400 loop
+    a := x"0000" & "00000" & randv(3) & randv(1) & "0000000";
+    case rndn(2) is
+      when 0 => lr(rndn(1), a);
+      when 1 => sc(rndn(1), a, randv(32));
+      when others => wrd(rndn(1), a);
+    end case;
+  end loop;

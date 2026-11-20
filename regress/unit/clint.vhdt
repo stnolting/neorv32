@@ -1,0 +1,34 @@
+--! dut neorv32_clint
+--! generic NUM_HARTS=2
+--! config clint_1 NUM_HARTS=1
+--! config clint_2 NUM_HARTS=2
+--! config clint_4 NUM_HARTS=4
+--! stim
+  tick(5);
+  for h in 0 to NUM_HARTS-1 loop
+    wr(std_ulogic_vector(to_unsigned(h * 4, 32)), x"00000001"); -- msip
+    rd(std_ulogic_vector(to_unsigned(h * 4, 32)));
+    wr(std_ulogic_vector(to_unsigned(h * 4, 32)), x"00000000");
+    rd(std_ulogic_vector(to_unsigned(h * 4, 32)));
+    wr(std_ulogic_vector(to_unsigned(16#4000# + h * 8, 32)), x"00000100"); -- mtimecmp lo
+    wr(std_ulogic_vector(to_unsigned(16#4004# + h * 8, 32)), x"00000000"); -- mtimecmp hi
+    rd(std_ulogic_vector(to_unsigned(16#4000# + h * 8, 32)));
+    rd(std_ulogic_vector(to_unsigned(16#4004# + h * 8, 32)));
+  end loop;
+  rd(x"0000BFF8");
+  rd(x"0000BFFC");
+  tick(300);
+  wr(x"0000BFF8", x"FFFFFF00"); -- mtime lo
+  wr(x"0000BFFC", x"00000001"); -- mtime hi
+  for h in 0 to NUM_HARTS-1 loop
+    wr(std_ulogic_vector(to_unsigned(16#4004# + h * 8, 32)), x"00000002");
+    wr(std_ulogic_vector(to_unsigned(16#4000# + h * 8, 32)), x"00000010");
+  end loop;
+  tick(400);
+  -- an unmapped address gets no response
+  bus_req_i.addr <= x"00008000";
+  bus_req_i.rw   <= '0';
+  bus_req_i.stb  <= '1';
+  tick;
+  bus_req_i.stb  <= '0';
+  tick(4);

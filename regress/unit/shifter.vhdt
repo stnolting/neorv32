@@ -1,0 +1,23 @@
+--! dut neorv32_cpu_alu_shifter
+--! generic FAST_SHIFT_EN=true
+--! config shifter_fast
+--! config shifter_serial FAST_SHIFT_EN=false
+--! decl
+  signal cp_done : std_ulogic;
+  signal rs2_i : std_ulogic_vector(31 downto 0);
+--! arch
+  cp_done <= valid_o;
+  shamt_i <= rs2_i(4 downto 0) when ctrl_i.ir_opcode(5) = '1' else ctrl_i.ir_funct12(4 downto 0);
+--! stim
+  -- procs
+  --! include alu_ops.inc
+  -- end procs
+  tick(4);
+  cp_corners('1', "001", x"000");
+  cp_corners('1', "101", x"000");
+  cp_corners('1', "101", x"400");
+  for s in 0 to 31 loop
+    cp('0', "001", std_ulogic_vector(to_unsigned(s, 12)), x"80000001", x"00000000");
+    cp('0', "101", std_ulogic_vector(to_unsigned(s, 12)), x"80000001", x"00000000");
+    cp('0', "101", std_ulogic_vector(to_unsigned(s + 1024, 12)), x"80000001", x"00000000");
+  end loop;

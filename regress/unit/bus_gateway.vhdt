@@ -1,0 +1,55 @@
+--! dut neorv32_bus_gateway
+--! generic A_EN=true
+--! generic A_BASE=x"00000000"
+--! generic A_SIZE=4096
+--! generic A_TMO=16
+--! generic B_EN=true
+--! generic B_BASE=x"10000000"
+--! generic B_SIZE=4096
+--! generic B_TMO=16
+--! generic C_EN=true
+--! generic C_BASE=x"20000000"
+--! generic C_SIZE=4096
+--! generic C_TMO=16
+--! generic D_EN=true
+--! generic D_BASE=x"30000000"
+--! generic D_SIZE=4096
+--! generic D_TMO=16
+--! generic X_EN=true
+--! generic X_TMO=32
+--! config gateway_all
+--! config gateway_nox X_EN=false
+--! config gateway_notmo X_TMO=0
+--! arch
+  mem_a: entity neorv32.regress_bus_mem port map (clk_i => clk_i, req_i => a_req_o, rsp_o => a_rsp_i);
+  mem_b: entity neorv32.regress_bus_mem generic map (LATENCY => 2) port map (clk_i => clk_i, req_i => b_req_o, rsp_o => b_rsp_i);
+  mem_c: entity neorv32.regress_bus_mem port map (clk_i => clk_i, req_i => c_req_o, rsp_o => c_rsp_i);
+  mem_d: entity neorv32.regress_bus_mem generic map (LATENCY => 3) port map (clk_i => clk_i, req_i => d_req_o, rsp_o => d_rsp_i);
+  -- external port: ack delayed by 3, addresses with bit 20 set hang
+  x_port: process
+  begin
+    wait until rising_edge(clk_i);
+    x_rsp_i <= rsp_terminate_c;
+    if (x_req_o.stb = '1') and (x_req_o.addr(20) = '0') then
+      wait until rising_edge(clk_i);
+      wait until rising_edge(clk_i);
+      x_rsp_i.ack <= '1';
+      x_rsp_i.data <= x_req_o.addr;
+    end if;
+  end process;
+--! stim
+  -- procs
+    variable a : std_ulogic_vector(31 downto 0);
+  -- end procs
+  tick(4);
+  for i in 1 to 800 loop
+    a := randv(32) and x"F00FFFFC";
+    if (i mod 5) /= 0 then
+      a(31 downto 28) := x"0";
+      a(29 downto 28) := randv(2);
+    end if;
+    a(20) := bool_to_ulogic_f((i mod 40) = 0);
+    a(27 downto 21) := bool_to_ulogic_f((i mod 40) = 7) & "000000";
+    bus_xfer(clk_i, req_i, rsp_o, a, randv(32), randv(1)(0), randv(4), meta => randv(5), limit => 3000);
+    tick(rndn(2));
+  end loop;
