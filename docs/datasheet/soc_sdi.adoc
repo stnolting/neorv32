@@ -101,6 +101,6 @@ of the interrupt is resolved.
                                   <|`27`    `SDI_CTRL_TX_FULL`                      ^| r/- <| TX FIFO full
                                   <|`30:28` -                                       ^| r/- <| _reserved_, read as zero
                                   <|`31`    `SDI_CTRL_CS_ACTIVE`                    ^| r/- <| Chip-select is active when set
-.2+<| `0xfff70004` .2+<| `DATA` <|`7:0`  `SDI_DATA_MSB : SDI_DATA_LSB` ^| r/w <| receive/transmit data (FIFO)
+.2+<| `0xfff70004` .2+<| `DATA` <|`7:0`  `SDI_DATA_MSB : SDI_DATA_LSB` ^| r/w <| receive/transmit data (FIFO); reads zero if no RX data available
                                 <|`31:8` -                             ^| r/- <| _reserved_, read as zero
 |=======================

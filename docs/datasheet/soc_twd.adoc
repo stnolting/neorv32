@@ -213,6 +213,6 @@ twd_scl_i <= std_ulogic(scl_io);
                                   <|`29`    `TWD_CTRL_COM_BEG`                            ^| r/c <| Communication has started; clear by writing 1
                                   <|`30`    `TWD_CTRL_COM_END`                            ^| r/c <| Communication has ended; clear by writing 1
                                   <|`31`    `TWD_CTRL_COM`                                ^| r/- <| Active communication
-.2+<| `0xffea0004` .2+<| `DATA`   <|`7:0`   `TWD_DATA_MSB : TWD_DATA_LSB`                 ^| r/w <| RX/TX data FIFO access
+.2+<| `0xffea0004` .2+<| `DATA`   <|`7:0`   `TWD_DATA_MSB : TWD_DATA_LSB`                 ^| r/w <| RX/TX data FIFO access (reads zero if no RX data available)
                                   <|`31:8`  -                                             ^| r/- <| _reserved_, read as zero
 |=======================
