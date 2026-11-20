@@ -25,18 +25,15 @@ entity neorv32_top is
     DUAL_CORE_EN        : boolean                        := false;         -- enable dual-core homogeneous SMP
     TRACE_PORT_EN       : boolean                        := false;         -- enable CPU execution trace port
     TRACE_SIMLOG_EN     : boolean                        := false;         -- enable simulation trace logging
-
     -- Boot Configuration --
     BOOT_MODE_SELECT    : natural range 0 to 2           := 0;             -- boot configuration select (default = 0 = bootloader)
     BOOT_ADDR_CUSTOM    : std_ulogic_vector(31 downto 0) := x"00000000";   -- custom CPU boot address (if BOOT_MODE_SELECT = 1)
-
     -- On-Chip Debugger (OCD) --
     OCD_EN              : boolean                        := false;         -- implement on-chip debugger
     OCD_EXT_DTM         : boolean                        := false;         -- use external debug transfer module (export DMI)
     OCD_NUM_HW_TRIGGERS : natural range 0 to 16          := 0;             -- number of hardware break-/watchpoints
     OCD_AUTHENTICATION  : boolean                        := false;         -- implement on-chip debugger authentication
     OCD_JEDEC_ID        : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
-
     -- RISC-V CPU Extensions --
     RISCV_ISA_C         : boolean                        := false;         -- compressed extension
     RISCV_ISA_E         : boolean                        := false;         -- embedded RF extension
@@ -67,36 +64,30 @@ entity neorv32_top is
     RISCV_ISA_Zmmul     : boolean                        := false;         -- multiply-only M sub-extension
     RISCV_ISA_Smcntrpmf : boolean                        := false;         -- counter privilege-mode filtering
     RISCV_ISA_Xcfu      : boolean                        := false;         -- custom (instr.) functions unit
-
     -- Tuning Options --
     CPU_CONSTT_BR_EN    : boolean                        := false;         -- enable constant-time branches
     CPU_FAST_MUL_EN     : boolean                        := false;         -- use DSPs for M extension's multiplier
     CPU_FAST_MUL_REGS   : natural range 1 to 3           := 1;             -- number of fast multiplier register stages (needs CPU_FAST_MUL_EN)
     CPU_FAST_SHIFT_EN   : boolean                        := false;         -- use barrel shifter for shift operations
     CPU_RF_ARCH_SEL     : natural range 0 to 3           := 0;             -- register file implementation style select
-
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS     : natural range 0 to 16          := 0;             -- number of regions
     PMP_MIN_GRANULARITY : natural                        := 4;             -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     PMP_TOR_MODE_EN     : boolean                        := false;         -- implement TOR mode
     PMP_NAP_MODE_EN     : boolean                        := false;         -- implement NAPOT/NA4 modes
-
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS        : natural range 0 to 29          := 0;             -- number of implemented HPM counters
     HPM_CNT_WIDTH       : natural range 0 to 64          := 64;            -- total size of HPM counters
-
     -- Internal Instruction memory (IMEM) --
     IMEM_EN             : boolean                        := false;         -- implement processor-internal instruction memory
     IMEM_BASE           : std_ulogic_vector(31 downto 0) := x"00000000";   -- base address of processor-internal instruction memory (naturally aligned)
     IMEM_SIZE           : natural                        := 16*1024;       -- size of processor-internal instruction memory in bytes (use a power of 2)
     IMEM_OUTREG_EN      : boolean                        := false;         -- enable IMEM output register stage (for improved mapping/timing)
-
     -- Internal Data memory (DMEM) --
     DMEM_EN             : boolean                        := false;         -- implement processor-internal data memory
     DMEM_BASE           : std_ulogic_vector(31 downto 0) := x"80000000";   -- base address of processor-internal data memory (naturally aligned)
     DMEM_SIZE           : natural                        := 8*1024;        -- size of processor-internal data memory in bytes (use a power of 2)
     DMEM_OUTREG_EN      : boolean                        := false;         -- enable DMEM output register stage (for improved mapping/timing)
-
     -- CPU Caches --
     ICACHE_EN           : boolean                        := false;         -- implement instruction cache (i-cache)
     ICACHE_NUM_BLOCKS   : natural range 1 to 4096        := 4;             -- i-cache: number of blocks, has to be a power of 2
@@ -105,23 +96,18 @@ entity neorv32_top is
     CACHE_BLOCK_SIZE    : natural range 4 to 1024        := 64;            -- i-cache/d-cache: block size in bytes, has to be a power of 2
     CACHE_BURSTS_EN     : boolean                        := true;          -- i-cache/d-cache: enable issuing of burst transfer for cache update
     CACHE_UC_BASE       : std_ulogic_vector(31 downto 0) := x"F0000000";   -- base address of uncached address space (has to be 256MB-aligned)
-
     -- Serial Memory Controller (SMC) --
     SMC_EN              : boolean                        := false;         -- implement serial memory controller
     SMC_BASE            : std_ulogic_vector(31 downto 0) := x"E0000000";   -- serial memory base address (256MB-aligned)
-
     -- External Bus Interface (XBUS) --
     XBUS_EN             : boolean                        := false;         -- implement external bus interface
     XBUS_TIMEOUT        : natural                        := 2048;          -- cycles after a pending bus access auto-terminates (0 = disabled)
     XBUS_REGSTAGE_EN    : boolean                        := false;         -- add XBUS register stage
-
     -- General-Purpose Input/Output Controller (GPIO) --
     IO_GPIO_NUM         : natural range 0 to 32          := 0;             -- number of GPIO input/output pairs
     IO_GPIO_DIR_EN      : boolean                        := false;         -- enable GPIO direction control port
-
     -- RISC-V Core-Local Interruptor (CLINT) --
     IO_CLINT_EN         : boolean                        := false;         -- implement core local interruptor (CLINT)
-
     -- Universal Asynchronous Receiver/Transmitter (UART0/UART1) --
     IO_UART0_EN         : boolean                        := false;         -- implement primary universal asynchronous receiver/transmitter (UART0)
     IO_UART0_RX_FIFO    : natural range 1 to 32768       := 1;             -- RX FIFO depth, has to be a power of two
@@ -129,56 +115,44 @@ entity neorv32_top is
     IO_UART1_EN         : boolean                        := false;         -- implement secondary universal asynchronous receiver/transmitter (UART1)
     IO_UART1_RX_FIFO    : natural range 1 to 32768       := 1;             -- RX FIFO depth, has to be a power of two
     IO_UART1_TX_FIFO    : natural range 1 to 32768       := 1;             -- TX FIFO depth, has to be a power of two
-
     -- Serial Peripheral Interface (SPI Host, SDI Device) --
     IO_SPI_EN           : boolean                        := false;         -- implement serial peripheral interface (SPI)
     IO_SPI_FIFO         : natural range 1 to 32768       := 1;             -- RTX FIFO depth, has to be a power of two
     IO_SDI_EN           : boolean                        := false;         -- implement serial data interface (SDI)
     IO_SDI_FIFO         : natural range 1 to 32768       := 1;             -- RTX FIFO depth, has to be zero or a power of two
-
     -- Two-Wire Interface (TWI Host, TWD Device) --
     IO_TWI_EN           : boolean                        := false;         -- implement two-wire interface (TWI)
     IO_TWI_FIFO         : natural range 1 to 32768       := 1;             -- RTX FIFO depth, has to be zero or a power of two
     IO_TWD_EN           : boolean                        := false;         -- implement two-wire device (TWD)
     IO_TWD_RX_FIFO      : natural range 1 to 32768       := 1;             -- RX FIFO depth, has to be zero or a power of two
     IO_TWD_TX_FIFO      : natural range 1 to 32768       := 1;             -- TX FIFO depth, has to be zero or a power of two
-
     -- Pulse-Width Modulation Controller (PWM) --
     IO_PWM_NUM          : natural range 0 to 32          := 0;             -- number of PWM channels to implement
-
     -- Watchdog Timer (WDT) --
     IO_WDT_EN           : boolean                        := false;         -- implement watch dog timer (WDT)
-
     -- True-Random Number Generator (TRNG) --
     IO_TRNG_EN          : boolean                        := false;         -- implement true random number generator (TRNG)
     IO_TRNG_FIFO        : natural range 1 to 32768       := 1;             -- data FIFO depth, has to be a power of two
     IO_TRNG_NUM_RO      : natural range 1 to 255         := 3;             -- total number of ring-oscillators
     IO_TRNG_NUM_INV     : natural range 3 to 4095        := 5;             -- number of inverters in first ring-oscillator; has to be odd
     IO_TRNG_NUM_RBIT    : natural range 8 to 4096        := 64;            -- number of raw bits to process for one output byte; has to be power of two
-
     -- Custom Functions Subsystem (CFS) --
     IO_CFS_EN           : boolean                        := false;         -- implement custom functions subsystem (CFS)
-
     -- Smart LED interface (NEOLED) --
     IO_NEOLED_EN        : boolean                        := false;         -- implement NeoPixel-compatible smart LED interface (NEOLED)
     IO_NEOLED_TX_FIFO   : natural range 1 to 32768       := 1;             -- NEOLED FIFO depth, has to be a power of two
-
     -- General-Purpose Timer (GPTMR) --
     IO_GPTMR_NUM        : natural range 0 to 16          := 0;             -- number of GPTMR timer slices to implement (0..16)
-
     -- 1-Wire Interface (ONEWIRE) --
     IO_ONEWIRE_EN       : boolean                        := false;         -- implement 1-wire interface (ONEWIRE)
     IO_ONEWIRE_FIFO     : natural range 1 to 32768       := 1;             -- RTX FIFO depth, has to be zero or a power of two
-
     -- Direct Memory Access Controller (DMA) --
     IO_DMA_EN           : boolean                        := false;         -- implement direct memory access controller (DMA)
     IO_DMA_DSC_FIFO     : natural range 4 to 512         := 4;             -- DMA descriptor FIFO depth, has to be a power of two
-
     -- Stream Link Interface (SLINK) --
     IO_SLINK_EN         : boolean                        := false;         -- implement stream link interface (SLINK)
     IO_SLINK_RX_FIFO    : natural range 1 to 32768       := 1;             -- RX FIFO depth, has to be a power of two
     IO_SLINK_TX_FIFO    : natural range 1 to 32768       := 1;             -- TX FIFO depth, has to be a power of two
-
     -- Execution Trace Buffer (TRACEBUF) --
     IO_TRACEBUF_EN      : boolean                        := false;         -- implement instruction trace buffer
     IO_TRACEBUF_DEPTH   : natural range 1 to 32768       := 1              -- trace buffer depth, has to be a power of two
@@ -189,31 +163,26 @@ entity neorv32_top is
     rstn_i         : in  std_ulogic;                                         -- global reset, low-active, async
     rstn_ocd_o     : out std_ulogic;                                         -- on-chip debugger reset output, low-active, sync
     rstn_wdt_o     : out std_ulogic;                                         -- watchdog reset output, low-active, sync
-
     -- Execution trace (available if TRACE_PORT_EN = true) --
     trace_cpu0_o   : out trace_port_t;                                       -- CPU 0 trace port, RVFI-compatible
     trace_cpu1_o   : out trace_port_t;                                       -- CPU 1 trace port, RVFI-compatible
-
     -- External debug module interface (available if OCD_EXT_DTM = true) --
     dmi_req_op_i   : in  std_ulogic_vector(1 downto 0)  := (others => 'L');  -- operation trigger, single-shot
     dmi_req_addr_i : in  std_ulogic_vector(6 downto 0)  := (others => 'L');  -- access address
     dmi_req_data_i : in  std_ulogic_vector(31 downto 0) := (others => 'L');  -- write data
     dmi_rsp_data_o : out std_ulogic_vector(31 downto 0);                     -- read data
     dmi_rsp_ack_o  : out std_ulogic;                                         -- operation acknowledge, single-shot
-
     -- JTAG on-chip debugger interface (available if OCD_EN = true) --
     jtag_tck_i     : in  std_ulogic := 'L';                                  -- serial clock
     jtag_tdi_i     : in  std_ulogic := 'L';                                  -- serial data input
     jtag_tdo_o     : out std_ulogic;                                         -- serial data output
     jtag_tms_i     : in  std_ulogic := 'L';                                  -- mode select
-
     -- Serial memory controller interface (available if SMC_EN = true) --
     smc_ioen_o     : out std_ulogic;                                         -- SMC pin enable, can be used for IO multiplexing
     smc_sck_o      : out std_ulogic;                                         -- clock
     smc_csn_o      : out std_ulogic_vector(1 downto 0);                      -- bank/chip select, low-active
     smc_sdo_o      : out std_ulogic;                                         -- controller data out, memory data in
     smc_sdi_i      : in  std_ulogic := 'L';                                  -- controller data in, memory data out
-
     -- External bus interface (available if XBUS_EN = true) --
     xbus_adr_o     : out std_ulogic_vector(31 downto 0);                     -- address
     xbus_dat_o     : out std_ulogic_vector(31 downto 0);                     -- write data
@@ -226,7 +195,6 @@ entity neorv32_top is
     xbus_dat_i     : in  std_ulogic_vector(31 downto 0) := (others => 'L');  -- read data
     xbus_ack_i     : in  std_ulogic := 'L';                                  -- transfer acknowledge
     xbus_err_i     : in  std_ulogic := 'L';                                  -- transfer error
-
     -- Stream link interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'L');  -- RX input data
     slink_rx_val_i : in  std_ulogic := 'L';                                  -- RX valid input
@@ -236,64 +204,51 @@ entity neorv32_top is
     slink_tx_val_o : out std_ulogic;                                         -- TX valid output
     slink_tx_lst_o : out std_ulogic;                                         -- TX last element of stream
     slink_tx_rdy_i : in  std_ulogic := 'L';                                  -- TX ready to send
-
     -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_dir_o     : out std_ulogic_vector(31 downto 0);                     -- direction control (0=in, 1=out)
     gpio_o         : out std_ulogic_vector(31 downto 0);                     -- parallel output
     gpio_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L');  -- parallel input; interrupt-capable
-
     -- Primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_ulogic;                                         -- send data
     uart0_rxd_i    : in  std_ulogic := 'L';                                  -- receive data
     uart0_rtsn_o   : out std_ulogic;                                         -- HW flow control: RX ready to receive, low-active
     uart0_ctsn_i   : in  std_ulogic := 'L';                                  -- HW flow control: TX allowed to transmit, low-active
-
     -- Secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    : out std_ulogic;                                         -- send data
     uart1_rxd_i    : in  std_ulogic := 'L';                                  -- receive data
     uart1_rtsn_o   : out std_ulogic;                                         -- HW flow control: RX ready to receive, low-active
     uart1_ctsn_i   : in  std_ulogic := 'L';                                  -- HW flow control: TX allowed to transmit, low-active
-
     -- SPI (available if IO_SPI_EN = true) --
     spi_clk_o      : out std_ulogic;                                         -- serial clock
     spi_dat_o      : out std_ulogic;                                         -- controller data out, peripheral data in
     spi_dat_i      : in  std_ulogic := 'L';                                  -- controller data in, peripheral data out
     spi_csn_o      : out std_ulogic_vector(7 downto 0);                      -- chip-select, low-active
-
     -- SDI (available if IO_SDI_EN = true) --
     sdi_clk_i      : in  std_ulogic := 'L';                                  -- serial clock
     sdi_dat_o      : out std_ulogic;                                         -- controller data out, peripheral data in
     sdi_dat_i      : in  std_ulogic := 'L';                                  -- controller data in, peripheral data out
     sdi_csn_i      : in  std_ulogic := 'H';                                  -- chip-select, low-active
-
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_i      : in  std_ulogic := 'H';                                  -- serial data line sense input
     twi_sda_o      : out std_ulogic;                                         -- serial data line output (pull low only)
     twi_scl_i      : in  std_ulogic := 'H';                                  -- serial clock line sense input
     twi_scl_o      : out std_ulogic;                                         -- serial clock line output (pull low only)
-
     -- TWD (available if IO_TWD_EN = true) --
     twd_sda_i      : in  std_ulogic := 'H';                                  -- serial data line sense input
     twd_sda_o      : out std_ulogic;                                         -- serial data line output (pull low only)
     twd_scl_i      : in  std_ulogic := 'H';                                  -- serial clock line sense input
-
     -- 1-Wire interface (available if IO_ONEWIRE_EN = true) --
     onewire_i      : in  std_ulogic := 'H';                                  -- 1-wire bus sense input
     onewire_o      : out std_ulogic;                                         -- 1-wire bus output (pull low only)
-
     -- PWM (available if IO_PWM_NUM > 0) --
     pwm_o          : out std_ulogic_vector(31 downto 0);                     -- PWM channels
-
     -- Custom functions subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i       : in  std_ulogic_vector(255 downto 0) := (others => 'L'); -- custom CFS inputs conduit
     cfs_out_o      : out std_ulogic_vector(255 downto 0);                    -- custom CFS outputs conduit
-
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o       : out std_ulogic;                                         -- async serial data line
-
     -- Machine timer system time (available if IO_CLINT_EN = true) --
     mtime_time_o   : out std_ulogic_vector(63 downto 0);                     -- current system time
-
     -- CPU interrupts --
     irq_msi_i      : in  std_ulogic := 'L';                                  -- machine software interrupt, available if IO_CLINT_EN = false
     irq_mti_i      : in  std_ulogic := 'L';                                  -- machine timer interrupt, available if IO_CLINT_EN = false
