@@ -109,13 +109,10 @@ architecture neorv32_core_complex_rtl of neorv32_core_complex is
   -- memory ordering arbiter --
   component neorv32_core_complex_ordering
   port (
-    -- global control --
     rstn_i    : in  std_ulogic;
     clk_i     : in  std_ulogic;
-    -- CPU interface --
     fence_i   : in  std_ulogic_vector(2 downto 0);
     fence_o   : out std_ulogic;
-    -- Cache interface --
     ic_sync_o : out std_ulogic_vector(1 downto 0);
     ic_sync_i : in  std_ulogic;
     dc_sync_o : out std_ulogic_vector(1 downto 0);
@@ -123,6 +120,7 @@ architecture neorv32_core_complex_rtl of neorv32_core_complex is
   );
   end component;
 
+  -- wiring --
   signal cpu_fence : std_ulogic_vector(2 downto 0);
   signal icache_sync, dcache_sync : std_ulogic_vector(1 downto 0);
   signal icache_syncd, dcache_syncd, cpu_fenced : std_ulogic;

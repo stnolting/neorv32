@@ -348,7 +348,7 @@ begin
   -- Hardware Trigger Module (Sdtrig) -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   trigger_module_enabled:
-  if (RISCV_ISA_Sdtrig = true) and (NUM_HW_TRIGGERS > 0) generate
+  if RISCV_ISA_Sdtrig and (NUM_HW_TRIGGERS > 0) generate
     cpu_hwtrig_inst: entity neorv32.neorv32_cpu_hwtrig
     generic map (
       NUM_TRIGGERS => NUM_HW_TRIGGERS, -- number of implemented hardware triggers
@@ -368,7 +368,7 @@ begin
   end generate;
 
   trigger_module_disabled:
-  if (RISCV_ISA_Sdtrig = false) or (NUM_HW_TRIGGERS = 0) generate
+  if (not RISCV_ISA_Sdtrig) or (NUM_HW_TRIGGERS = 0) generate
     xcsr_tm <= (others => '0');
     hwtrig  <= '0';
   end generate;

@@ -221,7 +221,7 @@ begin
   port map (
     -- global control --
     clk_i   => clk_i,
-    rstn_i  => rstn_i,
+    rstn_i  => '1', -- not required as we have a sync reset
     clear_i => tx_fifo.clr,
     level_o => open,
     -- write port --
@@ -244,13 +244,13 @@ begin
   generic map (
     AWIDTH  => rx_size_c,
     DWIDTH  => 8,
-    OUTGATE => false,
+    OUTGATE => true, -- read zero if no data available
     ASYNCRD => false
   )
   port map (
     -- global control --
     clk_i   => clk_i,
-    rstn_i  => rstn_i,
+    rstn_i  => '1', -- not required as we have a sync reset
     clear_i => rx_fifo.clr,
     level_o => open,
     -- write port --

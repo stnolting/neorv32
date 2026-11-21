@@ -180,13 +180,13 @@ begin
   generic map (
     AWIDTH  => rx_awidth_c,
     DWIDTH  => 1+32, -- last + data
-    OUTGATE => true, -- to prevent getting X in simulation
+    OUTGATE => true, -- read zero if no data available
     ASYNCRD => false
   )
   port map (
     -- global control --
     clk_i   => clk_i,
-    rstn_i  => rstn_i,
+    rstn_i  => '1', -- not required as we have a sync reset
     clear_i => rx_fifo.clear,
     level_o => rx_level,
     -- write port --
@@ -239,7 +239,7 @@ begin
   port map (
     -- global control --
     clk_i   => clk_i,
-    rstn_i  => rstn_i,
+    rstn_i  => '1', -- not required as we have a sync reset
     clear_i => tx_fifo.clear,
     level_o => tx_level,
     -- write port --

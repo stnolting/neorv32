@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130802"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130803"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -35,12 +35,12 @@ package neorv32_package is
   ;
 
 -- **********************************************************************************************************
--- SoC Peripheral/IO Address Space Layout
+-- SoC-Internal I/O Address Space Layout
 -- **********************************************************************************************************
 
-  constant mem_io_dev_size_c : natural := 64*1024; -- size of a single IO device (bytes)
-  constant mem_io_base_c     : std_ulogic_vector(31 downto 0) := x"ffe00000";
-  constant mem_io_size_c     : natural := 32 * mem_io_dev_size_c;
+  constant io_dev_size_c   : natural := 64*1024; -- size of a single IO device (bytes)
+  constant io_base_c       : std_ulogic_vector(31 downto 0) := x"ffe00000"; -- IO base address
+  constant io_size_c       : natural := 32 * io_dev_size_c; -- total size of IO space
 
   -- IO Address Map (base address must be aligned to the region's size) --
   constant base_io_bootrom_c  : std_ulogic_vector(31 downto 0) := x"ffe00000";

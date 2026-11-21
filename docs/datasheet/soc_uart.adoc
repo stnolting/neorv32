@@ -160,7 +160,7 @@ output line to the simulator console.
                                 <|`15:10` ^| r/- <| _reserved_, read as zero
                                 <|`18:16` ^| r/w <| Baud rate clock prescaler select
                                 <|`31:19` ^| r/- <| _reserved_, read as zero
-.2+<| `0xfff50008` .2+<| `DATA` <|`7:0`  ^| r/w <| Receive/transmit data
+.2+<| `0xfff50008` .2+<| `DATA` <|`7:0`  ^| r/w <| Receive/transmit data (reads zero if no RX data available)
                                 <|`31:8` ^| r/- <| _reserved_, read as zero
 |=======================
 

@@ -18,7 +18,7 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_lsu is
   generic (
     HART_ID : natural range 0 to 1; -- hardware thread ID
-    AMO_EN  : boolean  -- enable atomic memory accesses
+    AMO_EN  : boolean               -- enable atomic memory accesses
   );
   port (
     -- global control --
@@ -105,8 +105,8 @@ begin
       ma   <= '0';
     elsif rising_edge(clk_i) then
       if (ctrl_i.lsu_mo_en = '1') then
-        addr <= addr_i; -- memory address register
-        case ctrl_i.ir_funct3(1 downto 0) is -- alignment + byte-enable
+        addr <= addr_i;
+        case ctrl_i.ir_funct3(1 downto 0) is
           when "00" => -- byte
             data   <= wdata_i(7 downto 0) & wdata_i(7 downto 0) & wdata_i(7 downto 0) & wdata_i(7 downto 0);
             ben(0) <= (not addr_i(1)) and (not addr_i(0));
@@ -131,9 +131,6 @@ begin
       end if;
     end if;
   end process;
-
-  -- address feedback --
-  mar_o <= addr;
 
   -- assemble request --
   dbus_req_o.meta  <= std_ulogic_vector(to_unsigned(HART_ID, 2)) & ctrl_i.cpu_debug & ctrl_i.lsu_priv & '0';
@@ -176,8 +173,9 @@ begin
     end if;
   end process;
 
-  -- wait for bus response --
-  wait_o <= not dbus_rsp_i.ack;
+  -- access feedback --
+  mar_o  <= addr; -- address
+  wait_o <= not dbus_rsp_i.ack; -- wait for ACK
 
   -- access/alignment errors --
   -- [NOTE] AMOs will report load AND store exceptions. However, only the store exception will be reported due to its higher priority.

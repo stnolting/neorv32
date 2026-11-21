@@ -150,7 +150,7 @@ has completed (i.e. the TX FIFO is empty and the SPI engine is idle).
                                   <|`29:28` -                                       ^| r/- <| _reserved_, read as zero
                                   <|`30`    `SPI_CS_ACTIVE`                         ^| r/- <| Set if any chip-select line is active
                                   <|`31`    `SPI_CTRL_BUSY`                         ^| r/- <| SPI module busy when set (serial engine operation in progress and TX FIFO not empty yet)
-.4+<| `0xfff80004` .4+<| `DATA` <|`7:0`  `SPI_DATA_MSB : SPI_DATA_LSB` ^| r/w <| receive/transmit data (FIFO), only for data mode (`SPI_DATA_CMD = 0`)
+.4+<| `0xfff80004` .4+<| `DATA` <|`7:0`  `SPI_DATA_MSB : SPI_DATA_LSB` ^| r/w <| receive/transmit data (FIFO), only for data mode (`SPI_DATA_CMD = 0`), reads zero if no RX data available
                                 <|`3:0`                                ^| -/w <| chip-select-enable (bit 3) and chip-select (bit 2:0), only for command mode (`SPI_DATA_CMD = 1`)
                                 <|`30:8` -                             ^| r/- <| _reserved_, read as zero
                                 <|`31`   `SPI_DATA_CMD`                ^| -/w <| `0` = data, `1` = chip-select-command

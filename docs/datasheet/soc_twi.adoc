@@ -182,6 +182,6 @@ twi_scl_i <= std_ulogic(scl_io); -- sense
                                   <|`31`    `TWI_CTRL_BUSY`                         ^| r/- <| TWI bus engine busy or TX FIFO not empty
 .4+<| `0xfff90004` .2+<| `DCMD` (write) <|`8:0`  ^| -/w <| TX data/command (TX FIFO access)
                                         <|`31:9` ^| -/w <| _reserved_, write have no effect
-                   .2+<| `DCMD` (read)  <|`7:0`  ^| r/- <| RX data byte (RX FIFO access)
+                   .2+<| `DCMD` (read)  <|`7:0`  ^| r/- <| RX data byte (RX FIFO access); reads zero if no RX data available
                                         <|`31:8` ^| r/- <| _reserved_, read as zero
 |=======================
