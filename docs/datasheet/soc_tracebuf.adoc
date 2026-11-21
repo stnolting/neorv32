@@ -139,15 +139,15 @@ Line 68 of "main.c" starts at address 0x2cc <test_code> and ends at 0x2d0 <test_
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.9+<| `0xfff30000` .9+<| `CTRL` <| `0`    `TRACEBUF_CTRL_EN`                              ^| r/w <| TRACEBUF enable, reset module when 0
-                                <| `1`    `TRACEBUF_CTRL_HSEL`                            ^| r/w <| Hart select for tracing (`0` = CPU0, `1` = CPU1)
-                                <| `2`    `TRACEBUF_CTRL_START`                           ^| r/w <| Start tracing, flag always reads as zero
-                                <| `3`    `TRACEBUF_CTRL_STOP`                            ^| r/w <| Manually stop tracing, flag always reads as zero
-                                <| `4`    `TRACEBUF_CTRL_RUN`                             ^| r/- <| Tracing in progress when set
-                                <| `5`    `TRACEBUF_CTRL_AVAIL`                           ^| r/- <| Trace data available when set
-                                <| `6`    `TRACEBUF_CTRL_IRQ_CLR`                         ^| r/w <| Clear pending interrupt when writing `1`, flag always reads as zero
-                                <| `10:7` `TRACEBUF_CTRL_TBM_MSB : TRACEBUF_CTRL_TBM_LSB` ^| r/- <| `log2(IO_TRACEBUF_DEPTH)`: trace buffer depth
-                                <| `31:11` _reserved_                                     ^| r/- <| _reserved_, hardwired to zero
+.9+<| `0xfff30000` .9+<| `CTRL` <| `0`    `TRACEBUF_CTRL_EN`                       ^| r/w <| TRACEBUF enable, reset module when 0
+                                <| `1`    `TRACEBUF_CTRL_HSEL`                     ^| r/w <| Hart select for tracing (`0` = CPU0, `1` = CPU1)
+                                <| `2`    `TRACEBUF_CTRL_START`                    ^| r/w <| Start tracing, flag always reads as zero
+                                <| `3`    `TRACEBUF_CTRL_STOP`                     ^| r/w <| Manually stop tracing, flag always reads as zero
+                                <| `4`    `TRACEBUF_CTRL_RUN`                      ^| r/- <| Tracing in progress when set
+                                <| `5`    `TRACEBUF_CTRL_AVAIL`                    ^| r/- <| Trace data available when set
+                                <| `6`    `TRACEBUF_CTRL_IRQ_CLR`                  ^| r/w <| Clear pending interrupt when writing `1`, flag always reads as zero
+                                <| `10:7` `TRACEBUF_CTRL_TBM3 : TRACEBUF_CTRL_TBM0 ^| r/- <| `log2(IO_TRACEBUF_DEPTH)`: trace buffer depth
+                                <| `31:11` _reserved_                              ^| r/- <| _reserved_, hardwired to zero
 | `0xfff30004` | `STOP_ADDR` | `31:0` | r/w | Stop-tracing-address register, set to `-1` to disable automatic stopping
 .2+<| `0xfff30008` .2+<| `DELTA_SRC` <| `31:1` ^| r/- | Branch source address (reads zero if no data available)
                                      <| `0`    ^| r/- | `1` = very first instruction delta in current trace; `0` = any further instruction delta

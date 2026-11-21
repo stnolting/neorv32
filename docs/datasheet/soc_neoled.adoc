@@ -153,16 +153,16 @@ The NEOLED modules features a single interrupt that gets triggered when the TX d
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.10+<| `0xfffd0000` .10+<| `CTRL` <|`0`     `NEOLED_CTRL_EN`                                ^| r/w <| module enable
-                                  <|`3:1`   `NEOLED_CTRL_PRSC_MSB : NEOLED_CTRL_PRSC_LSB`   ^| r/w <| clock prescaler select
-                                  <|`8:4`   `NEOLED_CTRL_T_TOT_MSB : NEOLED_CTRL_T_TOT_LSB` ^| r/w <| pre-scaled clock ticks per total single-bit period (T~total~)
-                                  <|`13:9`  `NEOLED_CTRL_T_0H_MSB : NEOLED_CTRL_T_0H_LSB`   ^| r/w <| pre-scaled clock ticks per high-time for sending a zero-bit (T~0H~)
-                                  <|`18:14` `NEOLED_CTRL_T_1H_MSB : NEOLED_CTRL_T_1H_LSB`   ^| r/w <| pre-scaled clock ticks per high-time for sending a one-bit (T~1H~)
-                                  <|`24:19` -                                               ^| r/- <| _reserved_, read as zero
-                                  <|`28:25` `NEOLED_CTRL_FIFO_MSB : NEOLED_CTRL_FIFO_LSB`   ^| r/- <| log(FIFO size)
-                                  <|`29`    `NEOLED_CTRL_TX_EMPTY`                          ^| r/- <| TX FIFO is empty
-                                  <|`30`    `NEOLED_CTRL_TX_FULL`                           ^| r/- <| TX FIFO is full
-                                  <|`31`    `NEOLED_CTRL_TX_BUSY`                           ^| r/- <| TX serial engine is busy when set
+.10+<| `0xfffd0000` .10+<| `CTRL` <|`0`     `NEOLED_CTRL_EN`                          ^| r/w <| module enable
+                                  <|`3:1`   `NEOLED_CTRL_PRSC2 : NEOLED_CTRL_PRSC0`   ^| r/w <| clock prescaler select
+                                  <|`8:4`   `NEOLED_CTRL_T_TOT4 : NEOLED_CTRL_T_TOT0` ^| r/w <| pre-scaled clock ticks per total single-bit period (T~total~)
+                                  <|`13:9`  `NEOLED_CTRL_T_0H4 : NEOLED_CTRL_T_0H0`   ^| r/w <| pre-scaled clock ticks per high-time for sending a zero-bit (T~0H~)
+                                  <|`18:14` `NEOLED_CTRL_T_1H4 : NEOLED_CTRL_T_1H0`   ^| r/w <| pre-scaled clock ticks per high-time for sending a one-bit (T~1H~)
+                                  <|`24:19` -                                         ^| r/- <| _reserved_, read as zero
+                                  <|`28:25` `NEOLED_CTRL_FIFO3 : NEOLED_CTRL_FIFO0`   ^| r/- <| log(FIFO size)
+                                  <|`29`    `NEOLED_CTRL_TX_EMPTY`                    ^| r/- <| TX FIFO is empty
+                                  <|`30`    `NEOLED_CTRL_TX_FULL`                     ^| r/- <| TX FIFO is full
+                                  <|`31`    `NEOLED_CTRL_TX_BUSY`                     ^| r/- <| TX serial engine is busy when set
 | `0xfffd0004` | `DATA24` <| `23:0` ^| -/w <| write 24-bit RGB data to transmission buffer
 | `0xfffd0008` | `DATA32` <| `31:0` ^| -/w <| write 32-bit RGB data to transmission buffer
 | `0xfffd000c` | `STROBE` <| -      ^| -/w <| write strobe/reset command  to transmission buffer
