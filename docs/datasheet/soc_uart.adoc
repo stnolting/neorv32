@@ -154,8 +154,8 @@ output line to the simulator console.
                                   <|`20`    `UART_CTRL_RX_IRQ_PEND`                         ^| r/- <| Pending RX interrupt
                                   <|`21`    `UART_CTRL_TX_IRQ_PEND`                         ^| r/- <| Pending TX interrupt
                                   <|`23:22` -                                               ^| r/- <| _reserved_, read as zero
-                                  <|`27:24` `UART_CTRL_RX_FIFO_MSB : UART_CTRL_RX_FIFO_LSB` ^| r/r <| log2(RX FIFO depth)
-                                  <|`31:28` `UART_CTRL_TX_FIFO_MSB : UART_CTRL_TX_FIFO_LSB` ^| r/r <| log2(TX FIFO depth)
+                                  <|`27:24` `UART_CTRL_RX_FIFO3 : UART_CTRL_RX_FIFO0`       ^| r/r <| log2(RX FIFO depth)
+                                  <|`31:28` `UART_CTRL_TX_FIFO3 : UART_CTRL_TX_FIFO0`       ^| r/r <| log2(TX FIFO depth)
 .4+<| `0xfff50004` .4+<| `BAUD` <|`9:0`   ^| r/w <| Baud rate divisor
                                 <|`15:10` ^| r/- <| _reserved_, read as zero
                                 <|`18:16` ^| r/w <| Baud rate clock prescaler select

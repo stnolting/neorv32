@@ -193,26 +193,26 @@ twd_scl_i <= std_ulogic(scl_io);
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.20+<| `0xffea0000` .20+<| `CTRL` <|`0`     `TWD_CTRL_EN`                                 ^| r/w <| TWD enable, reset if cleared
-                                  <|`1`     `TWD_CTRL_CLR_RX`                             ^| -/w <| Clear RX FIFO, flag auto-clears
-                                  <|`2`     `TWD_CTRL_CLR_TX`                             ^| -/w <| Clear TX FIFO, flag auto-clears
-                                  <|`3`     `TWD_CTRL_FSEL`                               ^| r/w <| Bus sample clock / filter select
-                                  <|`10:4`  `TWD_CTRL_DEV_ADDR6 : TWD_CTRL_DEV_ADDR0`     ^| r/w <| Device address (7-bit)
-                                  <|`11`    `TWD_CTRL_IRQ_RX_AVAIL`                       ^| r/w <| IRQ if RX FIFO data available
-                                  <|`12`    `TWD_CTRL_IRQ_RX_FULL`                        ^| r/w <| IRQ if RX FIFO full
-                                  <|`13`    `TWD_CTRL_IRQ_TX_EMPTY`                       ^| r/w <| IRQ if TX FIFO empty
-                                  <|`14`    `TWD_CTRL_IRQ_TX_NFULL`                       ^| r/w <| IRQ if TX FIFO is not full
-                                  <|`15`    `TWD_CTRL_IRQ_COM_BEG`                        ^| r/w <| IRQ if begin of communication
-                                  <|`16`    `TWD_CTRL_IRQ_COM_END`                        ^| r/w <| IRQ if end of communication
-                                  <|`20:17` `TWD_CTRL_RX_FIFO_MSB : TWD_CTRL_RX_FIFO_LSB` ^| r/- <| FIFO depth; log2(`IO_TWD_RX_FIFO`)
-                                  <|`24:21` `TWD_CTRL_TX_FIFO_MSB : TWD_CTRL_TX_FIFO_LSB` ^| r/- <| FIFO depth; log2(`IO_TWD_TX_FIFO`)
-                                  <|`25`    `TWD_CTRL_RX_AVAIL`                           ^| r/- <| RX FIFO data available
-                                  <|`26`    `TWD_CTRL_RX_FULL`                            ^| r/- <| RX FIFO full
-                                  <|`27`    `TWD_CTRL_TX_EMPTY`                           ^| r/- <| TX FIFO empty
-                                  <|`28`    `TWD_CTRL_TX_FULL`                            ^| r/- <| TX FIFO full
-                                  <|`29`    `TWD_CTRL_COM_BEG`                            ^| r/c <| Communication has started; clear by writing 1
-                                  <|`30`    `TWD_CTRL_COM_END`                            ^| r/c <| Communication has ended; clear by writing 1
-                                  <|`31`    `TWD_CTRL_COM`                                ^| r/- <| Active communication
-.2+<| `0xffea0004` .2+<| `DATA`   <|`7:0`   `TWD_DATA_MSB : TWD_DATA_LSB`                 ^| r/w <| RX/TX data FIFO access (reads zero if no RX data available)
-                                  <|`31:8`  -                                             ^| r/- <| _reserved_, read as zero
+.20+<| `0xffea0000` .20+<| `CTRL` <|`0`     `TWD_CTRL_EN`                             ^| r/w <| TWD enable, reset if cleared
+                                  <|`1`     `TWD_CTRL_CLR_RX`                         ^| -/w <| Clear RX FIFO, flag auto-clears
+                                  <|`2`     `TWD_CTRL_CLR_TX`                         ^| -/w <| Clear TX FIFO, flag auto-clears
+                                  <|`3`     `TWD_CTRL_FSEL`                           ^| r/w <| Bus sample clock / filter select
+                                  <|`10:4`  `TWD_CTRL_DEV_ADDR6 : TWD_CTRL_DEV_ADDR0` ^| r/w <| Device address (7-bit)
+                                  <|`11`    `TWD_CTRL_IRQ_RX_AVAIL`                   ^| r/w <| IRQ if RX FIFO data available
+                                  <|`12`    `TWD_CTRL_IRQ_RX_FULL`                    ^| r/w <| IRQ if RX FIFO full
+                                  <|`13`    `TWD_CTRL_IRQ_TX_EMPTY`                   ^| r/w <| IRQ if TX FIFO empty
+                                  <|`14`    `TWD_CTRL_IRQ_TX_NFULL`                   ^| r/w <| IRQ if TX FIFO is not full
+                                  <|`15`    `TWD_CTRL_IRQ_COM_BEG`                    ^| r/w <| IRQ if begin of communication
+                                  <|`16`    `TWD_CTRL_IRQ_COM_END`                    ^| r/w <| IRQ if end of communication
+                                  <|`20:17` `TWD_CTRL_RX_FIFO3 : TWD_CTRL_RX_FIFO0`   ^| r/- <| FIFO depth; log2(`IO_TWD_RX_FIFO`)
+                                  <|`24:21` `TWD_CTRL_TX_FIFO3 : TWD_CTRL_TX_FIFO0`   ^| r/- <| FIFO depth; log2(`IO_TWD_TX_FIFO`)
+                                  <|`25`    `TWD_CTRL_RX_AVAIL`                       ^| r/- <| RX FIFO data available
+                                  <|`26`    `TWD_CTRL_RX_FULL`                        ^| r/- <| RX FIFO full
+                                  <|`27`    `TWD_CTRL_TX_EMPTY`                       ^| r/- <| TX FIFO empty
+                                  <|`28`    `TWD_CTRL_TX_FULL`                        ^| r/- <| TX FIFO full
+                                  <|`29`    `TWD_CTRL_COM_BEG`                        ^| r/c <| Communication has started; clear by writing 1
+                                  <|`30`    `TWD_CTRL_COM_END`                        ^| r/c <| Communication has ended; clear by writing 1
+                                  <|`31`    `TWD_CTRL_COM`                            ^| r/- <| Active communication
+.2+<| `0xffea0004` .2+<| `DATA`   <|`7:0`   `TWD_DATA7 : TWD_DATA0`                   ^| r/w <| RX/TX data FIFO access (reads zero if no RX data available)
+                                  <|`31:8`  -                                         ^| r/- <| _reserved_, read as zero
 |=======================

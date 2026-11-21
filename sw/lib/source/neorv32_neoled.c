@@ -35,11 +35,11 @@ void neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero,
   NEORV32_NEOLED->CTRL = 0; // reset
 
   uint32_t tmp = 0;
-  tmp |= (uint32_t)((1U          & 0x01U) << NEOLED_CTRL_EN);        // module enable
-  tmp |= (uint32_t)((prsc        & 0x07U) << NEOLED_CTRL_PRSC_LSB);  // clock prescaler
-  tmp |= (uint32_t)((t_total     & 0x1fU) << NEOLED_CTRL_T_TOT_LSB); // serial data output: total period length for one bit
-  tmp |= (uint32_t)((t_high_zero & 0x1fU) << NEOLED_CTRL_T_0H_LSB);  // serial data output: high-time for sending a '0'
-  tmp |= (uint32_t)((t_high_one  & 0x1fU) << NEOLED_CTRL_T_1H_LSB);  // serial data output: high-time for sending a '1'
+  tmp |= (uint32_t)((1U          & 0x01U) << NEOLED_CTRL_EN);     // module enable
+  tmp |= (uint32_t)((prsc        & 0x07U) << NEOLED_CTRL_PRSC0);  // clock prescaler
+  tmp |= (uint32_t)((t_total     & 0x1fU) << NEOLED_CTRL_T_TOT0); // serial data output: total period length for one bit
+  tmp |= (uint32_t)((t_high_zero & 0x1fU) << NEOLED_CTRL_T_0H0);  // serial data output: high-time for sending a '0'
+  tmp |= (uint32_t)((t_high_one  & 0x1fU) << NEOLED_CTRL_T_1H0);  // serial data output: high-time for sending a '1'
   NEORV32_NEOLED->CTRL = tmp;
 }
 
@@ -156,7 +156,7 @@ void neorv32_neoled_write24_nonblocking(uint32_t data) {
  **************************************************************************/
 int neorv32_neoled_get_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_NEOLED->CTRL >> NEOLED_CTRL_FIFO_LSB) & 0xfU;
+  uint32_t tmp = (NEORV32_NEOLED->CTRL >> NEOLED_CTRL_FIFO0) & 0xfU;
   return (int)(1U << tmp);
 }
 

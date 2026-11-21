@@ -284,13 +284,13 @@ int main() {
     }
 
     // check if NAPOT and TOR modes are supported
-    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_TOR << PMPCFG_A_LSB)); // try to set mode "TOR"
-    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xff) != (PMP_TOR << PMPCFG_A_LSB)) {
+    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_TOR << PMPCFG_A0)); // try to set mode "TOR"
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xff) != (PMP_TOR << PMPCFG_A0)) {
       PRINT("\nERROR! PMP TOR mode not supported!\n");
       return 1;
     }
-    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_NAPOT << PMPCFG_A_LSB)); // try to set mode "NAPOT"
-    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xff) != (PMP_NAPOT << PMPCFG_A_LSB)) {
+    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_NAPOT << PMPCFG_A0)); // try to set mode "NAPOT"
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xff) != (PMP_NAPOT << PMPCFG_A0)) {
       PRINT("\nERROR! PMP NAPOT mode not supported!\n");
       return 1;
     }
@@ -300,7 +300,7 @@ int main() {
 
     // set execute permission for u-mode for the entire address range
     // use entry 2 so we can use entries 0 & 1 later on for higher-prioritized configurations
-    tmp_a = neorv32_cpu_pmp_configure_region(2, 0xffffffff, (PMP_NAPOT << PMPCFG_A_LSB) | (1 << PMPCFG_X));
+    tmp_a = neorv32_cpu_pmp_configure_region(2, 0xffffffff, (PMP_NAPOT << PMPCFG_A0) | (1 << PMPCFG_X));
 
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == trap_never_c) && (tmp_a == 0)) {
       test_ok();
@@ -355,7 +355,7 @@ int main() {
     // #1684 by @14sea
 
     // cache block size
-    uint32_t blk_size = (uint32_t)(1U << ((NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_BLOCK_SIZE_0) & 0x0FU));
+    uint32_t blk_size = (uint32_t)(1U << ((NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_BLOCK_SIZE0) & 0x0FU));
     uint32_t buf_size  = 2*blk_size; // bytes in buffer (buffer size = 2 * cache_block_size)
     uint32_t blk_words = blk_size/4; // words per block
     uint32_t code_idx  = blk_words;  // code at start of last block
@@ -2155,9 +2155,9 @@ int main() {
 
     tmp_a = neorv32_smc_get_baseaddr();
 
-    // write word to PSRAM_0
+    // write word to PSRAM-0
     neorv32_cpu_store_unsigned_word(tmp_a + 0 + 0, 0xfeedcafe);
-    // write bytes to PSRAM_1
+    // write bytes to PSRAM-1
     neorv32_cpu_store_unsigned_byte(tmp_a + 2*1024*1024 + 0, 0x12);
     neorv32_cpu_store_unsigned_byte(tmp_a + 2*1024*1024 + 1, 0x34);
     neorv32_cpu_store_unsigned_byte(tmp_a + 2*1024*1024 + 2, 0x56);
@@ -2428,7 +2428,7 @@ int main() {
     tmp_a = neorv32_cpu_pmp_configure_region(0, pmp_base >> 2, 0);
 
     PRINT("[1]: TOR (!L,!X,!W,R) @ 0x%x ", pmp_bound); // bound
-    tmp_a += neorv32_cpu_pmp_configure_region(1, pmp_bound >> 2, (PMP_TOR << PMPCFG_A_LSB) | (1 << PMPCFG_R)); // read-only
+    tmp_a += neorv32_cpu_pmp_configure_region(1, pmp_bound >> 2, (PMP_TOR << PMPCFG_A0) | (1 << PMPCFG_R)); // read-only
 
     if ((tmp_a == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == trap_never_c)) {
       test_ok();

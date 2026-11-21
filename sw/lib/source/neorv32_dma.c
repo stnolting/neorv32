@@ -28,7 +28,7 @@ int neorv32_dma_available(void) {
  **************************************************************************/
 int neorv32_dma_get_descriptor_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_DMA->CTRL >> DMA_CTRL_DFIFO_LSB) & 0xfU;
+  uint32_t tmp = (NEORV32_DMA->CTRL >> DMA_CTRL_DFIFO0) & 0xfU;
   return (int)(1U << tmp);
 }
 

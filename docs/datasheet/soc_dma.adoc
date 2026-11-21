@@ -134,16 +134,16 @@ when the `DMA_CONF_BSWAP` bit is set.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.11+<| `0xffed0000` .11+<| `CTRL` <|`0`     `DMA_CTRL_EN`                             ^| r/w <| DMA module enable; reset module when cleared
-                                  <|`1`     `DMA_CTRL_START`                          ^| -/w <| Start programmed DMA transfer(s)
-                                  <|`15:2`  _reserved_                                ^| r/- <| _reserved_, read as zero
-                                  <|`19:16` `DMA_CTRL_DFIFO_MSB : DMA_CTRL_DFIFO_LSB` ^| r/- <| Descriptor FIFO depth, log2(`IO_DMA_DSC_FIFO`)
-                                  <|`26:20` _reserved_                                ^| r/- <| _reserved_, read as zero
-                                  <|`27`    `DMA_CTRL_ACK`                            ^| -/w <| Write `1` to clear DMA interrupt (also clears `DMA_CTRL_ERROR` and `DMA_CTRL_DONE`)
-                                  <|`27`    `DMA_CTRL_DEMPTY`                         ^| r/- <| Descriptor FIFO is empty
-                                  <|`28`    `DMA_CTRL_DFULL`                          ^| r/- <| Descriptor FIFO is full
-                                  <|`29`    `DMA_CTRL_ERROR`                          ^| r/- <| Bus access error during transfer or incomplete descriptor data
-                                  <|`30`    `DMA_CTRL_DONE`                           ^| r/1 <| All transfers executed
-                                  <|`31`    `DMA_CTRL_BUSY`                           ^| r/- <| DMA transfer(s) in progress
+.11+<| `0xffed0000` .11+<| `CTRL` <|`0`     `DMA_CTRL_EN`                       ^| r/w <| DMA module enable; reset module when cleared
+                                  <|`1`     `DMA_CTRL_START`                    ^| -/w <| Start programmed DMA transfer(s)
+                                  <|`15:2`  _reserved_                          ^| r/- <| _reserved_, read as zero
+                                  <|`19:16` `DMA_CTRL_DFIFO3 : DMA_CTRL_DFIFO0` ^| r/- <| Descriptor FIFO depth, log2(`IO_DMA_DSC_FIFO`)
+                                  <|`26:20` _reserved_                          ^| r/- <| _reserved_, read as zero
+                                  <|`27`    `DMA_CTRL_ACK`                      ^| -/w <| Write `1` to clear DMA interrupt (also clears `DMA_CTRL_ERROR` and `DMA_CTRL_DONE`)
+                                  <|`27`    `DMA_CTRL_DEMPTY`                   ^| r/- <| Descriptor FIFO is empty
+                                  <|`28`    `DMA_CTRL_DFULL`                    ^| r/- <| Descriptor FIFO is full
+                                  <|`29`    `DMA_CTRL_ERROR`                    ^| r/- <| Bus access error during transfer or incomplete descriptor data
+                                  <|`30`    `DMA_CTRL_DONE`                     ^| r/1 <| All transfers executed
+                                  <|`31`    `DMA_CTRL_BUSY`                     ^| r/- <| DMA transfer(s) in progress
 | `0xffed0004` | `DESC` |`31:0` | -/w | Descriptor FIFO write access
 |=======================

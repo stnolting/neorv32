@@ -138,8 +138,8 @@ interrupt-causing conditions are resolved (e.g. by reading data from the RX FIFO
                                   <| `18`    `SLINK_CTRL_RX_IRQ_PEND`                          ^| r/- <| RX interrupt pending
                                   <| `19`    `SLINK_CTRL_TX_IRQ_PEND`                          ^| r/- <| TX interrupt pending
                                   <| `23:20` _reserved_                                        ^| r/- <| _reserved_, read as zero
-                                  <| `27:24` `SLINK_CTRL_RX_FIFO_MSB : SLINK_CTRL_RX_FIFO_LSB` ^| r/- <| log2(RX FIFO size)
-                                  <| `31:28` `SLINK_CTRL_TX_FIFO_MSB : SLINK_CTRL_TX_FIFO_LSB` ^| r/- <| log2(TX FIFO size)
+                                  <| `27:24` `SLINK_CTRL_RX_FIFO3 : SLINK_CTRL_RX_FIFO0`       ^| r/- <| log2(RX FIFO size)
+                                  <| `31:28` `SLINK_CTRL_TX_FIFO3 : SLINK_CTRL_TX_FIFO0`       ^| r/- <| log2(TX FIFO size)
 | `0xffec0004` | -       | `31:0` | r/- | _reserved_
 | `0xffec0008` | `DATA`  | `31:0` | r/w | Write data to TX FIFO / read data from RX FIFO (reads zero if no RX data available)
 | `0xffec000c` | `DATA2` | `31:0` | r/w | Write data to TX FIFO (and also set end-of-stream delimiter) / read data from RX FIFO (reads zero if no RX data available)

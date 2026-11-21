@@ -44,10 +44,10 @@ enum NEORV32_TWD_CTRL_enum {
   TWD_CTRL_IRQ_TX_NFULL = 14, /**< TWD control register(14) (r/w): IRQ if TX FIFO not full */
   TWD_CTRL_IRQ_COM_BEG  = 15, /**< TWD control register(15) (r/w): IRQ if begin of communication */
   TWD_CTRL_IRQ_COM_END  = 16, /**< TWD control register(16) (r/w): IRQ if end of communication */
-  TWD_CTRL_RX_FIFO_LSB  = 17, /**< TWD control register(17) (r/-): log2(RX_FIFO size), LSB */
-  TWD_CTRL_RX_FIFO_MSB  = 20, /**< TWD control register(20) (r/-): log2(RX_FIFO size), MSB */
-  TWD_CTRL_TX_FIFO_LSB  = 21, /**< TWD control register(21) (r/-): log2(TX_FIFO size), LSB */
-  TWD_CTRL_TX_FIFO_MSB  = 24, /**< TWD control register(24) (r/-): log2(TX_FIFO size), MSB */
+  TWD_CTRL_RX_FIFO0     = 17, /**< TWD control register(17) (r/-): log2(RX_FIFO size), bit 0 (LSB) */
+  TWD_CTRL_RX_FIFO3     = 20, /**< TWD control register(20) (r/-): log2(RX_FIFO size), bit 3 (MSB) */
+  TWD_CTRL_TX_FIFO0     = 21, /**< TWD control register(21) (r/-): log2(TX_FIFO size), bit 0 (LSB) */
+  TWD_CTRL_TX_FIFO3     = 24, /**< TWD control register(24) (r/-): log2(TX_FIFO size), bit 3 (MSB) */
   TWD_CTRL_RX_AVAIL     = 25, /**< TWD control register(25) (r/-): RX FIFO data available */
   TWD_CTRL_RX_FULL      = 26, /**< TWD control register(26) (r/-): RX FIFO full */
   TWD_CTRL_TX_EMPTY     = 27, /**< TWD control register(27) (r/-): TX FIFO empty */
@@ -59,8 +59,8 @@ enum NEORV32_TWD_CTRL_enum {
 
 /** TWD data register bits */
 enum NEORV32_TWD_DATA_enum {
-  TWD_DATA_LSB = 0, /**< TWD data register(0) (r/w): Receive/transmit data (8-bit) LSB */
-  TWD_DATA_MSB = 7  /**< TWD data register(7) (r/w): Receive/transmit data (8-bit) MSB */
+  TWD_DATA0 = 0, /**< TWD data register(0) (r/w): Receive/transmit data (8-bit), LSB */
+  TWD_DATA7 = 7  /**< TWD data register(7) (r/w): Receive/transmit data (8-bit), MSB */
 };
 /**@}*/
 

@@ -24,7 +24,7 @@
 /** TWI module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL; /**< offset 0: control register (#NEORV32_TWI_CTRL_enum) */
-  uint32_t DCMD; /**< offset 4: data/command register (#NEORV32_TWI_DCMD_enum) */
+  uint32_t DCMD; /**< offset 4: data/command register */
 } neorv32_twi_t;
 
 /** TWI module hardware handle (#neorv32_twi_t) */
@@ -41,8 +41,8 @@ enum NEORV32_TWI_CTRL_enum {
   TWI_CTRL_CDIV2     =  6, /**< TWI control register(6)  (r/w): Clock divider bit 2 */
   TWI_CTRL_CDIV3     =  7, /**< TWI control register(7)  (r/w): Clock divider bit 3 */
 
-  TWI_CTRL_FIFO_LSB  = 15, /**< TWI control register(15) (r/-): log2(FIFO size), LSB */
-  TWI_CTRL_FIFO_MSB  = 18, /**< TWI control register(18) (r/-): log2(FIFO size), MSB */
+  TWI_CTRL_FIFO0     = 15, /**< TWI control register(15) (r/-): log2(FIFO size), bit 0 (LSB) */
+  TWI_CTRL_FIFO3     = 18, /**< TWI control register(18) (r/-): log2(FIFO size), bit 3 (MSB) */
 
   TWI_CTRL_NACK      = 23, /**< TWI control register(23) (r/-): TX-NACK received */
   TWI_CTRL_NACK_CLR  = 24, /**< TWI control register(24) (-/w): Clear NACK flag */

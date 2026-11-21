@@ -61,9 +61,9 @@ Right after being enabled, the SMC issues up to three user-defined single-byte c
 serial memory devices (at the same time):
 
 . Eight dummy clock cycles with all chip-selects _disabled_.
-. Command `SMC_CSR1_ICMD0` with both chip-selects _active_.
-. Command `SMC_CSR1_ICMD1` with both chip-selects _active_.
-. Command `SMC_CSR1_ICMD2` with both chip-selects _active_.
+. Command `SMC_CSR1_ICMDA` with both chip-selects _active_.
+. Command `SMC_CSR1_ICMDB` with both chip-selects _active_.
+. Command `SMC_CSR1_ICMDC` with both chip-selects _active_.
 
 Unused command slots can be set to `0x00`.
 
@@ -117,20 +117,20 @@ to provide a software-driven manual access mechanism (e.g. to program an XIP fla
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Description
-.11+<| `0xffef0000` .11+<| `CSR0` <| `0`     `SMC_CSR0_EN`                             ^| r/w <| SMC module enable, reset module when cleared
-                                  <| `1`     `SMC_CSR0_IOEN`                           ^| r/w <| Enable control of `smc_*` SMC IO pins
-                                  <| `2`     -                                         ^| r/- <| _reserved_, read as zero
-                                  <| `3`     `SMC_CSR0_DUAL`                           ^| r/w <| Enable dual-chip mode
-                                  <| `4`     `SMC_CSR0_BUSY`                           ^| r/- <| Memory operation in progress when set
-                                  <| `6:5`   -                                         ^| r/- <| _reserved_, read as zero
-                                  <| `8:7`   `SMC_CSR0_MSIZE_MSB : SMC_CSR0_MSIZE_LSB` ^| r/w <| Memory size select
-                                  <| `11:9`  `SMC_CSR0_CDIV_MSB : SMC_CSR0_CDIV_LSB`   ^| r/w <| SPI clock divider
-                                  <| `15:12` `SMC_CSR0_RWAIT_MSB : SMC_CSR0_RWAIT_LSB` ^| r/w <| Read access dummy/wait cycles
-                                  <| `23:16` `SMC_CSR0_RCMD_MSB : SMC_CSR0_RCMD_LSB`   ^| r/w <| Memory read command
-                                  <| `31:24` `SMC_CSR0_WCMD_MSB : SMC_CSR0_WCMD_LSB`   ^| r/w <| Memory write command
-.5+<| `0xffef0004` .5+<| `CSR1` <| `7:0`   `SMC_CSR1_ICMD0_MSB : SMC_CSR1_ICMD0_LSB`       ^| r/w <| 1st memory initialization command
-                                <| `15:8`  `SMC_CSR1_ICMD1_MSB : SMC_CSR1_ICMD1_LSB`       ^| r/w <| 2nd memory initialization command
-                                <| `23:16` `SMC_CSR1_ICMD2_MSB : SMC_CSR1_ICMD2_LSB`       ^| r/w <| 3rd memory initialization command
-                                <| `27:24` -                                               ^| r/- <| _reserved_, read as zero
-                                <| `31:28` `SMC_CSR1_MEM_BASE_MSB : SMC_CSR1_MEM_BASE_LSB` ^| r/- <| Memory base address (top 4 address bits / 256MB page)
+.11+<| `0xffef0000` .11+<| `CSR0` <| `0`     `SMC_CSR0_EN`                       ^| r/w <| SMC module enable, reset module when cleared
+                                  <| `1`     `SMC_CSR0_IOEN`                     ^| r/w <| Enable control of `smc_*` SMC IO pins
+                                  <| `2`     -                                   ^| r/- <| _reserved_, read as zero
+                                  <| `3`     `SMC_CSR0_DUAL`                     ^| r/w <| Enable dual-chip mode
+                                  <| `4`     `SMC_CSR0_BUSY`                     ^| r/- <| Memory operation in progress when set
+                                  <| `6:5`   -                                   ^| r/- <| _reserved_, read as zero
+                                  <| `8:7`   `SMC_CSR0_MSIZE1 : SMC_CSR0_MSIZE0` ^| r/w <| Memory size select
+                                  <| `11:9`  `SMC_CSR0_CDIV2 : SMC_CSR0_CDIV0`   ^| r/w <| SPI clock divider
+                                  <| `15:12` `SMC_CSR0_RWAIT3 : SMC_CSR0_RWAIT0` ^| r/w <| Read access dummy/wait cycles
+                                  <| `23:16` `SMC_CSR0_RCMD7 : SMC_CSR0_RCMD0`   ^| r/w <| Memory read command
+                                  <| `31:24` `SMC_CSR0_WCMD7 : SMC_CSR0_WCMD0`   ^| r/w <| Memory write command
+.5+<| `0xffef0004` .5+<| `CSR1` <| `7:0`   `SMC_CSR1_ICMDA7 : SMC_CSR1_ICMDA0`   ^| r/w <| 1st memory initialization command
+                                <| `15:8`  `SMC_CSR1_ICMDB7 : SMC_CSR1_ICMDB0`   ^| r/w <| 2nd memory initialization command
+                                <| `23:16` `SMC_CSR1_ICMDC7 : SMC_CSR1_ICMDC0`   ^| r/w <| 3rd memory initialization command
+                                <| `27:24` -                                         ^| r/- <| _reserved_, read as zero
+                                <| `31:28` `SMC_CSR1_MEM_BASE3 : SMC_CSR1_MEM_BASE0` ^| r/- <| Memory base address (top 4 address bits / 256MB page)
 |=======================

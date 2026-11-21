@@ -41,8 +41,8 @@ enum NEORV32_TRACEBUF_CTRL_enum {
   TRACEBUF_CTRL_RUN     =  4, /**< TRACEBUF control register (4) (r/-): Tracing in progress when set */
   TRACEBUF_CTRL_AVAIL   =  5, /**< TRACEBUF control register (5) (r/-): Trace data available when set */
   TRACEBUF_CTRL_IRQ_CLR =  6, /**< TRACEBUF control register (6) (r/w): Clear pending interrupt when writing 1 */
-  TRACEBUF_CTRL_TBM_LSB =  7, /**< TRACEBUF control register (7) (r/-): log2(trace buffer depth), LSB */
-  TRACEBUF_CTRL_TBM_MSB = 10  /**< TRACEBUF control register(10) (r/-): log2(trace buffer depth), MSB */
+  TRACEBUF_CTRL_TBM0    =  7, /**< TRACEBUF control register (7) (r/-): log2(trace buffer depth), bit 0 (LSB) */
+  TRACEBUF_CTRL_TBM3    = 10  /**< TRACEBUF control register(10) (r/-): log2(trace buffer depth), bit 3 (MSB) */
 };
 /**@}*/
 

@@ -44,7 +44,7 @@ void neorv32_twi_setup(int prsc, int cdiv) {
  **************************************************************************/
 uint32_t neorv32_twi_get_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_TWI->CTRL >> TWI_CTRL_FIFO_LSB) & 0x0fU;
+  uint32_t tmp = (NEORV32_TWI->CTRL >> TWI_CTRL_FIFO0) & 0x0fU;
   return (1U << tmp);
 }
 

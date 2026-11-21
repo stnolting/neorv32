@@ -60,7 +60,7 @@ void neorv32_trng_fifo_clear(void) {
  **************************************************************************/
 int neorv32_trng_get_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_TRNG->CTRL >> TRNG_CTRL_FIFO_LSB) & 0x0fU;
+  uint32_t tmp = (NEORV32_TRNG->CTRL >> TRNG_CTRL_FIFO0) & 0x0fU;
   return (int)(1U << tmp);
 }
 
@@ -70,7 +70,7 @@ int neorv32_trng_get_fifo_depth(void) {
  **************************************************************************/
 int neorv32_trng_get_num_raw_bits(void) {
 
-  uint32_t tmp = (NEORV32_TRNG->CTRL >> TRNG_CTRL_NBIT_LSB) & 0x0fU;
+  uint32_t tmp = (NEORV32_TRNG->CTRL >> TRNG_CTRL_NBIT0) & 0x0fU;
   return (int)(1U << tmp);
 }
 
@@ -80,7 +80,7 @@ int neorv32_trng_get_num_raw_bits(void) {
  **************************************************************************/
 int neorv32_trng_get_num_ros(void) {
 
-  return (int)((NEORV32_TRNG->CTRL >> TRNG_CTRL_NRO_LSB) & 0xffU);
+  return (int)((NEORV32_TRNG->CTRL >> TRNG_CTRL_NRO0) & 0xffU);
 }
 
 /**********************************************************************//**
@@ -89,7 +89,7 @@ int neorv32_trng_get_num_ros(void) {
  **************************************************************************/
 int neorv32_trng_get_num_inv(void) {
 
-  return (int)((NEORV32_TRNG->CTRL >> TRNG_CTRL_NINV_LSB) & 0xfffU);
+  return (int)((NEORV32_TRNG->CTRL >> TRNG_CTRL_NINV0) & 0xfffU);
 }
 
 /**********************************************************************//**

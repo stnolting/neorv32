@@ -70,7 +70,7 @@ void neorv32_twd_irq_config(int enable, uint32_t irq_mask) {
  **************************************************************************/
 int neorv32_twd_get_rx_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_TWD->CTRL >> TWD_CTRL_RX_FIFO_LSB) & 0xfU;
+  uint32_t tmp = (NEORV32_TWD->CTRL >> TWD_CTRL_RX_FIFO0) & 0xfU;
   return (int)(1U << tmp);
 }
 
@@ -81,7 +81,7 @@ int neorv32_twd_get_rx_fifo_depth(void) {
  **************************************************************************/
 int neorv32_twd_get_tx_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_TWD->CTRL >> TWD_CTRL_TX_FIFO_LSB) & 0xfU;
+  uint32_t tmp = (NEORV32_TWD->CTRL >> TWD_CTRL_TX_FIFO0) & 0xfU;
   return (int)(1U << tmp);
 }
 
