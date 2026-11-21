@@ -96,6 +96,6 @@ data FIFO is completely full (indicating that at least `IO_TRNG_FIFO` bytes of r
                                 <|`11:8`  `TRNG_CTRL_NBIT_MSB : TRNG_CTRL_NBIT_LSB` ^| r/- <| FIFO depth (`log2(IO_TRNG_NUM_RBIT)`)
                                 <|`19:12` `TRNG_CTRL_NRO_MSB : TRNG_CTRL_NRO_LSB`   ^| r/- <| Total number of ring-oscillators (`IO_TRNG_NUM_RO`)
                                 <|`31:20` `TRNG_CTRL_NINV_MSB : TRNG_CTRL_NINV_LSB` ^| r/- <| Number of inverters in first ring-oscillator (`IO_TRNG_NUM_INV`)
-.2+<| `0xfffa0004` .2+<| `DATA` <|`7:0`  `TRNG_DATA_MSB : TRNG_DATA_LSB`            ^| r/- <| random data byte
+.2+<| `0xfffa0004` .2+<| `DATA` <|`7:0`  `TRNG_DATA_MSB : TRNG_DATA_LSB`            ^| r/- <| random data byte (reads zero if no data available)
                                 <|`31:8` _reserved_                                 ^| r/- <| reserved, read as zero
 |=======================

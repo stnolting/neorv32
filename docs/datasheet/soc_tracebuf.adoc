@@ -149,8 +149,8 @@ Line 68 of "main.c" starts at address 0x2cc <test_code> and ends at 0x2d0 <test_
                                 <| `10:7` `TRACEBUF_CTRL_TBM_MSB : TRACEBUF_CTRL_TBM_LSB` ^| r/- <| `log2(IO_TRACEBUF_DEPTH)`: trace buffer depth
                                 <| `31:11` _reserved_                                     ^| r/- <| _reserved_, hardwired to zero
 | `0xfff30004` | `STOP_ADDR` | `31:0` | r/w | Stop-tracing-address register, set to `-1` to disable automatic stopping
-.2+<| `0xfff30008` .2+<| `DELTA_SRC` <| `31:1` ^| r/- | Branch source address
+.2+<| `0xfff30008` .2+<| `DELTA_SRC` <| `31:1` ^| r/- | Branch source address (reads zero if no data available)
                                      <| `0`    ^| r/- | `1` = very first instruction delta in current trace; `0` = any further instruction delta
-.2+<| `0xfff3000c` .2+<| `DELTA_DST` <| `31:1` ^| r/- | Branch destination address
+.2+<| `0xfff3000c` .2+<| `DELTA_DST` <| `31:1` ^| r/- | Branch destination address (reads zero if no data available)
                                      <| `0`    ^| r/- | `1` = branch due trap entry (interrupt or synchronous exception); `0` = branch due to jump/call/branch instruction
 |=======================

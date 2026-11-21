@@ -151,7 +151,7 @@ begin
   )
   port map (
     clk_i    => clk_i,
-    rstn_i   => rstn_i,
+    rstn_i   => '1', -- not required as we have a sync reset
     enable_i => enable,
     valid_o  => fifo.we,
     data_o   => fifo.wdata
@@ -163,7 +163,7 @@ begin
   generic map (
     AWIDTH  => log2_fifo_size_c,
     DWIDTH  => 8,
-    OUTGATE => true, -- output zero if no data available
+    OUTGATE => true, -- read zero if no data available
     ASYNCRD => false
   )
   port map (
