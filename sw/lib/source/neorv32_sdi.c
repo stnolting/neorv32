@@ -45,7 +45,7 @@ void neorv32_sdi_setup(uint32_t irq_mask) {
  **************************************************************************/
 int neorv32_sdi_get_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_SDI->CTRL >> SDI_CTRL_FIFO_LSB) & 0x0fU;
+  uint32_t tmp = (NEORV32_SDI->CTRL >> SDI_CTRL_FIFO0) & 0x0fU;
   return (int)(1U << tmp);
 }
 

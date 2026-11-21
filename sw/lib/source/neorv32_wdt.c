@@ -35,7 +35,7 @@ void neorv32_wdt_setup(uint32_t timeout, int lock) {
   // set configuration
   uint32_t ctrl = 0;
   ctrl |= ((uint32_t)(1))                    << WDT_CTRL_EN;
-  ctrl |= ((uint32_t)(timeout & 0x00ffffff)) << WDT_CTRL_TIMEOUT_LSB;
+  ctrl |= ((uint32_t)(timeout & 0x00ffffff)) << WDT_CTRL_TIMEOUT0;
   ctrl |= ((uint32_t)(lock & 1))             << WDT_CTRL_LOCK;
   NEORV32_WDT->CTRL = ctrl;
 }
@@ -79,5 +79,5 @@ void neorv32_wdt_force_hwreset(void) {
  **************************************************************************/
 int neorv32_wdt_get_cause(void) {
 
-  return (NEORV32_WDT->CTRL >> WDT_CTRL_RCAUSE_LO) & 0x3;
+  return (NEORV32_WDT->CTRL >> WDT_CTRL_RCAUSE0) & 0x3;
 }

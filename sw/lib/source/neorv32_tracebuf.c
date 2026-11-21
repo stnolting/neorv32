@@ -53,7 +53,7 @@ void neorv32_tracebuf_disable(void) {
  **************************************************************************/
 int neorv32_tracebuf_get_buffer_depth(void) {
 
-  uint32_t tmp = (NEORV32_TRACEBUF->CTRL >> TRACEBUF_CTRL_TBM_LSB) & 0x0fU;
+  uint32_t tmp = (NEORV32_TRACEBUF->CTRL >> TRACEBUF_CTRL_TBM0) & 0x0fU;
   return (int)(1U << tmp);
 }
 

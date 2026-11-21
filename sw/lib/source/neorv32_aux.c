@@ -365,14 +365,14 @@ void neorv32_aux_print_hw_config(void) {
   neorv32_uart0_printf("\nPhys. Memory Prot.:  ");
   if (neorv32_cpu_pmp_get_num_regions() != 0)  {
     neorv32_uart0_printf("%u region(s), %u bytes granularity, modes =", neorv32_cpu_pmp_get_num_regions(), neorv32_cpu_pmp_get_granularity());
-    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_OFF << PMPCFG_A_LSB)); // try to set mode "OFF"
-    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xffU) == (PMP_OFF << PMPCFG_A_LSB)) { neorv32_uart0_printf(" OFF"); }
-    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_TOR << PMPCFG_A_LSB)); // try to set mode "TOR"
-    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xffU) == (PMP_TOR << PMPCFG_A_LSB)) { neorv32_uart0_printf(" TOR"); }
-    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_NA4 << PMPCFG_A_LSB)); // try to set mode "NA4"
-    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xffU) == (PMP_NA4 << PMPCFG_A_LSB)) { neorv32_uart0_printf(" NA4"); }
-    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_NAPOT << PMPCFG_A_LSB)); // try to set mode "NAPOT"
-    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xffU) == (PMP_NAPOT << PMPCFG_A_LSB)) { neorv32_uart0_printf(" NAPOT"); }
+    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_OFF << PMPCFG_A0)); // try to set mode "OFF"
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xffU) == (PMP_OFF << PMPCFG_A0)) { neorv32_uart0_printf(" OFF"); }
+    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_TOR << PMPCFG_A0)); // try to set mode "TOR"
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xffU) == (PMP_TOR << PMPCFG_A0)) { neorv32_uart0_printf(" TOR"); }
+    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_NA4 << PMPCFG_A0)); // try to set mode "NA4"
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xffU) == (PMP_NA4 << PMPCFG_A0)) { neorv32_uart0_printf(" NA4"); }
+    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_NAPOT << PMPCFG_A0)); // try to set mode "NAPOT"
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xffU) == (PMP_NAPOT << PMPCFG_A0)) { neorv32_uart0_printf(" NAPOT"); }
     neorv32_cpu_csr_write(CSR_PMPCFG0, 0); // disable PMP entry again
   }
   else {
@@ -440,10 +440,10 @@ void neorv32_aux_print_hw_config(void) {
   // Caches
   // ----------------------------------
 
-  uint32_t c_block_size  = 1U << ((cache >> SYSINFO_CACHE_BLOCK_SIZE_0)   & 0x0FU);
-  uint32_t ic_num_blocks = 1U << ((cache >> SYSINFO_CACHE_I_NUM_BLOCKS_0) & 0x0FU);
-  uint32_t dc_num_blocks = 1U << ((cache >> SYSINFO_CACHE_D_NUM_BLOCKS_0) & 0x0FU);
-  uint32_t uncached_beg  =       ((cache >> SYSINFO_CACHE_UC_BEGIN_0)     & 0x0FU) << 28;
+  uint32_t c_block_size  = 1U << ((cache >> SYSINFO_CACHE_BLOCK_SIZE0)   & 0x0FU);
+  uint32_t ic_num_blocks = 1U << ((cache >> SYSINFO_CACHE_I_NUM_BLOCKS0) & 0x0FU);
+  uint32_t dc_num_blocks = 1U << ((cache >> SYSINFO_CACHE_D_NUM_BLOCKS0) & 0x0FU);
+  uint32_t uncached_beg  =       ((cache >> SYSINFO_CACHE_UC_BEGIN0)     & 0x0FU) << 28;
   uint32_t uncached_end  = 0xFFFFFFFFU;
 
   neorv32_uart0_printf("CPU I-cache:         ");

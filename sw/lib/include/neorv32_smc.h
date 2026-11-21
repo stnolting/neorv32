@@ -38,29 +38,29 @@ enum NEORV32_SMC_CFG0_enum {
   SMC_CSR0_DUAL      =  3, /**< SMC CSR0  (3) (r/w): Enable dual-chip mode */
   SMC_CSR0_BUSY      =  4, /**< SMC CSR0  (4) (r/-): Memory operation in progress when set */
 
-  SMC_CSR0_MSIZE_LSB =  7, /**< SMC CSR0  (7) (r/w): Memory size select, LSB */
-  SMC_CSR0_MSIZE_MSB =  8, /**< SMC CSR0  (8) (r/w): Memory size select, MSB */
-  SMC_CSR0_CDIV_LSB  =  9, /**< SMC CSR0  (9) (r/w): SPI clock divider, LSB */
-  SMC_CSR0_CDIV_MSB  = 11, /**< SMC CSR0 (11) (r/w): SPI clock divider, MSB */
-  SMC_CSR0_RWAIT_LSB = 12, /**< SMC CSR0 (12) (r/w): Read access dummy/wait cycles, LSB */
-  SMC_CSR0_RWAIT_MSB = 15, /**< SMC CSR0 (15) (r/w): Read access dummy/wait cycles, MSB */
-  SMC_CSR0_RCMD_LSB  = 16, /**< SMC CSR0 (16) (r/w): Read command, LSB */
-  SMC_CSR0_RCMD_MSB  = 23, /**< SMC CSR0 (23) (r/w): Read command, MSB */
-  SMC_CSR0_WCMD_LSB  = 24, /**< SMC CSR0 (24) (r/w): Write command, LSB */
-  SMC_CSR0_WCMD_MSB  = 31  /**< SMC CSR0 (31) (r/w): Write command, MSB */
+  SMC_CSR0_MSIZE0 =  7, /**< SMC CSR0  (7) (r/w): Memory size select, LSB */
+  SMC_CSR0_MSIZE1 =  8, /**< SMC CSR0  (8) (r/w): Memory size select, MSB */
+  SMC_CSR0_CDIV0  =  9, /**< SMC CSR0  (9) (r/w): SPI clock divider, LSB */
+  SMC_CSR0_CDIV2  = 11, /**< SMC CSR0 (11) (r/w): SPI clock divider, MSB */
+  SMC_CSR0_RWAIT0 = 12, /**< SMC CSR0 (12) (r/w): Read access dummy/wait cycles, LSB */
+  SMC_CSR0_RWAIT3 = 15, /**< SMC CSR0 (15) (r/w): Read access dummy/wait cycles, MSB */
+  SMC_CSR0_RCMD0  = 16, /**< SMC CSR0 (16) (r/w): Read command, LSB */
+  SMC_CSR0_RCMD7  = 23, /**< SMC CSR0 (23) (r/w): Read command, MSB */
+  SMC_CSR0_WCMD0  = 24, /**< SMC CSR0 (24) (r/w): Write command, LSB */
+  SMC_CSR0_WCMD7  = 31  /**< SMC CSR0 (31) (r/w): Write command, MSB */
 };
 
 /** SMC control and status register 1 (CSR1) bits */
 enum NEORV32_SMC_CFG1_enum {
-  SMC_CSR1_ICMD0_LSB    =  0, /**< SMC CSR1  (0) (r/w): Memory initialization command 0, LSB */
-  SMC_CSR1_ICMD0_MSB    =  7, /**< SMC CSR1  (7) (r/w): Memory initialization command 0, MSB */
-  SMC_CSR1_ICMD1_LSB    =  8, /**< SMC CSR1  (8) (r/w): Memory initialization command 1, LSB */
-  SMC_CSR1_ICMD1_MSB    = 15, /**< SMC CSR1 (15) (r/w): Memory initialization command 1, MSB */
-  SMC_CSR1_ICMD2_LSB    = 16, /**< SMC CSR1 (16) (r/w): Memory initialization command 2, LSB */
-  SMC_CSR1_ICMD2_MSB    = 23, /**< SMC CSR1 (23) (r/w): Memory initialization command 2, MSB */
+  SMC_CSR1_ICMDA0    =  0, /**< SMC CSR1  (0) (r/w): Memory initialization command A/0, LSB */
+  SMC_CSR1_ICMDA7    =  7, /**< SMC CSR1  (7) (r/w): Memory initialization command A/0, MSB */
+  SMC_CSR1_ICMDB0    =  8, /**< SMC CSR1  (8) (r/w): Memory initialization command B/1, LSB */
+  SMC_CSR1_ICMDB7    = 15, /**< SMC CSR1 (15) (r/w): Memory initialization command B/1, MSB */
+  SMC_CSR1_ICMDC0    = 16, /**< SMC CSR1 (16) (r/w): Memory initialization command C/2, LSB */
+  SMC_CSR1_ICMDC7    = 23, /**< SMC CSR1 (23) (r/w): Memory initialization command C/2, MSB */
 
-  SMC_CSR1_MEM_BASE_LSB = 28, /**< SMC CSR1 (28) (r/-): Memory base address (top 4 bits / 256MB page), LSB */
-  SMC_CSR1_MEM_BASE_MSB = 31  /**< SMC CSR1 (31) (r/-): Memory base address (top 4 bits / 256MB page), MSB */
+  SMC_CSR1_MEM_BASE0 = 28, /**< SMC CSR1 (28) (r/-): Memory base address (top 4 bits / 256MB page), LSB */
+  SMC_CSR1_MEM_BASE3 = 31  /**< SMC CSR1 (31) (r/-): Memory base address (top 4 bits / 256MB page), MSB */
 };
 /**@}*/
 

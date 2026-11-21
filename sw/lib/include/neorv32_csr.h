@@ -507,12 +507,12 @@ enum NEORV32_HPMCNT_EVENT_enum {
  * pmpcfg PMP configuration attributes
  **************************************************************************/
 enum NEORV32_PMPCFG_ATTRIBUTES_enum {
-  PMPCFG_R     = 0, /**< pmpcfg attribute (0): Read */
-  PMPCFG_W     = 1, /**< pmpcfg attribute (1): Write */
-  PMPCFG_X     = 2, /**< pmpcfg attribute (2): Execute */
-  PMPCFG_A_LSB = 3, /**< pmpcfg attribute (3): Mode LSB #NEORV32_PMP_MODES_enum */
-  PMPCFG_A_MSB = 4, /**< pmpcfg attribute (4): Mode MSB #NEORV32_PMP_MODES_enum */
-  PMPCFG_L     = 7  /**< pmpcfg attribute (7): Locked */
+  PMPCFG_R  = 0, /**< pmpcfg attribute (0): Read */
+  PMPCFG_W  = 1, /**< pmpcfg attribute (1): Write */
+  PMPCFG_X  = 2, /**< pmpcfg attribute (2): Execute */
+  PMPCFG_A0 = 3, /**< pmpcfg attribute (3): Mode LSB #NEORV32_PMP_MODES_enum */
+  PMPCFG_A1 = 4, /**< pmpcfg attribute (4): Mode MSB #NEORV32_PMP_MODES_enum */
+  PMPCFG_L  = 7  /**< pmpcfg attribute (7): Locked */
 };
 
 /**********************************************************************//**

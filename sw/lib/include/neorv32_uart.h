@@ -53,17 +53,17 @@ enum NEORV32_UART_CTRL_enum {
   UART_CTRL_TX_FULL     = 14, /**< UART control register(14) (r/-): TX FIFO is full */
   UART_CTRL_TX_BUSY     = 15, /**< UART control register(15) (r/-): Transmitter busy or TX FIFO not empty */
 
-  UART_CTRL_RX_IRQ_SEL0 = 16, /**< UART control register(16) (r/w): RX interrupt select, LSB */
-  UART_CTRL_RX_IRQ_SEL1 = 17, /**< UART control register(17) (r/w): RX interrupt select, MSB */
-  UART_CTRL_TX_IRQ_SEL0 = 18, /**< UART control register(18) (r/w): TX interrupt select, LSB */
-  UART_CTRL_TX_IRQ_SEL1 = 19, /**< UART control register(19) (r/w): TX interrupt select, MSB */
+  UART_CTRL_RX_IRQ_SEL0 = 16, /**< UART control register(16) (r/w): RX interrupt select, bit 0 (LSB) */
+  UART_CTRL_RX_IRQ_SEL1 = 17, /**< UART control register(17) (r/w): RX interrupt select, bit 1 (MSB) */
+  UART_CTRL_TX_IRQ_SEL0 = 18, /**< UART control register(18) (r/w): TX interrupt select, bit 0 (LSB) */
+  UART_CTRL_TX_IRQ_SEL1 = 19, /**< UART control register(19) (r/w): TX interrupt select, bit 1 (MSB) */
   UART_CTRL_RX_IRQ_PEND = 20, /**< UART control register(20) (r/-): RX interrupt pending */
   UART_CTRL_TX_IRQ_PEND = 21, /**< UART control register(21) (r/-): TX interrupt pending */
 
-  UART_CTRL_RX_FIFO_LSB = 24, /**< UART control register(24) (r/-): log2(RX FIFO depth), LSB */
-  UART_CTRL_RX_FIFO_MSB = 27, /**< UART control register(27) (r/-): log2(RX FIFO depth), MSB */
-  UART_CTRL_TX_FIFO_LSB = 28, /**< UART control register(28) (r/-): log2(TX FIFO depth), LSB */
-  UART_CTRL_TX_FIFO_MSB = 31  /**< UART control register(31) (r/-): log2(TX FIFO depth), MSB */
+  UART_CTRL_RX_FIFO0    = 24, /**< UART control register(24) (r/-): log2(RX FIFO depth), bit 0 (LSB) */
+  UART_CTRL_RX_FIFO3    = 27, /**< UART control register(27) (r/-): log2(RX FIFO depth), bit 3 (MSB) */
+  UART_CTRL_TX_FIFO0    = 28, /**< UART control register(28) (r/-): log2(TX FIFO depth), bit 0 (LSB) */
+  UART_CTRL_TX_FIFO3    = 31  /**< UART control register(31) (r/-): log2(TX FIFO depth), bit 3 (MSB) */
 };
 
 /** RX interrupt select */
@@ -104,7 +104,7 @@ int  neorv32_uart_scan(neorv32_uart_t *uartx, char *buffer, int max_size, int ec
  * @return Number of FIFO entries.
  **************************************************************************/
 static inline int __attribute__((always_inline)) neorv32_uart_rx_fifo_depth(neorv32_uart_t *uartx) {
-  return (int)(1U << ((uartx->CTRL >> UART_CTRL_RX_FIFO_LSB) & 0x0fU));
+  return (int)(1U << ((uartx->CTRL >> UART_CTRL_RX_FIFO0) & 0x0fU));
 }
 
 /**********************************************************************//**
@@ -113,7 +113,7 @@ static inline int __attribute__((always_inline)) neorv32_uart_rx_fifo_depth(neor
  * @return Number of FIFO entries.
  **************************************************************************/
 static inline int __attribute__((always_inline)) neorv32_uart_tx_fifo_depth(neorv32_uart_t *uartx) {
-  return (int)(1U <<((uartx->CTRL >> UART_CTRL_TX_FIFO_LSB) & 0x0fU));
+  return (int)(1U <<((uartx->CTRL >> UART_CTRL_TX_FIFO0) & 0x0fU));
 }
 
 /**********************************************************************//**

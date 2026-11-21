@@ -44,7 +44,7 @@ void neorv32_slink_setup(int rx_irq_sel, int tx_irq_sel) {
  **************************************************************************/
 int neorv32_slink_get_rx_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_SLINK->CTRL >> SLINK_CTRL_RX_FIFO_LSB) & 15U;
+  uint32_t tmp = (NEORV32_SLINK->CTRL >> SLINK_CTRL_RX_FIFO0) & 15U;
   return (int)(1U << tmp);
 }
 
@@ -54,6 +54,6 @@ int neorv32_slink_get_rx_fifo_depth(void) {
  **************************************************************************/
 int neorv32_slink_get_tx_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_SLINK->CTRL >> SLINK_CTRL_TX_FIFO_LSB) & 15U;
+  uint32_t tmp = (NEORV32_SLINK->CTRL >> SLINK_CTRL_TX_FIFO0) & 15U;
   return (int)(1U << tmp);
 }

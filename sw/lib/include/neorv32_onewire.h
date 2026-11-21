@@ -39,8 +39,8 @@ enum NEORV32_ONEWIRE_CTRL_enum {
   ONEWIRE_CTRL_CLKDIV0   =  4, /**< ONEWIRE control register(4)  (r/w): Clock divider bit 0 */
   ONEWIRE_CTRL_CLKDIV7   = 11, /**< ONEWIRE control register(11) (r/w): Clock divider bit 7 */
 
-  ONEWIRE_CTRL_FIFO_LSB  = 15, /**< ONEWIRE control register(15) (r/-): log2(FIFO size), LSB */
-  ONEWIRE_CTRL_FIFO_MSB  = 18, /**< ONEWIRE control register(18) (r/-): log2(FIFO size), MSB */
+  ONEWIRE_CTRL_FIFO0     = 15, /**< ONEWIRE control register(15) (r/-): log2(FIFO size), bit 0 (LSB) */
+  ONEWIRE_CTRL_FIFO3     = 18, /**< ONEWIRE control register(18) (r/-): log2(FIFO size), bit 3 (MSB) */
 
   ONEWIRE_CTRL_TX_FULL   = 28, /**< ONEWIRE control register(28) (r/-): TX FIFO full */
   ONEWIRE_CTRL_RX_AVAIL  = 29, /**< ONEWIRE control register(29) (r/-): RX FIFO data available */
@@ -50,10 +50,10 @@ enum NEORV32_ONEWIRE_CTRL_enum {
 
 /** ONEWIRE command and data register bits */
 enum NEORV32_ONEWIRE_DCMD_enum {
-  ONEWIRE_DCMD_DATA_LSB = 0,  /**< ONEWIRE data/data register(0)  (r/w): Receive/transmit data (8-bit) LSB */
-  ONEWIRE_DCMD_DATA_MSB = 7,  /**< ONEWIRE data/data register(7)  (r/w): Receive/transmit data (8-bit) MSB */
-  ONEWIRE_DCMD_CMD_LO   = 8,  /**< ONEWIRE data/data register(8)  (-/w): Operation command LSB */
-  ONEWIRE_DCMD_CMD_HI   = 9,  /**< ONEWIRE data/data register(9)  (-/w): Operation command MSB */
+  ONEWIRE_DCMD_DATA0    = 0,  /**< ONEWIRE data/data register(0)  (r/w): Receive/transmit data (8-bit) LSB */
+  ONEWIRE_DCMD_DATA7    = 7,  /**< ONEWIRE data/data register(7)  (r/w): Receive/transmit data (8-bit) MSB */
+  ONEWIRE_DCMD_CMD0     = 8,  /**< ONEWIRE data/data register(8)  (-/w): Operation command LSB */
+  ONEWIRE_DCMD_CMD1     = 9,  /**< ONEWIRE data/data register(9)  (-/w): Operation command MSB */
   ONEWIRE_DCMD_PRESENCE = 10  /**< ONEWIRE data/data register(10) (r/-): Bus presence detected */
 };
 /**@}*/

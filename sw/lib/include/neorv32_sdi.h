@@ -36,8 +36,8 @@ enum NEORV32_SDI_CTRL_enum {
   SDI_CTRL_CLR_RX        =  1, /**< SDI control register(1) (r/w): Clear RX FIFO, flag auto-clears */
   SDI_CTRL_CLR_TX        =  2, /**< SDI control register(2) (r/w): Clear TX FIFO, flag auto-clears */
 
-  SDI_CTRL_FIFO_LSB      =  4, /**< SDI control register(4) (r/-): log2 of SDI FIFO size, LSB */
-  SDI_CTRL_FIFO_MSB      =  7, /**< SDI control register(7) (r/-): log2 of SDI FIFO size, MSB */
+  SDI_CTRL_FIFO0         =  4, /**< SDI control register(4) (r/-): log2 of SDI FIFO size, bit 0 (LSB) */
+  SDI_CTRL_FIFO3         =  7, /**< SDI control register(7) (r/-): log2 of SDI FIFO size, bit 3 (MSB) */
 
   SDI_CTRL_IRQ_RX_NEMPTY = 16, /**< SDI control register(16) (r/w): IRQ when RX FIFO not empty */
   SDI_CTRL_IRQ_RX_FULL   = 17, /**< SDI control register(17) (r/w): IRQ when RX FIFO full */

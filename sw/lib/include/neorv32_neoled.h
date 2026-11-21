@@ -34,21 +34,21 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 
 /** NEOLED control register bits */
 enum NEORV32_NEOLED_CTRL_enum {
-  NEOLED_CTRL_EN        =  0, /**< NEOLED control register(0)  (r/w): NEOLED global enable */
-  NEOLED_CTRL_PRSC_LSB  =  1, /**< NEOLED control register(1)  (r/w): Clock prescaler select bit, 0 */
-  NEOLED_CTRL_PRSC_MSB  =  3, /**< NEOLED control register(3)  (r/w): Clock prescaler select bit, 2 */
-  NEOLED_CTRL_T_TOT_LSB =  4, /**< NEOLED control register(4)  (r/w): pulse-clock ticks per total period, bit 0 */
-  NEOLED_CTRL_T_TOT_MSB =  8, /**< NEOLED control register(8)  (r/w): pulse-clock ticks per total period, bit 4 */
-  NEOLED_CTRL_T_0H_LSB  =  9, /**< NEOLED control register(9)  (r/w): pulse-clock ticks per ZERO high-time, bit 0 */
-  NEOLED_CTRL_T_0H_MSB  = 13, /**< NEOLED control register(13) (r/w): pulse-clock ticks per ZERO high-time, bit 4 */
-  NEOLED_CTRL_T_1H_LSB  = 14, /**< NEOLED control register(14) (r/w): pulse-clock ticks per ONE high-time, bit 0 */
-  NEOLED_CTRL_T_1H_MSB  = 18, /**< NEOLED control register(18) (r/w): pulse-clock ticks per ONE high-time, bit 4 */
+  NEOLED_CTRL_EN     =  0, /**< NEOLED control register(0)  (r/w): NEOLED global enable */
+  NEOLED_CTRL_PRSC0  =  1, /**< NEOLED control register(1)  (r/w): Clock prescaler select bit, 0 */
+  NEOLED_CTRL_PRSC2  =  3, /**< NEOLED control register(3)  (r/w): Clock prescaler select bit, 2 */
+  NEOLED_CTRL_T_TOT0 =  4, /**< NEOLED control register(4)  (r/w): pulse-clock ticks per total period, bit 0 */
+  NEOLED_CTRL_T_TOT4 =  8, /**< NEOLED control register(8)  (r/w): pulse-clock ticks per total period, bit 4 */
+  NEOLED_CTRL_T_0H0  =  9, /**< NEOLED control register(9)  (r/w): pulse-clock ticks per ZERO high-time, bit 0 */
+  NEOLED_CTRL_T_0H4  = 13, /**< NEOLED control register(13) (r/w): pulse-clock ticks per ZERO high-time, bit 4 */
+  NEOLED_CTRL_T_1H0  = 14, /**< NEOLED control register(14) (r/w): pulse-clock ticks per ONE high-time, bit 0 */
+  NEOLED_CTRL_T_1H4  = 18, /**< NEOLED control register(18) (r/w): pulse-clock ticks per ONE high-time, bit 4 */
 
-  NEOLED_CTRL_FIFO_LSB  = 25, /**< NEOLED control register(25) (r/-): log2(TX FIFO size), bit 0 */
-  NEOLED_CTRL_FIFO_MSB  = 28, /**< NEOLED control register(28) (r/-): log2(TX FIFO size), bit 3 */
-  NEOLED_CTRL_TX_EMPTY  = 29, /**< NEOLED control register(29) (r/-): TX FIFO is empty */
-  NEOLED_CTRL_TX_FULL   = 30, /**< NEOLED control register(30) (r/-): TX FIFO is full */
-  NEOLED_CTRL_TX_BUSY   = 31  /**< NEOLED control register(31) (r/-): serial PHY busy or TX FIFO not empty yet */
+  NEOLED_CTRL_FIFO0    = 25, /**< NEOLED control register(25) (r/-): log2(TX FIFO size), bit 0 */
+  NEOLED_CTRL_FIFO3    = 28, /**< NEOLED control register(28) (r/-): log2(TX FIFO size), bit 3 */
+  NEOLED_CTRL_TX_EMPTY = 29, /**< NEOLED control register(29) (r/-): TX FIFO is empty */
+  NEOLED_CTRL_TX_FULL  = 30, /**< NEOLED control register(30) (r/-): TX FIFO is full */
+  NEOLED_CTRL_TX_BUSY  = 31  /**< NEOLED control register(31) (r/-): serial PHY busy or TX FIFO not empty yet */
 };
 /**@}*/
 

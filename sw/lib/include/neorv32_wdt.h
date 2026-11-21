@@ -32,13 +32,13 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 
 /** WDT control register bits */
 enum NEORV32_WDT_CTRL_enum {
-  WDT_CTRL_EN          =  0, /**< WDT control register(0) (r/w): Watchdog enable */
-  WDT_CTRL_LOCK        =  1, /**< WDT control register(1) (r/w): Lock write access to control register, clears on reset only */
-  WDT_CTRL_RCAUSE_LO   =  2, /**< WDT control register(2) (r/-): Cause of last system reset - low */
-  WDT_CTRL_RCAUSE_HI   =  3, /**< WDT control register(3) (r/-): Cause of last system reset - high */
+  WDT_CTRL_EN        =  0, /**< WDT control register(0) (r/w): Watchdog enable */
+  WDT_CTRL_LOCK      =  1, /**< WDT control register(1) (r/w): Lock write access to control register, clears on reset only */
+  WDT_CTRL_RCAUSE0   =  2, /**< WDT control register(2) (r/-): Cause of last system reset, bit 0 (LSB) */
+  WDT_CTRL_RCAUSE1   =  3, /**< WDT control register(3) (r/-): Cause of last system reset, bit 0 (MSB) */
 
-  WDT_CTRL_TIMEOUT_LSB =  8, /**< WDT control register(8)  (r/w): Timeout value, LSB */
-  WDT_CTRL_TIMEOUT_MSB = 31  /**< WDT control register(31) (r/w): Timeout value, MSB */
+  WDT_CTRL_TIMEOUT0  =  8, /**< WDT control register(8)  (r/w): 24-bi timeout value, bit 0 (LSB) */
+  WDT_CTRL_TIMEOUT23 = 31  /**< WDT control register(31) (r/w): 24-bi timeout value, bit 23 (MSB) */
 };
 /**@}*/
 

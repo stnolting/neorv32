@@ -28,7 +28,7 @@ int neorv32_onewire_available(void) {
  **************************************************************************/
 int neorv32_onewire_get_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_ONEWIRE->CTRL >> ONEWIRE_CTRL_FIFO_LSB) & 0x0fU;
+  uint32_t tmp = (NEORV32_ONEWIRE->CTRL >> ONEWIRE_CTRL_FIFO0) & 0x0fU;
   return (int)(1U << tmp);
 }
 
@@ -113,7 +113,7 @@ int neorv32_onewire_busy(void) {
 void neorv32_onewire_reset(void) {
 
   // trigger reset-pulse operation
-  NEORV32_ONEWIRE->DCMD = ONEWIRE_CMD_RESET << ONEWIRE_DCMD_CMD_LO;
+  NEORV32_ONEWIRE->DCMD = ONEWIRE_CMD_RESET << ONEWIRE_DCMD_CMD0;
 }
 
 /**********************************************************************//**
@@ -133,7 +133,7 @@ int neorv32_onewire_reset_get_presence(void) {
 void neorv32_onewire_read_bit(void) {
 
   // trigger bit operation with data = all-one
-  NEORV32_ONEWIRE->DCMD = (ONEWIRE_CMD_BIT << ONEWIRE_DCMD_CMD_LO) | (0xffU << ONEWIRE_DCMD_DATA_LSB);
+  NEORV32_ONEWIRE->DCMD = (ONEWIRE_CMD_BIT << ONEWIRE_DCMD_CMD0) | (0xffU << ONEWIRE_DCMD_DATA0);
 }
 
 /**********************************************************************//**
@@ -144,7 +144,7 @@ void neorv32_onewire_read_bit(void) {
 uint8_t neorv32_onewire_read_bit_get(void) {
 
   // return read bit
-  if ((NEORV32_ONEWIRE->DCMD >> ONEWIRE_DCMD_DATA_MSB) & 1U) { // LSB first -> read bit is in MSB
+  if ((NEORV32_ONEWIRE->DCMD >> ONEWIRE_DCMD_DATA7) & 1U) { // LSB first -> read bit is in MSB
     return 1;
   }
   else {
@@ -161,10 +161,10 @@ void neorv32_onewire_write_bit(uint8_t bit) {
 
   // set replicated bit and trigger bit operation
   if (bit) {
-    NEORV32_ONEWIRE->DCMD = (ONEWIRE_CMD_BIT << ONEWIRE_DCMD_CMD_LO) | (0xffU << ONEWIRE_DCMD_DATA_LSB);
+    NEORV32_ONEWIRE->DCMD = (ONEWIRE_CMD_BIT << ONEWIRE_DCMD_CMD0) | (0xffU << ONEWIRE_DCMD_DATA0);
   }
   else {
-    NEORV32_ONEWIRE->DCMD = (ONEWIRE_CMD_BIT << ONEWIRE_DCMD_CMD_LO) | (0x00U << ONEWIRE_DCMD_DATA_LSB);
+    NEORV32_ONEWIRE->DCMD = (ONEWIRE_CMD_BIT << ONEWIRE_DCMD_CMD0) | (0x00U << ONEWIRE_DCMD_DATA0);
   }
 }
 
@@ -175,7 +175,7 @@ void neorv32_onewire_write_bit(uint8_t bit) {
 void neorv32_onewire_read_byte(void) {
 
   // output all-one and trigger byte operation
-  NEORV32_ONEWIRE->DCMD = (ONEWIRE_CMD_BYTE << ONEWIRE_DCMD_CMD_LO) | (0xffU << ONEWIRE_DCMD_DATA_LSB);
+  NEORV32_ONEWIRE->DCMD = (ONEWIRE_CMD_BYTE << ONEWIRE_DCMD_CMD0) | (0xffU << ONEWIRE_DCMD_DATA0);
 }
 
 /**********************************************************************//**
@@ -197,7 +197,7 @@ uint8_t neorv32_onewire_read_byte_get(void) {
 void neorv32_onewire_write_byte(uint8_t byte) {
 
   // and trigger byte operation
-  NEORV32_ONEWIRE->DCMD = (ONEWIRE_CMD_BYTE << ONEWIRE_DCMD_CMD_LO) | ((uint32_t)byte << ONEWIRE_DCMD_DATA_LSB);
+  NEORV32_ONEWIRE->DCMD = (ONEWIRE_CMD_BYTE << ONEWIRE_DCMD_CMD0) | ((uint32_t)byte << ONEWIRE_DCMD_DATA0);
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------

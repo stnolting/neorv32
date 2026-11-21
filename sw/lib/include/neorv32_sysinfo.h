@@ -34,18 +34,18 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 
 /** NEORV32_SYSINFO.MISC (r/-): Miscellaneous system configurations */
 enum NEORV32_SYSINFO_MISC_enum {
-  SYSINFO_MISC_IMEM_LSB =  0, /**< SYSINFO_MISC  (0) (r/-): log2(internal IMEM size in bytes) (via IMEM_SIZE generic), LSB */
-  SYSINFO_MISC_IMEM_MSB =  7, /**< SYSINFO_MISC  (7) (r/-): log2(internal IMEM size in bytes) (via IMEM_SIZE generic), MSB */
-  SYSINFO_MISC_DMEM_LSB =  8, /**< SYSINFO_MISC  (8) (r/-): log2(internal DMEM size in bytes) (via DMEM_SIZE generic), LSB */
-  SYSINFO_MISC_DMEM_MSB = 15, /**< SYSINFO_MISC (15) (r/-): log2(internal DMEM size in bytes) (via DMEM_SIZE generic), MSB */
-  SYSINFO_MISC_HART_LSB = 16, /**< SYSINFO_MISC (16) (r/-): number of physical CPU cores ("harts"), LSB */
-  SYSINFO_MISC_HART_MSB = 19, /**< SYSINFO_MISC (19) (r/-): number of physical CPU cores ("harts"), MSB */
-  SYSINFO_MISC_BOOT_LSB = 20, /**< SYSINFO_MISC (20) (r/-): boot mode configuration (via BOOT_MODE_SELECT generic), LSB */
-  SYSINFO_MISC_BOOT_MSB = 21, /**< SYSINFO_MISC (21) (r/-): boot mode configuration (via BOOT_MODE_SELECT generic), MSB */
-  SYSINFO_MISC_ITMO_LSB = 22, /**< SYSINFO_MISC (22) (r/-): log2(internal bus timeout cycles), LSB */
-  SYSINFO_MISC_ITMO_MSB = 26, /**< SYSINFO_MISC (26) (r/-): log2(internal bus timeout cycles), MSB */
-  SYSINFO_MISC_ETMO_LSB = 27, /**< SYSINFO_MISC (27) (r/-): log2(external bus timeout cycles), LSB */
-  SYSINFO_MISC_ETMO_MSB = 31  /**< SYSINFO_MISC (31) (r/-): log2(external bus timeout cycles), MSB */
+  SYSINFO_MISC_IMEM0 =  0, /**< SYSINFO_MISC  (0) (r/-): log2(internal IMEM size in bytes) (via IMEM_SIZE generic), LSB */
+  SYSINFO_MISC_IMEM7 =  7, /**< SYSINFO_MISC  (7) (r/-): log2(internal IMEM size in bytes) (via IMEM_SIZE generic), MSB */
+  SYSINFO_MISC_DMEM0 =  8, /**< SYSINFO_MISC  (8) (r/-): log2(internal DMEM size in bytes) (via DMEM_SIZE generic), LSB */
+  SYSINFO_MISC_DMEM7 = 15, /**< SYSINFO_MISC (15) (r/-): log2(internal DMEM size in bytes) (via DMEM_SIZE generic), MSB */
+  SYSINFO_MISC_HART0 = 16, /**< SYSINFO_MISC (16) (r/-): number of physical CPU cores ("harts"), LSB */
+  SYSINFO_MISC_HART3 = 19, /**< SYSINFO_MISC (19) (r/-): number of physical CPU cores ("harts"), MSB */
+  SYSINFO_MISC_BOOT0 = 20, /**< SYSINFO_MISC (20) (r/-): boot mode configuration (via BOOT_MODE_SELECT generic), LSB */
+  SYSINFO_MISC_BOOT1 = 21, /**< SYSINFO_MISC (21) (r/-): boot mode configuration (via BOOT_MODE_SELECT generic), MSB */
+  SYSINFO_MISC_ITMO0 = 22, /**< SYSINFO_MISC (22) (r/-): log2(internal bus timeout cycles), LSB */
+  SYSINFO_MISC_ITMO4 = 26, /**< SYSINFO_MISC (26) (r/-): log2(internal bus timeout cycles), MSB */
+  SYSINFO_MISC_ETMO0 = 27, /**< SYSINFO_MISC (27) (r/-): log2(external bus timeout cycles), LSB */
+  SYSINFO_MISC_ETMO4 = 31  /**< SYSINFO_MISC (31) (r/-): log2(external bus timeout cycles), MSB */
 };
 
 /** NEORV32_SYSINFO.SOC (r/-): Implemented processor devices/features */
@@ -86,15 +86,15 @@ enum NEORV32_SYSINFO_SOC_enum {
 
 /** NEORV32_SYSINFO.CACHE (r/-): Cache configuration */
  enum NEORV32_SYSINFO_CACHE_enum {
-  SYSINFO_CACHE_BLOCK_SIZE_0   =  0, /**< SYSINFO_CACHE  (0) (r/-): log2(Block size in bytes), bit 0 (via CACHE_BLOCK_SIZE generic) */
-  SYSINFO_CACHE_BLOCK_SIZE_3   =  3, /**< SYSINFO_CACHE  (3) (r/-): log2(Block size in bytes), bit 3 (via CACHE_BLOCK_SIZE generic) */
-  SYSINFO_CACHE_I_NUM_BLOCKS_0 =  4, /**< SYSINFO_CACHE  (4) (r/-): i-cache: log2(Number of cache blocks), bit 0 (via ICACHE_NUM_BLOCKS generic) */
-  SYSINFO_CACHE_I_NUM_BLOCKS_3 =  7, /**< SYSINFO_CACHE  (7) (r/-): i-cache: log2(Number of cache blocks), bit 3 (via ICACHE_NUM_BLOCKS generic) */
-  SYSINFO_CACHE_D_NUM_BLOCKS_0 =  8, /**< SYSINFO_CACHE  (8) (r/-): d-cache: log2(Number of cache blocks), bit 0 (via DCACHE_NUM_BLOCKS generic) */
-  SYSINFO_CACHE_D_NUM_BLOCKS_3 = 11, /**< SYSINFO_CACHE (11) (r/-): d-cache: log2(Number of cache blocks), bit 3 (via DCACHE_NUM_BLOCKS generic) */
-  SYSINFO_CACHE_UC_BEGIN_0     = 12, /**< SYSINFO_CACHE (12) (r/-): start of non-cached address space, 256MB page (via CACHE_BYPASS_BEGIN generic) */
-  SYSINFO_CACHE_UC_BEGIN_3     = 15, /**< SYSINFO_CACHE (15) (r/-): start of non-cached address space, 256MB page (via CACHE_BYPASS_BEGIN generic) */
-  SYSINFO_CACHE_BURSTS_EN      = 16  /**< SYSINFO_CACHE (16) (r/-): issue burst transfers for cache updates (via CACHE_BURSTS_EN generic) */
+  SYSINFO_CACHE_BLOCK_SIZE0   =  0, /**< SYSINFO_CACHE  (0) (r/-): log2(Block size in bytes), bit 0 (via CACHE_BLOCK_SIZE generic) */
+  SYSINFO_CACHE_BLOCK_SIZE3   =  3, /**< SYSINFO_CACHE  (3) (r/-): log2(Block size in bytes), bit 3 (via CACHE_BLOCK_SIZE generic) */
+  SYSINFO_CACHE_I_NUM_BLOCKS0 =  4, /**< SYSINFO_CACHE  (4) (r/-): i-cache: log2(Number of cache blocks), bit 0 (via ICACHE_NUM_BLOCKS generic) */
+  SYSINFO_CACHE_I_NUM_BLOCKS3 =  7, /**< SYSINFO_CACHE  (7) (r/-): i-cache: log2(Number of cache blocks), bit 3 (via ICACHE_NUM_BLOCKS generic) */
+  SYSINFO_CACHE_D_NUM_BLOCKS0 =  8, /**< SYSINFO_CACHE  (8) (r/-): d-cache: log2(Number of cache blocks), bit 0 (via DCACHE_NUM_BLOCKS generic) */
+  SYSINFO_CACHE_D_NUM_BLOCKS3 = 11, /**< SYSINFO_CACHE (11) (r/-): d-cache: log2(Number of cache blocks), bit 3 (via DCACHE_NUM_BLOCKS generic) */
+  SYSINFO_CACHE_UC_BEGIN0     = 12, /**< SYSINFO_CACHE (12) (r/-): start of non-cached address space, 256MB page (via CACHE_BYPASS_BEGIN generic) */
+  SYSINFO_CACHE_UC_BEGIN3     = 15, /**< SYSINFO_CACHE (15) (r/-): start of non-cached address space, 256MB page (via CACHE_BYPASS_BEGIN generic) */
+  SYSINFO_CACHE_BURSTS_EN     = 16  /**< SYSINFO_CACHE (16) (r/-): issue burst transfers for cache updates (via CACHE_BURSTS_EN generic) */
 };
 /**@}*/
 
@@ -111,7 +111,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_is_sim(vo
  * @return Number of physical CPU cores / harts.
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_numcores(void) {
-  return (uint32_t)((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_HART_LSB) & 0x0fU);
+  return (uint32_t)((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_HART0) & 0x0fU);
 }
 
 /**********************************************************************//**
@@ -119,7 +119,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_numco
  * @return IMEM size in bytes.
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_imemsize(void) {
-  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_IMEM_LSB) & 0xffU;
+  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_IMEM0) & 0xffU;
   if (tmp) {
     return (uint32_t)(1u << tmp);
   }
@@ -131,7 +131,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_imems
  * @return DMEM size in bytes.
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_dmemsize(void) {
-  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_DMEM_LSB) & 0xffU;
+  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_DMEM0) & 0xffU;
   if (tmp) {
     return (uint32_t)(1U << tmp);
   }
@@ -143,7 +143,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_dmems
  * @return Boot configuration ID.
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_bootmode(void) {
-  return (uint32_t)((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_BOOT_LSB) & 0x03U);
+  return (uint32_t)((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_BOOT0) & 0x03U);
 }
 
 /**********************************************************************//**
@@ -151,7 +151,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_bootm
  * @return Bus timeout cycles.
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_intbustimeout(void) {
-  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_ITMO_LSB) & 0x1fU;
+  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_ITMO0) & 0x1fU;
   if (tmp) {
     return (uint32_t)(1U << tmp);
   }
@@ -163,7 +163,7 @@ static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_intbu
  * @return Bus timeout cycles.
  **************************************************************************/
 static inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_extbustimeout(void) {
-  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_ETMO_LSB) & 0x1fU;
+  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_ETMO0) & 0x1fU;
   if (tmp) {
     return (uint32_t)(1U << tmp);
   }
