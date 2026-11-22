@@ -505,39 +505,39 @@ use neorv32.neorv32_package.all;
 entity neorv32_bus_io_switch is
   generic (
     DEV_SIZE  : natural; -- size of each IO device, has to be a power of two
-    -- device port enable and base address; enabled ports do not have to be contiguous --
-    DEV_00_EN : boolean := false; DEV_00_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_01_EN : boolean := false; DEV_01_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_02_EN : boolean := false; DEV_02_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_03_EN : boolean := false; DEV_03_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_04_EN : boolean := false; DEV_04_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_05_EN : boolean := false; DEV_05_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_06_EN : boolean := false; DEV_06_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_07_EN : boolean := false; DEV_07_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_08_EN : boolean := false; DEV_08_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_09_EN : boolean := false; DEV_09_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_10_EN : boolean := false; DEV_10_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_11_EN : boolean := false; DEV_11_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_12_EN : boolean := false; DEV_12_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_13_EN : boolean := false; DEV_13_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_14_EN : boolean := false; DEV_14_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_15_EN : boolean := false; DEV_15_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_16_EN : boolean := false; DEV_16_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_17_EN : boolean := false; DEV_17_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_18_EN : boolean := false; DEV_18_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_19_EN : boolean := false; DEV_19_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_20_EN : boolean := false; DEV_20_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_21_EN : boolean := false; DEV_21_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_22_EN : boolean := false; DEV_22_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_23_EN : boolean := false; DEV_23_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_24_EN : boolean := false; DEV_24_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_25_EN : boolean := false; DEV_25_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_26_EN : boolean := false; DEV_26_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_27_EN : boolean := false; DEV_27_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_28_EN : boolean := false; DEV_28_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_29_EN : boolean := false; DEV_29_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_30_EN : boolean := false; DEV_30_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_31_EN : boolean := false; DEV_31_BASE : std_ulogic_vector(31 downto 0) := (others => '0')
+    -- device port enable, base address and address width (poer of two!); enabled ports do not have to be contiguous --
+    DEV_00_EN : boolean := false; DEV_00_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_00_SIZE : natural := 0;
+    DEV_01_EN : boolean := false; DEV_01_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_01_SIZE : natural := 0;
+    DEV_02_EN : boolean := false; DEV_02_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_02_SIZE : natural := 0;
+    DEV_03_EN : boolean := false; DEV_03_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_03_SIZE : natural := 0;
+    DEV_04_EN : boolean := false; DEV_04_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_04_SIZE : natural := 0;
+    DEV_05_EN : boolean := false; DEV_05_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_05_SIZE : natural := 0;
+    DEV_06_EN : boolean := false; DEV_06_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_06_SIZE : natural := 0;
+    DEV_07_EN : boolean := false; DEV_07_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_07_SIZE : natural := 0;
+    DEV_08_EN : boolean := false; DEV_08_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_08_SIZE : natural := 0;
+    DEV_09_EN : boolean := false; DEV_09_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_09_SIZE : natural := 0;
+    DEV_10_EN : boolean := false; DEV_10_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_10_SIZE : natural := 0;
+    DEV_11_EN : boolean := false; DEV_11_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_11_SIZE : natural := 0;
+    DEV_12_EN : boolean := false; DEV_12_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_12_SIZE : natural := 0;
+    DEV_13_EN : boolean := false; DEV_13_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_13_SIZE : natural := 0;
+    DEV_14_EN : boolean := false; DEV_14_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_14_SIZE : natural := 0;
+    DEV_15_EN : boolean := false; DEV_15_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_15_SIZE : natural := 0;
+    DEV_16_EN : boolean := false; DEV_16_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_16_SIZE : natural := 0;
+    DEV_17_EN : boolean := false; DEV_17_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_17_SIZE : natural := 0;
+    DEV_18_EN : boolean := false; DEV_18_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_18_SIZE : natural := 0;
+    DEV_19_EN : boolean := false; DEV_19_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_19_SIZE : natural := 0;
+    DEV_20_EN : boolean := false; DEV_20_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_20_SIZE : natural := 0;
+    DEV_21_EN : boolean := false; DEV_21_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_21_SIZE : natural := 0;
+    DEV_22_EN : boolean := false; DEV_22_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_22_SIZE : natural := 0;
+    DEV_23_EN : boolean := false; DEV_23_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_23_SIZE : natural := 0;
+    DEV_24_EN : boolean := false; DEV_24_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_24_SIZE : natural := 0;
+    DEV_25_EN : boolean := false; DEV_25_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_25_SIZE : natural := 0;
+    DEV_26_EN : boolean := false; DEV_26_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_26_SIZE : natural := 0;
+    DEV_27_EN : boolean := false; DEV_27_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_27_SIZE : natural := 0;
+    DEV_28_EN : boolean := false; DEV_28_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_28_SIZE : natural := 0;
+    DEV_29_EN : boolean := false; DEV_29_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_29_SIZE : natural := 0;
+    DEV_30_EN : boolean := false; DEV_30_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_30_SIZE : natural := 0;
+    DEV_31_EN : boolean := false; DEV_31_BASE : std_ulogic_vector(31 downto 0) := (others => '0'); DEV_31_SIZE : natural := 0
   );
   port (
     -- global control --
@@ -584,12 +584,24 @@ end entity;
 
 architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
 
+  -- generate address mask --
+  function mask_gen_f(mask_width : natural; device_size : natural) return std_ulogic_vector is
+    variable res_v : std_ulogic_vector(mask_width-1 downto 0);
+  begin
+    res_v := (others => '1');
+    if (device_size /= 0) then
+      res_v(index_size_f(device_size)-1 downto 0) := (others => '0');
+    end if;
+    return res_v;
+  end function;
+
   -- module configuration --
   constant num_devs_c : natural := 32; -- number of device ports
 
-  -- address bit boundaries for access decoding --
-  constant addr_lo_c : natural := index_size_f(DEV_SIZE); -- low address boundary bit
-  constant addr_hi_c : natural := (index_size_f(DEV_SIZE) + index_size_f(num_devs_c)) - 1; -- high address boundary bit
+  -- address decoding --
+  constant dev_idx_c : natural := index_size_f(num_devs_c); -- number of bits required for device index
+  constant idx_lo_c  : natural := index_size_f(DEV_SIZE);   -- low address boundary bit
+  constant idx_hi_c  : natural := idx_lo_c + (dev_idx_c-1); -- high address boundary bit
 
   -- list of enabled device ports --
   type dev_en_list_t is array (num_devs_c-1 downto 0) of boolean;
@@ -615,6 +627,28 @@ architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
     20 => DEV_20_BASE, 21 => DEV_21_BASE, 22 => DEV_22_BASE, 23 => DEV_23_BASE,
     24 => DEV_24_BASE, 25 => DEV_25_BASE, 26 => DEV_26_BASE, 27 => DEV_27_BASE,
     28 => DEV_28_BASE, 29 => DEV_29_BASE, 30 => DEV_30_BASE, 31 => DEV_31_BASE
+  );
+
+  -- list of device address masks --
+  constant mask_zero_c : std_ulogic_vector(idx_lo_c-1 downto 0) := (others => '0');
+  type dev_mask_list_t is array (num_devs_c-1 downto 0) of std_ulogic_vector(idx_lo_c-1 downto 0);
+  constant dev_mask_list_c : dev_mask_list_t := (
+    0  => mask_gen_f(idx_lo_c, DEV_00_SIZE), 1  => mask_gen_f(idx_lo_c, DEV_01_SIZE),
+    2  => mask_gen_f(idx_lo_c, DEV_02_SIZE), 3  => mask_gen_f(idx_lo_c, DEV_03_SIZE),
+    4  => mask_gen_f(idx_lo_c, DEV_04_SIZE), 5  => mask_gen_f(idx_lo_c, DEV_05_SIZE),
+    6  => mask_gen_f(idx_lo_c, DEV_06_SIZE), 7  => mask_gen_f(idx_lo_c, DEV_07_SIZE),
+    8  => mask_gen_f(idx_lo_c, DEV_08_SIZE), 9  => mask_gen_f(idx_lo_c, DEV_09_SIZE),
+    10 => mask_gen_f(idx_lo_c, DEV_10_SIZE), 11 => mask_gen_f(idx_lo_c, DEV_11_SIZE),
+    12 => mask_gen_f(idx_lo_c, DEV_12_SIZE), 13 => mask_gen_f(idx_lo_c, DEV_13_SIZE),
+    14 => mask_gen_f(idx_lo_c, DEV_14_SIZE), 15 => mask_gen_f(idx_lo_c, DEV_15_SIZE),
+    16 => mask_gen_f(idx_lo_c, DEV_16_SIZE), 17 => mask_gen_f(idx_lo_c, DEV_17_SIZE),
+    18 => mask_gen_f(idx_lo_c, DEV_18_SIZE), 19 => mask_gen_f(idx_lo_c, DEV_19_SIZE),
+    20 => mask_gen_f(idx_lo_c, DEV_20_SIZE), 21 => mask_gen_f(idx_lo_c, DEV_21_SIZE),
+    22 => mask_gen_f(idx_lo_c, DEV_22_SIZE), 23 => mask_gen_f(idx_lo_c, DEV_23_SIZE),
+    24 => mask_gen_f(idx_lo_c, DEV_24_SIZE), 25 => mask_gen_f(idx_lo_c, DEV_25_SIZE),
+    26 => mask_gen_f(idx_lo_c, DEV_26_SIZE), 27 => mask_gen_f(idx_lo_c, DEV_27_SIZE),
+    28 => mask_gen_f(idx_lo_c, DEV_28_SIZE), 29 => mask_gen_f(idx_lo_c, DEV_29_SIZE),
+    30 => mask_gen_f(idx_lo_c, DEV_30_SIZE), 31 => mask_gen_f(idx_lo_c, DEV_31_SIZE)
   );
 
   -- device ports combined as arrays --
@@ -688,8 +722,9 @@ begin
       bus_request: process(main_req)
       begin
         dev_req(i) <= main_req;
-        if (main_req.addr(addr_hi_c downto addr_lo_c) = dev_base_list_c(i)(addr_hi_c downto addr_lo_c)) then
-          dev_req(i).stb <= main_req.stb; -- propagate transaction strobe if address match
+        if (main_req.addr(idx_hi_c downto idx_lo_c) = dev_base_list_c(i)(idx_hi_c downto idx_lo_c)) and
+           ((main_req.addr(idx_lo_c-1 downto 0) and dev_mask_list_c(i)) = mask_zero_c) then
+          dev_req(i).stb <= main_req.stb; -- propagate strobe if address match and not out-of-range
         else
           dev_req(i).stb <= '0';
         end if;

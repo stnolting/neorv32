@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130803"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130804"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -42,7 +42,7 @@ package neorv32_package is
   constant io_base_c       : std_ulogic_vector(31 downto 0) := x"ffe00000"; -- IO base address
   constant io_size_c       : natural := 32 * io_dev_size_c; -- total size of IO space
 
-  -- IO Address Map (base address must be aligned to the region's size) --
+  -- IO address map (base address must be aligned to the region's size) --
   constant base_io_bootrom_c  : std_ulogic_vector(31 downto 0) := x"ffe00000";
 --constant base_io_???_c      : std_ulogic_vector(31 downto 0) := x"ffe10000"; -- reserved
 --constant base_io_???_c      : std_ulogic_vector(31 downto 0) := x"ffe20000"; -- reserved
@@ -75,6 +75,40 @@ package neorv32_package is
   constant base_io_neoled_c   : std_ulogic_vector(31 downto 0) := x"fffd0000";
   constant base_io_sysinfo_c  : std_ulogic_vector(31 downto 0) := x"fffe0000";
   constant base_io_ocd_c      : std_ulogic_vector(31 downto 0) := x"ffff0000";
+
+  -- IO device sizes in bytes (has to be a power of two and a multiple of 4) --
+  constant size_io_bootrom_c  : natural := io_dev_size_c; -- constrained locally
+--constant size_io_???_c      : natural := 0; -- reserved
+--constant size_io_???_c      : natural := 0; -- reserved
+--constant size_io_???_c      : natural := 0; -- reserved
+--constant size_io_???_c      : natural := 0; -- reserved
+--constant size_io_???_c      : natural := 0; -- reserved
+--constant size_io_???_c      : natural := 0; -- reserved
+--constant size_io_???_c      : natural := 0; -- reserved
+--constant size_io_???_c      : natural := 0; -- reserved
+--constant size_io_???_c      : natural := 0; -- reserved
+  constant size_io_twd_c      : natural := 2*4;
+  constant size_io_cfs_c      : natural := io_dev_size_c; -- constrained locally
+  constant size_io_slink_c    : natural := 4*4;
+  constant size_io_dma_c      : natural := 4*4;
+--constant size_io_???_c      : natural := 0; -- reserved
+  constant size_io_smc_c      : natural := 2*4;
+  constant size_io_pwm_c      : natural := 64*4;
+  constant size_io_gptmr_c    : natural := 64*4;
+  constant size_io_onewire_c  : natural := 2*4;
+  constant size_io_tracebuf_c : natural := 4*4;
+  constant size_io_clint_c    : natural := 16*1024*4;
+  constant size_io_uart0_c    : natural := 4*4;
+  constant size_io_uart1_c    : natural := 4*4;
+  constant size_io_sdi_c      : natural := 2*4;
+  constant size_io_spi_c      : natural := 2*4;
+  constant size_io_twi_c      : natural := 2*4;
+  constant size_io_trng_c     : natural := 2*4;
+  constant size_io_wdt_c      : natural := 2*4;
+  constant size_io_gpio_c     : natural := 8*4;
+  constant size_io_neoled_c   : natural := 4*4;
+  constant size_io_sysinfo_c  : natural := 4*4;
+  constant size_io_ocd_c      : natural := 16*1024*4;
 
   -- On-Chip Debugger - debug module entry points (code ROM) --
   constant dm_exc_entry_c  : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- = base_io_ocd_c + code_rom_base + 0
