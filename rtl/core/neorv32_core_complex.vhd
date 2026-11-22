@@ -123,7 +123,7 @@ architecture neorv32_core_complex_rtl of neorv32_core_complex is
   -- wiring --
   signal cpu_fence : std_ulogic_vector(2 downto 0);
   signal icache_sync, dcache_sync : std_ulogic_vector(1 downto 0);
-  signal icache_syncd, dcache_syncd, cpu_fenced : std_ulogic;
+  signal icache_syncd, dcache_syncd, cpu_fenced, icache_miss, dcache_miss : std_ulogic;
   signal cpu_i_req, cpu_d_req, icache_req, dcache_req, bus_req : bus_req_t;
   signal cpu_i_rsp, cpu_d_rsp, icache_rsp, dcache_rsp, bus_rsp : bus_rsp_t;
 
@@ -198,6 +198,8 @@ begin
     dbi_i      => dbi_i,
     fence_o    => cpu_fence,
     fenced_i   => cpu_fenced,
+    ic_miss_i  => icache_miss,
+    dc_miss_i  => dcache_miss,
     ibus_req_o => cpu_i_req,
     ibus_rsp_i => cpu_i_rsp,
     dbus_req_o => cpu_d_req,
@@ -245,6 +247,7 @@ begin
       rstn_i     => rstn_i,
       sync_i     => icache_sync,
       sync_o     => icache_syncd,
+      miss_o     => icache_miss,
       host_req_i => cpu_i_req,
       host_rsp_o => cpu_i_rsp,
       bus_req_o  => icache_req,
@@ -255,6 +258,7 @@ begin
   icache_disabled:
   if not ICACHE_EN generate
     icache_syncd <= '1'; -- always synchronized
+    icache_miss  <= '0';
     icache_req   <= cpu_i_req;
     cpu_i_rsp    <= icache_rsp;
   end generate;
@@ -276,6 +280,7 @@ begin
       rstn_i     => rstn_i,
       sync_i     => dcache_sync,
       sync_o     => dcache_syncd,
+      miss_o     => dcache_miss,
       host_req_i => cpu_d_req,
       host_rsp_o => cpu_d_rsp,
       bus_req_o  => dcache_req,
@@ -286,6 +291,7 @@ begin
   dcache_disabled:
   if not DCACHE_EN generate
     dcache_syncd <= '1'; -- always synchronized
+    dcache_miss  <= '0';
     dcache_req   <= cpu_d_req;
     cpu_d_rsp    <= dcache_rsp;
   end generate;
