@@ -841,6 +841,10 @@ need for an explicit initialization / executable upload.
 :sectnums:
 === Processor-Internal Modules
 
+.CMSIS System Description View (SVD)
+[TIP]
+A CMSIS-compatible **System View Description (SVD)** file including all peripherals is available in `sw/svd`.
+
 .Full-Word Write Accesses Only
 [NOTE]
 Unless otherwise specified, all peripheral/IO devices should only be accessed using full-word accesses (i.e. 32-bit).
@@ -853,22 +857,19 @@ However, only the specified memory-mapped registers addresses should be used.
 
 .Unimplemented Modules / Address Holes
 [NOTE]
-When accessing an IO device that has not been implemented (disabled via the according generic)
-or when accessing an address that is actually unused, a load/store access fault exception is raised.
+When accessing an IO device that has not been implemented (disabled via the according generic) a bus access
+or when accessing an address that is unassigned (like non-allocated addresses within an IO module), a
+bus access fault exception is raised.
 
 .Writing to Read-Only Registers
 [NOTE]
 Unless otherwise specified, writing to registers that are listed as read-only does not trigger an exception
 as the write access is just ignored by the corresponding hardware module.
 
-.Module Interrupts
+.Interrupts
 [NOTE]
 Several peripheral/IO devices provide some kind of interrupt. These interrupts are mapped to the CPU's
 <<_custom_fast_interrupt_request_lines>>. See section <<_processor_interrupts>> for more information.
-
-.CMSIS System Description View (SVD)
-[TIP]
-A CMSIS-compatible **System View Description (SVD)** file including all peripherals is available in `sw/svd`.
 
 include::soc_imem.adoc[]
 

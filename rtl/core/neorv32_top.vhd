@@ -919,38 +919,38 @@ begin
     bus_io_switch_inst: entity neorv32.neorv32_bus_io_switch
     generic map (
       DEV_SIZE  => io_dev_size_c,
-      DEV_00_EN => bootrom_en_c,      DEV_00_BASE => base_io_bootrom_c,
-      DEV_01_EN => false,             DEV_01_BASE => (others => '0'), -- reserved
-      DEV_02_EN => false,             DEV_02_BASE => (others => '0'), -- reserved
-      DEV_03_EN => false,             DEV_03_BASE => (others => '0'), -- reserved
-      DEV_04_EN => false,             DEV_04_BASE => (others => '0'), -- reserved
-      DEV_05_EN => false,             DEV_05_BASE => (others => '0'), -- reserved
-      DEV_06_EN => false,             DEV_06_BASE => (others => '0'), -- reserved
-      DEV_07_EN => false,             DEV_07_BASE => (others => '0'), -- reserved
-      DEV_08_EN => false,             DEV_08_BASE => (others => '0'), -- reserved
-      DEV_09_EN => false,             DEV_09_BASE => (others => '0'), -- reserved
-      DEV_10_EN => IO_TWD_EN,         DEV_10_BASE => base_io_twd_c,
-      DEV_11_EN => IO_CFS_EN,         DEV_11_BASE => base_io_cfs_c,
-      DEV_12_EN => IO_SLINK_EN,       DEV_12_BASE => base_io_slink_c,
-      DEV_13_EN => IO_DMA_EN,         DEV_13_BASE => base_io_dma_c,
-      DEV_14_EN => false,             DEV_14_BASE => (others => '0'), -- reserved
-      DEV_15_EN => SMC_EN,            DEV_15_BASE => base_io_smc_c,
-      DEV_16_EN => io_pwm_en_c,       DEV_16_BASE => base_io_pwm_c,
-      DEV_17_EN => io_gptmr_en_c,     DEV_17_BASE => base_io_gptmr_c,
-      DEV_18_EN => IO_ONEWIRE_EN,     DEV_18_BASE => base_io_onewire_c,
-      DEV_19_EN => IO_TRACEBUF_EN,    DEV_19_BASE => base_io_tracebuf_c,
-      DEV_20_EN => IO_CLINT_EN,       DEV_20_BASE => base_io_clint_c,
-      DEV_21_EN => IO_UART0_EN,       DEV_21_BASE => base_io_uart0_c,
-      DEV_22_EN => IO_UART1_EN,       DEV_22_BASE => base_io_uart1_c,
-      DEV_23_EN => IO_SDI_EN,         DEV_23_BASE => base_io_sdi_c,
-      DEV_24_EN => IO_SPI_EN,         DEV_24_BASE => base_io_spi_c,
-      DEV_25_EN => IO_TWI_EN,         DEV_25_BASE => base_io_twi_c,
-      DEV_26_EN => IO_TRNG_EN,        DEV_26_BASE => base_io_trng_c,
-      DEV_27_EN => IO_WDT_EN,         DEV_27_BASE => base_io_wdt_c,
-      DEV_28_EN => io_gpio_en_c,      DEV_28_BASE => base_io_gpio_c,
-      DEV_29_EN => IO_NEOLED_EN,      DEV_29_BASE => base_io_neoled_c,
-      DEV_30_EN => true,              DEV_30_BASE => base_io_sysinfo_c, -- always enabled
-      DEV_31_EN => OCD_EN,            DEV_31_BASE => base_io_ocd_c
+      DEV_00_EN => bootrom_en_c,   DEV_00_BASE => base_io_bootrom_c,  DEV_00_SIZE => size_io_bootrom_c,
+      DEV_01_EN => false,          DEV_01_BASE => (others => '0'),    DEV_01_SIZE => 0, -- reserved
+      DEV_02_EN => false,          DEV_02_BASE => (others => '0'),    DEV_02_SIZE => 0, -- reserved
+      DEV_03_EN => false,          DEV_03_BASE => (others => '0'),    DEV_03_SIZE => 0, -- reserved
+      DEV_04_EN => false,          DEV_04_BASE => (others => '0'),    DEV_04_SIZE => 0, -- reserved
+      DEV_05_EN => false,          DEV_05_BASE => (others => '0'),    DEV_05_SIZE => 0, -- reserved
+      DEV_06_EN => false,          DEV_06_BASE => (others => '0'),    DEV_06_SIZE => 0, -- reserved
+      DEV_07_EN => false,          DEV_07_BASE => (others => '0'),    DEV_07_SIZE => 0, -- reserved
+      DEV_08_EN => false,          DEV_08_BASE => (others => '0'),    DEV_08_SIZE => 0, -- reserved
+      DEV_09_EN => false,          DEV_09_BASE => (others => '0'),    DEV_09_SIZE => 0, -- reserved
+      DEV_10_EN => IO_TWD_EN,      DEV_10_BASE => base_io_twd_c,      DEV_10_SIZE => size_io_twd_c,
+      DEV_11_EN => IO_CFS_EN,      DEV_11_BASE => base_io_cfs_c,      DEV_11_SIZE => size_io_cfs_c,
+      DEV_12_EN => IO_SLINK_EN,    DEV_12_BASE => base_io_slink_c,    DEV_12_SIZE => size_io_slink_c,
+      DEV_13_EN => IO_DMA_EN,      DEV_13_BASE => base_io_dma_c,      DEV_13_SIZE => size_io_dma_c,
+      DEV_14_EN => false,          DEV_14_BASE => (others => '0'),    DEV_14_SIZE => 0, -- reserved
+      DEV_15_EN => SMC_EN,         DEV_15_BASE => base_io_smc_c,      DEV_15_SIZE => size_io_smc_c,
+      DEV_16_EN => io_pwm_en_c,    DEV_16_BASE => base_io_pwm_c,      DEV_16_SIZE => size_io_pwm_c,
+      DEV_17_EN => io_gptmr_en_c,  DEV_17_BASE => base_io_gptmr_c,    DEV_17_SIZE => size_io_gptmr_c,
+      DEV_18_EN => IO_ONEWIRE_EN,  DEV_18_BASE => base_io_onewire_c,  DEV_18_SIZE => size_io_onewire_c,
+      DEV_19_EN => IO_TRACEBUF_EN, DEV_19_BASE => base_io_tracebuf_c, DEV_19_SIZE => size_io_tracebuf_c,
+      DEV_20_EN => IO_CLINT_EN,    DEV_20_BASE => base_io_clint_c,    DEV_20_SIZE => size_io_clint_c,
+      DEV_21_EN => IO_UART0_EN,    DEV_21_BASE => base_io_uart0_c,    DEV_21_SIZE => size_io_uart0_c,
+      DEV_22_EN => IO_UART1_EN,    DEV_22_BASE => base_io_uart1_c,    DEV_22_SIZE => size_io_uart1_c,
+      DEV_23_EN => IO_SDI_EN,      DEV_23_BASE => base_io_sdi_c,      DEV_23_SIZE => size_io_sdi_c,
+      DEV_24_EN => IO_SPI_EN,      DEV_24_BASE => base_io_spi_c,      DEV_24_SIZE => size_io_spi_c,
+      DEV_25_EN => IO_TWI_EN,      DEV_25_BASE => base_io_twi_c,      DEV_25_SIZE => size_io_twi_c,
+      DEV_26_EN => IO_TRNG_EN,     DEV_26_BASE => base_io_trng_c,     DEV_26_SIZE => size_io_trng_c,
+      DEV_27_EN => IO_WDT_EN,      DEV_27_BASE => base_io_wdt_c,      DEV_27_SIZE => size_io_wdt_c,
+      DEV_28_EN => io_gpio_en_c,   DEV_28_BASE => base_io_gpio_c,     DEV_28_SIZE => size_io_gpio_c,
+      DEV_29_EN => IO_NEOLED_EN,   DEV_29_BASE => base_io_neoled_c,   DEV_29_SIZE => size_io_neoled_c,
+      DEV_30_EN => true,           DEV_30_BASE => base_io_sysinfo_c,  DEV_30_SIZE => size_io_sysinfo_c,
+      DEV_31_EN => OCD_EN,         DEV_31_BASE => base_io_ocd_c,      DEV_31_SIZE => size_io_ocd_c
     )
     port map (
       clk_i        => clk_i,
