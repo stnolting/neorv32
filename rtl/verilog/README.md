@@ -3,14 +3,16 @@
 [![Verilog Conversion](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/verilog.yml?branch=main&longCache=true&style=flat-square&label=Verilog%20Conversion&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions/workflows/verilog.yml)
 
 You can use [GHDL's synthesis feature](https://ghdl.github.io/ghdl/using/Synthesis.html) to convert
-a preconfigured NEORV32 wrapper setup into a single, synthesizable, **plain-Verilog** module. The
-resulting Verilog module can be instantiated within an all-Verilog design.
+a configurable NEORV32 VHDL wrapper ([`neorv32_verilog_wrapper.vhd`](neorv32_verilog_wrapper.vhd))
+setup into a single, synthesizable, **plain-Verilog** module. The resulting Verilog module can be
+instantiated within an all-Verilog design.
 
 GHDL supports black-box instantiation during conversion. This feature can be used to replace
-certain NEORV32 modules by custom Verilog modules. For this purpose, the according NEORV32 VHDL
-modules provide a simple, uniform entity: only generics that convert to integer Verilog parameters
-and only ports with a static size. This allows to replace these components 1-by-1 by corresponding
-Verilog modules. Exemplary Verilog replacement modules can be found in the [`modules`](modules) folder.
+certain NEORV32 modules (like the CPU register file or the data and instruction memories) by
+custom Verilog modules. For this purpose, the according NEORV32 VHDL modules provide a simple,
+uniform entity: only generics that convert to integer Verilog parameters and only ports with a
+static size. This allows to replace these components 1-by-1 by corresponding Verilog modules.
+Exemplary Verilog replacement modules can be found in the [`modules`](modules) folder.
 
 More information can be found in the online documentation:
 
