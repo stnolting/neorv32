@@ -39,6 +39,10 @@ Accesses to the uncached address space (from `CACHE_UC_BASE` to `0xFFFFFFFF`, 25
 **bypass the cache**. Atomic memory operations also bypass the cache. If the address is cached, a modified line is
 written back first and then invalidated (see <<_memory_coherence>>).
 
+.Tracking Cache Misses
+[TIP]
+Cache misses can be tracked by the CPU's <<_hardware_performance_monitors_hpm_csrs>>.
+
 .Retrieve Cache Configuration by Software
 [TIP]
 Software can retrieve the cache layout from the <<_sysinfo_cache_configuration>> register.

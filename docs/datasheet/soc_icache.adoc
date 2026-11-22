@@ -38,6 +38,10 @@ All devices reachable through the cache (including the <<_processor_external_bus
 Accesses to the uncached address space (from `CACHE_UC_BASE` to `0xFFFFFFFF`, 256MB granularity, see <<_address_space>>)
 **bypass the cache**.
 
+.Tracking Cache Misses
+[TIP]
+Cache misses can be tracked by the CPU's <<_hardware_performance_monitors_hpm_csrs>>.
+
 .Retrieve Cache Configuration by Software
 [TIP]
 Software can retrieve the cache layout from the <<_sysinfo_cache_configuration>> register.
