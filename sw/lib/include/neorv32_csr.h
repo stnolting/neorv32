@@ -492,15 +492,17 @@ enum NEORV32_CSR_MINSTRETCFGH_enum {
  * mhpmevent hardware performance monitor events
  **************************************************************************/
 enum NEORV32_HPMCNT_EVENT_enum {
-  HPMCNT_EVENT_CY       = 0, /**< mhpmevent CSR (0): Active cycle */
-  HPMCNT_EVENT_IR       = 1, /**< mhpmevent CSR (1): Retired instruction */
-  HPMCNT_EVENT_CI       = 2, /**< mhpmevent CSR (2): Compressed instruction */
-  HPMCNT_EVENT_WAIT_DIS = 3, /**< mhpmevent CSR (3): Instruction dispatch wait cycle */
-  HPMCNT_EVENT_WAIT_ALU = 4, /**< mhpmevent CSR (4): Multi-cycle ALU co-processor wait cycle */
-  HPMCNT_EVENT_WAIT_LSU = 5, /**< mhpmevent CSR (5): Load-store unit memory wait cycle */
-  HPMCNT_EVENT_DELTA    = 6, /**< mhpmevent CSR (6): Control flow transfer */
-  HPMCNT_EVENT_LOAD     = 7, /**< mhpmevent CSR (7): Memory load operation */
-  HPMCNT_EVENT_STORE    = 8  /**< mhpmevent CSR (8): Memory store operation */
+  HPMCNT_EVENT_CY       =  0, /**< mhpmevent CSR  (0): Active cycle */
+  HPMCNT_EVENT_IR       =  1, /**< mhpmevent CSR  (1): Retired instruction */
+  HPMCNT_EVENT_CI       =  2, /**< mhpmevent CSR  (2): Compressed instruction */
+  HPMCNT_EVENT_WAIT_DIS =  3, /**< mhpmevent CSR  (3): Instruction dispatch wait cycle */
+  HPMCNT_EVENT_WAIT_ALU =  4, /**< mhpmevent CSR  (4): Multi-cycle ALU co-processor wait cycle */
+  HPMCNT_EVENT_WAIT_LSU =  5, /**< mhpmevent CSR  (5): Load-store unit memory wait cycle */
+  HPMCNT_EVENT_DELTA    =  6, /**< mhpmevent CSR  (6): Control flow transfer */
+  HPMCNT_EVENT_LOAD     =  7, /**< mhpmevent CSR  (7): Memory load operation */
+  HPMCNT_EVENT_STORE    =  8, /**< mhpmevent CSR  (8): Memory store operation */
+  HPMCNT_EVENT_ICMISS   =  9, /**< mhpmevent CSR  (9): Instruction cache miss */
+  HPMCNT_EVENT_DCMISS   = 10  /**< mhpmevent CSR (10): Data cache miss */
 };
 
 /**********************************************************************//**
