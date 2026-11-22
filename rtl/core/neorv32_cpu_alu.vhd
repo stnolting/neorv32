@@ -235,7 +235,7 @@ begin
     cp_valid(2)  <= '0';
   end generate;
 
-  -- FLOAT-Opcode Co-Processor: Single-Precision FPUUnit (Zfinx ISA Extension) --------------
+  -- FLOAT-Opcode Co-Processor: Single-Precision FPU (Zfinx ISA Extension) ------------------
   -- -------------------------------------------------------------------------------------------
   cpu_alu_fpu_enabled:
   if RISCV_ISA_Zfinx generate
