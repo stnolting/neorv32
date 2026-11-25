@@ -511,11 +511,11 @@ All remaining registers are hardwired to zero.
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
-| 7   | `PMPCFG_L`     | r/w | **L**: Lock bit, prevents further write accesses, also enforces access rights in machine-mode, can only be cleared by CPU reset
-| 4:3 | `PMPCFG_A_MSB` : `PMPCFG_A_LSB` | r/w | **A**: Mode configuration (`00` = OFF, `01` = TOR, `10` = NA4, `11` = NAPOT)
-| 2   | `PMPCFG_X`     | r/w | **X**: Execute permission
-| 1   | `PMPCFG_W`     | r/w | **W**: Write permission
-| 0   | `PMPCFG_R`     | r/w | **R**: Read permission
+| 7   | `PMPCFG_L`              | r/w | **L**: Lock bit, prevents further write accesses, also enforces access rights in machine-mode, can only be cleared by CPU reset
+| 4:3 | `PMPCFG_A1 : PMPCFG_A0` | r/w | **A**: Mode configuration (`00` = OFF, `01` = TOR, `10` = NA4, `11` = NAPOT)
+| 2   | `PMPCFG_X`              | r/w | **X**: Execute permission
+| 1   | `PMPCFG_W`              | r/w | **W**: Write permission
+| 0   | `PMPCFG_R`              | r/w | **R**: Read permission
 |=======================
 
 .Implemented Modes
@@ -695,6 +695,8 @@ events is observed (logical OR). Note that the counter will only increment by 1 
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C]                | R/W | Event Description
+| 10  | `HPMCNT_EVENT_DCMISS`   | r/w | <<_data_cache_dcache>> miss; hardwired to zero if d-cache not enabled
+| 9   | `HPMCNT_EVENT_ICMISS`   | r/w | <<_instruction_cache_icache>> miss; hardwired to zero if i-cache not enabled
 | 8   | `HPMCNT_EVENT_STORE`    | r/w | memory store operation (read-modify-write AMOs are counted as 1x load + 1x store operation)
 | 7   | `HPMCNT_EVENT_LOAD`     | r/w | memory load operation (read-modify-write AMOs are counted as 1x load + 1x store operation)
 | 6   | `HPMCNT_EVENT_DELTA`    | r/w | control flow transfer (jump, taken branch, trap entry/exit)

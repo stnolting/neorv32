@@ -73,6 +73,8 @@ entity neorv32_cpu_control is
     frontend_i    : in  if_bus_t;                       -- front-end status and data
     hwtrig_i      : in  std_ulogic;                     -- hardware trigger
     fenced_i      : in  std_ulogic;                     -- fence operation completed
+    ic_miss_i     : in  std_ulogic;                     -- instruction cache miss
+    dc_miss_i     : in  std_ulogic;                     -- data cache miss
     -- data path interface --
     alu_cp_done_i : in  std_ulogic;                     -- ALU iterative operation done
     alu_cmp_i     : in  std_ulogic_vector(1 downto 0);  -- comparator status
@@ -171,6 +173,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal retire_done  : std_ulogic; -- end of instruction retire tracking
   signal retired      : std_ulogic; -- tracked instruction has retired
   signal fenced       : std_ulogic; -- fence operation completed
+  signal cache_miss   : std_ulogic_vector(1 downto 0); -- cache miss input synchronizer
 
 begin
 
@@ -572,6 +575,18 @@ begin
   cnt_event(cnt_event_delta_c)    <= '1' when (ctrl.if_reset = '1') and (exec.ir(6 downto 2) /= "00011") else '0'; -- control flow transfer
   cnt_event(cnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rd = '1')               else '0'; -- memory load
   cnt_event(cnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_wr = '1')               else '0'; -- memory store
+  cnt_event(cnt_event_icmiss_c)   <= '1' when (cache_miss(0) = '1')                                      else '0'; -- i-cache miss
+  cnt_event(cnt_event_dcmiss_c)   <= '1' when (cache_miss(1) = '1')                                      else '0'; -- d-cache miss
+
+  -- cache miss event synchronizer --
+  cache_misses: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      cache_miss <= (others => '0');
+    elsif rising_edge(clk_i) then
+      cache_miss <= dc_miss_i & ic_miss_i;
+    end if;
+  end process;
 
   -- retire tracking --
   retire_tracking: process(rstn_i, clk_i)

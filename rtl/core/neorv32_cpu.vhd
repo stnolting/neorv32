@@ -95,6 +95,9 @@ entity neorv32_cpu is
     -- memory ordering --
     fence_o    : out std_ulogic_vector(2 downto 0);  -- fence request (r/w/x)
     fenced_i   : in  std_ulogic;                     -- fence operation completed
+    -- cache status --
+    ic_miss_i  : in  std_ulogic;                     -- instruction cache miss
+    dc_miss_i  : in  std_ulogic;                     -- data cache miss
     -- instruction bus interface --
     ibus_req_o : out bus_req_t;                      -- request bus
     ibus_rsp_i : in  bus_rsp_t;                      -- response bus
@@ -313,6 +316,8 @@ begin
     frontend_i    => frontend,    -- front-end status and data
     hwtrig_i      => hwtrig,      -- hardware trigger
     fenced_i      => fenced_i,    -- fence operation completed
+    ic_miss_i     => ic_miss_i,   -- instruction cache miss
+    dc_miss_i     => dc_miss_i,   -- data cache miss
     -- data path interface --
     alu_cp_done_i => alu_cp_done, -- ALU iterative operation done
     alu_cmp_i     => alu_cmp,     -- comparator status

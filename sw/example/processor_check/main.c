@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
 
-
 /**********************************************************************//**
  * @file processor_check/main.c
  * @brief CPU/Processor test/verification program.
@@ -15,7 +14,6 @@
 
 #include <neorv32.h>
 #include <string.h>
-
 
 /**********************************************************************//**
  * @name User configuration
@@ -45,7 +43,6 @@
 #define TERM_HL_RESET      "\033[0m"
 /**@}*/
 
-
 /**********************************************************************//**
  * @name UART print macros
  **************************************************************************/
@@ -56,7 +53,6 @@
 #define PRINT(...) neorv32_uart0_printf(__VA_ARGS__)
 #endif
 /**@}*/
-
 
 // Prototypes
 void sim_irq_trigger(uint32_t sel);
@@ -97,7 +93,6 @@ volatile uint32_t amo_var = 0; // atomic memory access test
 volatile _Atomic int atomic_cnt = 0; // dual core atomic test
 volatile uint32_t twd_irq = 0; // TWD interrupt checks
 
-
 /**********************************************************************//**
  * Constructor; should be called before entering main.
  * @warning Constructors do not preserve any registers on the stack (issue #1169).
@@ -124,7 +119,6 @@ void __attribute__((constructor)) neorv32_constructor() {
   }
 }
 
-
 /**********************************************************************//**
  * High-level CPU/processor test program.
  *
@@ -143,7 +137,6 @@ int main() {
   // setup UARTs at default baud rate, no interrupts
   neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
   neorv32_uart_setup(NEORV32_UART1, BAUD_RATE, UART_RX_IRQ_NONE, UART_TX_IRQ_NONE);
-
 
   // setup RTE
   // -----------------------------------------------
@@ -183,7 +176,6 @@ int main() {
     return 1;
   }
 
-
   // clear GPIOs (they are used by the TB to trigger external events)
   neorv32_gpio_port_set(0);
   neorv32_gpio_port_dir_set(-1); // set all as outputs
@@ -201,14 +193,12 @@ int main() {
   // get number of implemented PMP regions
   pmp_num_regions = neorv32_cpu_pmp_get_num_regions();
 
-
   // fancy intro
   // -----------------------------------------------
   neorv32_aux_print_logo(); // show NEORV32 ASCII logo
   neorv32_aux_print_about(); // show project credits
   PRINT("Build: "__DATE__" "__TIME__"\n");
   neorv32_aux_print_hw_config(); // show full hardware configuration report
-
 
   // **********************************************************************************************
   // Run CPU and SoC tests
@@ -229,7 +219,6 @@ int main() {
   // no traps so far
   trap_cnt = 0;
 
-
   // ----------------------------------------------------------
   // Setup HPMs
   // ----------------------------------------------------------
@@ -241,15 +230,17 @@ int main() {
   if (num_hpm_cnts_global != 0) {
     cnt_test++;
 
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER3, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT3,  1 << HPMCNT_EVENT_CY);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER3, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT4,  1 << HPMCNT_EVENT_IR);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER3, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT5,  1 << HPMCNT_EVENT_CI);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER4, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT6,  1 << HPMCNT_EVENT_WAIT_DIS);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER5, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_WAIT_ALU);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER6, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT8,  1 << HPMCNT_EVENT_WAIT_LSU);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER7, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT9,  1 << HPMCNT_EVENT_DELTA);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER8, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT10, 1 << HPMCNT_EVENT_LOAD);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER9, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT11, 1 << HPMCNT_EVENT_STORE);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT3,  1 << HPMCNT_EVENT_CY);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT4,  1 << HPMCNT_EVENT_IR);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER5,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT5,  1 << HPMCNT_EVENT_CI);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER6,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT6,  1 << HPMCNT_EVENT_WAIT_DIS);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_WAIT_ALU);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT8,  1 << HPMCNT_EVENT_WAIT_LSU);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT9,  1 << HPMCNT_EVENT_DELTA);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT10, 1 << HPMCNT_EVENT_LOAD);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT11, 1 << HPMCNT_EVENT_STORE);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER12, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT12, 1 << HPMCNT_EVENT_ICMISS);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER13, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT13, 1 << HPMCNT_EVENT_DCMISS);
 
     // make sure there was no exception
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == trap_never_c) {
@@ -264,7 +255,6 @@ int main() {
   }
 
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // enable all counters
-
 
   // ----------------------------------------------------------
   // Setup PMP for tests
@@ -313,7 +303,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Test fence instructions
   // ----------------------------------------------------------
@@ -337,7 +326,6 @@ int main() {
   else {
     test_fail();
   }
-
 
   // ----------------------------------------------------------
   // Test instruction stream synchronization (#1684)
@@ -401,7 +389,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Check JTAG access from testbench
   // ----------------------------------------------------------
@@ -423,7 +410,6 @@ int main() {
   else {
     PRINT("[n.a.]\n");
   }
-
 
   // ----------------------------------------------------------
   // Test standard RISC-V counters
@@ -454,7 +440,6 @@ int main() {
   else {
     test_fail();
   }
-
 
   // ----------------------------------------------------------
   // Test mcounteren: constrain user-level access to counter CSRs
@@ -499,7 +484,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Test mcountinhibit: inhibit counter auto-inc
   // ----------------------------------------------------------
@@ -531,7 +515,6 @@ int main() {
 
   // re-enable all counters
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0);
-
 
   // ----------------------------------------------------------
   // Counter privilege-mode filtering
@@ -582,7 +565,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Execute MRET in U-mode (has to trap!)
   // ----------------------------------------------------------
@@ -608,7 +590,6 @@ int main() {
   else {
     PRINT("[n.a.]\n");
   }
-
 
   // ----------------------------------------------------------
   // External memory interface test
@@ -649,7 +630,6 @@ int main() {
   else {
     PRINT("[n.a.]\n");
   }
-
 
   // ----------------------------------------------------------
   // D-cache write-back error tests
@@ -708,7 +688,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Illegal CSR access
   // ----------------------------------------------------------
@@ -727,7 +706,6 @@ int main() {
     test_fail();
   }
 
-
   // ----------------------------------------------------------
   // Write-access to read-only CSR
   // ----------------------------------------------------------
@@ -743,7 +721,6 @@ int main() {
   else {
     test_fail();
   }
-
 
   // ----------------------------------------------------------
   // No "real" CSR write access (because rs1 = r0)
@@ -762,7 +739,6 @@ int main() {
   else {
     test_fail();
   }
-
 
   // ----------------------------------------------------------
   // Unaligned instruction address
@@ -792,7 +768,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Instruction access fault
   // ----------------------------------------------------------
@@ -818,7 +793,6 @@ int main() {
   else {
     PRINT("[n.a.]\n");
   }
-
 
   // ----------------------------------------------------------
   // Unaligned instruction fetch error
@@ -862,7 +836,6 @@ int main() {
   else {
     PRINT("[n.a.]\n");
   }
-
 
   // ----------------------------------------------------------
   // Illegal instruction
@@ -925,7 +898,6 @@ int main() {
   // re-enable machine-mode interrupts
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
-
   // ----------------------------------------------------------
   // Breakpoint instruction
   // ----------------------------------------------------------
@@ -949,7 +921,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Unaligned load address
   // ----------------------------------------------------------
@@ -971,7 +942,6 @@ int main() {
     test_fail();
   }
 
-
   // ----------------------------------------------------------
   // Load access fault
   // ----------------------------------------------------------
@@ -992,7 +962,6 @@ int main() {
   else {
     test_fail();
   }
-
 
   // ----------------------------------------------------------
   // Unaligned store address
@@ -1020,7 +989,6 @@ int main() {
     test_fail();
   }
 
-
   // ----------------------------------------------------------
   // Store access fault
   // ----------------------------------------------------------
@@ -1038,7 +1006,6 @@ int main() {
   else {
     test_fail();
   }
-
 
   // ----------------------------------------------------------
   // Environment call from M-mode
@@ -1060,7 +1027,6 @@ int main() {
   else {
     test_fail();
   }
-
 
   // ----------------------------------------------------------
   // Environment call from U-mode
@@ -1087,7 +1053,6 @@ int main() {
   else {
     PRINT("[n.a.]\n");
   }
-
 
   // ----------------------------------------------------------
   // CLINT machine time interrupt
@@ -1126,7 +1091,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // CLINT machine software interrupt
   // ----------------------------------------------------------
@@ -1157,7 +1121,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Machine external interrupt (MEI) via testbench
   // ----------------------------------------------------------
@@ -1187,7 +1150,6 @@ int main() {
   else {
     PRINT("[n.a.]\n");
   }
-
 
   // ----------------------------------------------------------
   // Test immediate interrupt entry [#1682]
@@ -1270,7 +1232,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Test pending interrupt
   // ----------------------------------------------------------
@@ -1305,7 +1266,6 @@ int main() {
   else {
     PRINT("[n.a.]\n");
   }
-
 
   // ----------------------------------------------------------
   // Test vectored interrupt via testbench external interrupt
@@ -1350,20 +1310,17 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Fast interrupt channel 0 (reserved)
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ0 (reserved) ", cnt_test);
   PRINT("[n.a.]\n");
 
-
   // ----------------------------------------------------------
   // Fast interrupt channel 1 (CFS)
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ1 (CFS) ", cnt_test);
   PRINT("[n.a.]\n");
-
 
   // ----------------------------------------------------------
   // Fast interrupt channel 2 (UART0)
@@ -1426,7 +1383,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Fast interrupt channel 3 (UART1)
   // ----------------------------------------------------------
@@ -1485,7 +1441,6 @@ int main() {
   else {
     PRINT("[n.a.]\n");
   }
-
 
   // ----------------------------------------------------------
   // Fast interrupt channel 4 (TWD)
@@ -1548,7 +1503,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Fast interrupt channel 5 (TRACEBUF)
   // ----------------------------------------------------------
@@ -1590,7 +1544,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Fast interrupt channel 6 (SPI)
   // ----------------------------------------------------------
@@ -1627,7 +1580,6 @@ int main() {
   else {
     PRINT("[n.a.]\n");
   }
-
 
   // ----------------------------------------------------------
   // Fast interrupt channel 7 (TWI)
@@ -1671,7 +1623,6 @@ int main() {
   else {
     PRINT("[n.a.]\n");
   }
-
 
   // ----------------------------------------------------------
   // Fast interrupt channel 8 (GPIO)
@@ -1735,7 +1686,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Fast interrupt channel 9 (NEOLED)
   // ----------------------------------------------------------
@@ -1772,7 +1722,6 @@ int main() {
   else {
     PRINT("[n.a.]\n");
   }
-
 
   // ----------------------------------------------------------
   // Fast interrupt channel 10 (DMA)
@@ -1834,7 +1783,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Fast interrupt channel 11 (SDI)
   // ----------------------------------------------------------
@@ -1877,7 +1825,6 @@ int main() {
   else {
     PRINT("[n.a.]\n");
   }
-
 
   // ----------------------------------------------------------
   // Fast interrupt channel 12 (GPTMR)
@@ -1922,7 +1869,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Fast interrupt channel 13 (ONEWIRE)
   // ----------------------------------------------------------
@@ -1961,7 +1907,6 @@ int main() {
   else {
     PRINT("[n.a.]\n");
   }
-
 
   // ----------------------------------------------------------
   // Fast interrupt channel 14 (SLINK)
@@ -2010,7 +1955,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Fast interrupt channel 15 (TRNG)
   // ----------------------------------------------------------
@@ -2045,7 +1989,6 @@ int main() {
   else {
     PRINT("[n.a.]\n");
   }
-
 
   // ----------------------------------------------------------
   // RTE context modification
@@ -2090,7 +2033,6 @@ int main() {
     test_fail();
   }
 
-
   // ----------------------------------------------------------
   // Check dynamic memory allocation
   // ----------------------------------------------------------
@@ -2117,7 +2059,6 @@ int main() {
     test_fail();
   }
 
-
   // ----------------------------------------------------------
   // Constructor test
   // ----------------------------------------------------------
@@ -2131,7 +2072,6 @@ int main() {
   else {
     test_fail();
   }
-
 
   // ----------------------------------------------------------
   // PSRAM access via SMC
@@ -2177,7 +2117,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Test WFI ("sleep") instruction (executed in user mode), wakeup via CLINT.MTIMER
   // mstatus.mie is cleared before to check if machine-mode IRQ still trigger in user-mode
@@ -2216,7 +2155,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Test if CPU wakes-up from WFI if m-mode interrupts are disabled globally
   // ----------------------------------------------------------
@@ -2253,7 +2191,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Test un-allowed WFI ("sleep") instruction (executed in user mode)
   // ----------------------------------------------------------
@@ -2283,7 +2220,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Test invalid CSR access in user mode
   // ----------------------------------------------------------
@@ -2311,7 +2247,6 @@ int main() {
   else {
     PRINT("[n.a.]\n");
   }
-
 
   // ----------------------------------------------------------
   // Test atomic lr/sc memory access
@@ -2343,7 +2278,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Test atomic read-modify-write accesses
   // ----------------------------------------------------------
@@ -2373,7 +2307,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // Test physical memory protection
   // ----------------------------------------------------------
@@ -2385,7 +2318,6 @@ int main() {
     for (tmp_a = 0; tmp_a < sizeof(pmp_access)/4; tmp_a++) {
       pmp_access[tmp_a] = 0xcafe00ff; // illegal instructions
     }
-
 
     // General memory access from user mode - has to
     // fail as u-mode has no permissions by default
@@ -2413,7 +2345,6 @@ int main() {
       test_fail();
     }
 
-
     // Create PMP protected region
     // ---------------------------------------------
     PRINT("[%i] PMP config ", cnt_test);
@@ -2437,7 +2368,6 @@ int main() {
       test_fail();
     }
 
-
     // LOAD from U-mode: should succeed
     // ---------------------------------------------
     PRINT("[%i] PMP U-mode R (granted) ", cnt_test);
@@ -2459,7 +2389,6 @@ int main() {
       test_fail();
     }
 
-
     // STORE from U-mode: should fail
     // ---------------------------------------------
     PRINT("[%i] PMP U-mode W (denied) ", cnt_test);
@@ -2478,7 +2407,6 @@ int main() {
     else {
       test_fail();
     }
-
 
     // EXECUTE from U-mode: should fail
     // ---------------------------------------------
@@ -2500,7 +2428,6 @@ int main() {
       test_fail();
     }
 
-
     // STORE from M mode using U mode permissions: should fail
     // ---------------------------------------------
     PRINT("[%i] PMP M-mode (U-mode perm.) W (denied) ", cnt_test);
@@ -2521,7 +2448,6 @@ int main() {
     else {
       test_fail();
     }
-
 
     // STORE from M mode with LOCKED: should fail
     // ---------------------------------------------
@@ -2545,7 +2471,6 @@ int main() {
   else {
     PRINT("[%i] PMP [n.a.]\n", cnt_test);
   }
-
 
   // ----------------------------------------------------------
   // SMP dual-core test
@@ -2586,7 +2511,6 @@ int main() {
     PRINT("[n.a.]\n");
   }
 
-
   // ----------------------------------------------------------
   // counter reports
   // ----------------------------------------------------------
@@ -2602,7 +2526,9 @@ int main() {
       "[HPM8]  LSU waits    : %u\n"
       "[HPM9]  Deltas       : %u\n"
       "[HPM10] Loads        : %u\n"
-      "[HPM11] Stores       : %u\n",
+      "[HPM11] Stores       : %u\n"
+      "[HPM12] I$ misses    : %u\n"
+      "[HPM13] D$ misses    : %u\n",
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER3),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER4),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER5),
@@ -2611,13 +2537,14 @@ int main() {
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER8),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER9),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER10),
-      neorv32_cpu_csr_read(CSR_MHPMCOUNTER11)
+      neorv32_cpu_csr_read(CSR_MHPMCOUNTER11),
+      neorv32_cpu_csr_read(CSR_MHPMCOUNTER12),
+      neorv32_cpu_csr_read(CSR_MHPMCOUNTER13)
     );
   }
   else {
     PRINT("no HPMs available\n");
   }
-
 
   // ----------------------------------------------------------
   // Final test reports
@@ -2636,7 +2563,6 @@ int main() {
 
 }
 
-
 /**********************************************************************//**
  * Simulation-based function to set/clear CPU interrupts (MSI, MEI).
  *
@@ -2646,7 +2572,6 @@ void sim_irq_trigger(uint32_t sel) {
 
   neorv32_cpu_store_unsigned_word(SIM_TRIG_BASE, sel);
 }
-
 
 /**********************************************************************//**
  * Trap handler for ALL exceptions/interrupts.
@@ -2668,7 +2593,6 @@ void global_trap_handler(void) {
   neorv32_cpu_csr_set(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));
 }
 
-
 /**********************************************************************//**
  * RTE's ecall "system service handler"; modifies application context to provide "system services"
  **************************************************************************/
@@ -2687,7 +2611,6 @@ void rte_service_handler(void) {
   // hack: return in MACHINE MODE
   neorv32_cpu_csr_set(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));
 }
-
 
 /**********************************************************************//**
  * Vectored mtvec mode jump table.
@@ -2723,7 +2646,6 @@ void __attribute__((naked, aligned(128))) vectored_irq_table(void) {
   );
 }
 
-
 /**********************************************************************//**
  * Vectored trap handler for ALL exceptions/interrupts.
  **************************************************************************/
@@ -2733,7 +2655,6 @@ void __attribute__((interrupt("machine"))) vectored_global_handler(void) {
   // as all function in the table must have the gcc attribute "interrupt".
   global_trap_handler();
 }
-
 
 /**********************************************************************//**
  * Machine external interrupt handler.
@@ -2746,7 +2667,6 @@ void __attribute__((interrupt("machine"))) vectored_mei_handler(void) {
   vectored_mei_handler_ack = 1; // successfully called
 }
 
-
 /**********************************************************************//**
  * GPIO input interrupt handler
  **************************************************************************/
@@ -2758,7 +2678,6 @@ void gpio_trap_handler(void) {
   neorv32_gpio_irq_enable(0); // disable all pin interrupts
 }
 
-
 /**********************************************************************//**
  * Test results helper function: Shows "[ok]" and increments global cnt_ok
  **************************************************************************/
@@ -2768,7 +2687,6 @@ void test_ok(void) {
   cnt_ok++;
 }
 
-
 /**********************************************************************//**
  * Test results helper function: Shows "[fail]" and increments global cnt_fail
  **************************************************************************/
@@ -2777,7 +2695,6 @@ void test_fail(void) {
   PRINT(TERM_HL_RED"[fail]"TERM_HL_RESET"\n");
   cnt_fail++;
 }
-
 
 /**********************************************************************//**
  * Test code to be run on second CPU core
@@ -2792,7 +2709,6 @@ int core1_main(void) {
 
   return 0;
 }
-
 
 /**********************************************************************//**
  * Switch from privilege mode MACHINE to privilege mode USER.
@@ -2811,7 +2727,6 @@ void __attribute__((naked,noinline)) goto_user_mode(void) {
   );
 }
 
-
 /**********************************************************************//**
  * Test code for trace buffer, part 1, no-inline to have actual branches when calling
  **************************************************************************/
@@ -2822,7 +2737,6 @@ void __attribute__((noinline)) trace_test_1(void) {
   asm volatile ("nop");
 }
 
-
 /**********************************************************************//**
  * Test code for trace buffer, part 2, no-inline to have actual branches when calling
  **************************************************************************/
@@ -2830,7 +2744,6 @@ void __attribute__((noinline)) trace_test_2(void) {
 
   asm volatile ("nop");
 }
-
 
 /**********************************************************************//**
  * TWD interrupt handler
