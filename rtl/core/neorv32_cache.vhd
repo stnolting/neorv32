@@ -38,6 +38,7 @@ entity neorv32_cache is
     rstn_i     : in  std_ulogic;                    -- global reset, low-active, async
     sync_i     : in  std_ulogic_vector(1 downto 0); -- sync request: 00=NOP, 01=invalidate, 10=flush, 11=both
     sync_o     : out std_ulogic;                    -- synchronization completed, single-shot
+    miss_o     : out std_ulogic;                    -- cache miss, single-shot
     host_req_i : in  bus_req_t;                     -- host request
     host_rsp_o : out bus_rsp_t;                     -- host response
     bus_req_o  : out bus_req_t;                     -- bus request
@@ -90,6 +91,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
     pnd_bp  : std_ulogic; -- pending bypass bus request
     bp_req  : std_ulogic; -- cache bypass bus request (STB)
     hit     : std_ulogic; -- forced cache hit (to skip status update latency)
+    miss    : std_ulogic; -- cache miss
     cln     : std_ulogic; -- forced clean status (to skip status update latency)
     tag     : std_ulogic_vector(tag_width_c-1 downto 0);    -- tag
     idx     : std_ulogic_vector(index_width_c-1 downto 0);  -- index
@@ -124,6 +126,7 @@ begin
       ctrl.pnd_bp  <= '0';
       ctrl.bp_req  <= '0';
       ctrl.hit     <= '0';
+      ctrl.miss    <= '0';
       ctrl.cln     <= '0';
       ctrl.tag     <= (others => '0');
       ctrl.idx     <= (others => '0');
@@ -149,6 +152,7 @@ begin
     ctrl_nxt.pnd_bp  <= ctrl.pnd_bp;
     ctrl_nxt.bp_req  <= '0';
     ctrl_nxt.hit     <= '0';
+    ctrl_nxt.miss    <= '0';
     ctrl_nxt.cln     <= '0';
     ctrl_nxt.tag     <= ctrl.tag;
     ctrl_nxt.idx     <= ctrl.idx;
@@ -206,6 +210,7 @@ begin
         ctrl_nxt.ofs_int <= (others => '0');
         ctrl_nxt.pnd_req <= '0'; -- access request accepted
         ctrl_nxt.bp_req  <= '1'; -- in case we are doing a bypass request (set STB for one cycle)
+        ctrl_nxt.miss    <= (not ctrl.pnd_bp) and (not cache_i.hit); -- is this a cache miss?
         --
         if (ctrl.pnd_bp = '1') then -- cache bypass (uncached or atomic memory operation)
           if (cache_i.hit = '1') then -- do we have a cached copy of the accessed address (#1540)?
@@ -511,6 +516,9 @@ begin
 
     end case;
   end process;
+
+  -- signal "cache miss" to CPU (for performance benchmarking) --
+  miss_o <= ctrl.miss;
 
 
   -- Status Memory: Block Valid -------------------------------------------------------------
