@@ -1265,8 +1265,10 @@ package neorv32_package is
   component neorv32_cpu_regfile
   generic (
     AWIDTH  : natural range 4 to 5;
+    DWIDTH  : natural;
     ARCHSEL : natural range 0 to 3;
-    RS3_EN  : boolean
+    RS3_EN  : boolean;
+    GUARD_0 : boolean
   );
   port (
     clk_i      : in  std_ulogic;
@@ -1274,13 +1276,13 @@ package neorv32_package is
     zero_i     : in  std_ulogic;
     rd_we_i    : in  std_ulogic;
     rd_addr_i  : in  std_ulogic_vector(4 downto 0);
-    rd_data_i  : in  std_ulogic_vector(31 downto 0);
+    rd_data_i  : in  std_ulogic_vector(DWIDTH-1 downto 0);
     rs1_addr_i : in  std_ulogic_vector(4 downto 0);
-    rs1_data_o : out std_ulogic_vector(31 downto 0);
+    rs1_data_o : out std_ulogic_vector(DWIDTH-1 downto 0);
     rs2_addr_i : in  std_ulogic_vector(4 downto 0);
-    rs2_data_o : out std_ulogic_vector(31 downto 0);
+    rs2_data_o : out std_ulogic_vector(DWIDTH-1 downto 0);
     rs3_addr_i : in  std_ulogic_vector(4 downto 0);
-    rs3_data_o : out std_ulogic_vector(31 downto 0)
+    rs3_data_o : out std_ulogic_vector(DWIDTH-1 downto 0)
   );
   end component;
 

@@ -27,8 +27,10 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_regfile is
   generic (
     AWIDTH  : natural range 4 to 5; -- address width
+    DWIDTH  : natural;              -- register size
     ARCHSEL : natural range 0 to 3; -- architecture style select
-    RS3_EN  : boolean               -- enable third read port
+    RS3_EN  : boolean;              -- enable third read port
+    GUARD_0 : boolean               -- isolate x0 register
   );
   port (
     -- global control --
@@ -38,16 +40,16 @@ entity neorv32_cpu_regfile is
     -- write port (rd) --
     rd_we_i    : in  std_ulogic;                     -- write-enable
     rd_addr_i  : in  std_ulogic_vector(4 downto 0);  -- address
-    rd_data_i  : in  std_ulogic_vector(31 downto 0); -- write data
+    rd_data_i  : in  std_ulogic_vector(DWIDTH-1 downto 0); -- write data
     -- read port 1 (rs1) --
     rs1_addr_i : in  std_ulogic_vector(4 downto 0);  -- address
-    rs1_data_o : out std_ulogic_vector(31 downto 0); -- read data
+    rs1_data_o : out std_ulogic_vector(DWIDTH-1 downto 0); -- read data
     -- read port 2 (rs2) --
     rs2_addr_i : in  std_ulogic_vector(4 downto 0);  -- address
-    rs2_data_o : out std_ulogic_vector(31 downto 0); -- read data
+    rs2_data_o : out std_ulogic_vector(DWIDTH-1 downto 0); -- read data
     -- read port 3 (rs3) --
     rs3_addr_i : in  std_ulogic_vector(4 downto 0);  -- address
-    rs3_data_o : out std_ulogic_vector(31 downto 0)  -- read data
+    rs3_data_o : out std_ulogic_vector(DWIDTH-1 downto 0)  -- read data
   );
 end entity;
 
@@ -56,11 +58,11 @@ architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
   -- access logic --
   signal rf_we  : std_ulogic;
   signal addr   : std_ulogic_vector(4 downto 0);
-  signal wdata  : std_ulogic_vector(31 downto 0);
-  signal onehot : std_ulogic_vector((2**AWIDTH)-1 downto 1);
+  signal wdata  : std_ulogic_vector(DWIDTH-1 downto 0);
+  signal onehot : std_ulogic_vector((2**AWIDTH)-1 downto 0);
 
   -- memory core --
-  type   regfile_t is array ((2**AWIDTH)-1 downto 0) of std_ulogic_vector(31 downto 0);
+  type   regfile_t is array ((2**AWIDTH)-1 downto 0) of std_ulogic_vector(DWIDTH-1 downto 0);
   signal regfile : regfile_t;
 
 begin
@@ -72,9 +74,16 @@ begin
 
     -- Register zero (x0) is just another physical register that has to be initialized by the CPU control.
     -- Writes to x0 are inhibited unless the control forces a write (writing zero) to re-initialize x0.
-    rf_we <= (rd_we_i and or_reduce_f(rd_addr_i(AWIDTH-1 downto 0))) or zero_i;
-    addr  <= (others => '0') when (zero_i  = '1') else -- force rd = zero
-             rd_addr_i       when (rd_we_i = '1') else rs1_addr_i; -- multiplexed rd/rs1
+    guard_o: if GUARD_0 generate
+      rf_we <= (rd_we_i and or_reduce_f(rd_addr_i(AWIDTH-1 downto 0))) or zero_i;
+      addr  <= (others => '0') when (zero_i  = '1') else -- force rd = zero
+               rd_addr_i       when (rd_we_i = '1') else rs1_addr_i; -- multiplexed rd/rs1
+    end generate;
+
+    no_guard_o: if not GUARD_0 generate
+      rf_we <= rd_we_i;
+      addr  <= rd_addr_i when (rd_we_i = '1') else rs1_addr_i;
+    end generate;
 
     -- synchronous write & read (SDPRAM) --
     rf_access: process(clk_i)
@@ -122,20 +131,40 @@ begin
     rf_read: process(clk_i)
     begin
       if rising_edge(clk_i) then
-        if (rs1_addr_i = "00000") then -- reading x0
-          rs1_data_o <= (others => '0');
+        if GUARD_0 then
+        ---------------------------------------
+          if (rs1_addr_i = "00000") then -- reading x0
+            rs1_data_o <= (others => '0');
+          else
+            rs1_data_o <= regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0))));
+          end if;
         else
+        ---------------------------------------
           rs1_data_o <= regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0))));
         end if;
-        if (rs2_addr_i = "00000") then -- reading x0
-          rs2_data_o <= (others => '0');
+
+        if GUARD_0 then
+        ---------------------------------------
+          if (rs2_addr_i = "00000") then -- reading x0
+            rs2_data_o <= (others => '0');
+          else
+            rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
+          end if;
         else
+        ---------------------------------------
           rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
         end if;
+
         if RS3_EN then -- optional third read port
-          if (rs3_addr_i = "00000") then -- reading x0
-            rs3_data_o <= (others => '0');
+          if GUARD_0 then
+          ---------------------------------------
+            if (rs3_addr_i = "00000") then -- reading x0
+              rs3_data_o <= (others => '0');
+            else
+              rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
+            end if;
           else
+          ---------------------------------------
             rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
           end if;
         else
@@ -158,26 +187,54 @@ begin
   if (ARCHSEL = 2) generate
 
     -- write select --
-    onehot_gen:
-    for i in 1 to (2**AWIDTH)-1 generate
-      onehot(i) <= rd_we_i when (unsigned(rd_addr_i(AWIDTH-1 downto 0)) = to_unsigned(i, AWIDTH)) else '0';
+    guard_o_oneshot: if GUARD_0 generate
+      onehot_gen:
+      for i in 1 to (2**AWIDTH)-1 generate
+        onehot(i) <= rd_we_i when (unsigned(rd_addr_i(AWIDTH-1 downto 0)) = to_unsigned(i, AWIDTH)) else '0';
+      end generate;
+      onehot(0) <= '0';
+    end generate;
+
+    no_guard_o_oneshot: if not GUARD_0 generate
+      onehot_gen:
+      for i in 0 to (2**AWIDTH)-1 generate
+        onehot(i) <= rd_we_i when (unsigned(rd_addr_i(AWIDTH-1 downto 0)) = to_unsigned(i, AWIDTH)) else '0';
+      end generate;
     end generate;
 
     -- individual registers with reset --
-    regfile_gen:
-    for i in 1 to (2**AWIDTH)-1 generate
-      rf_write: process(rstn_i, clk_i)
-      begin
-        if (rstn_i = '0') then
-          regfile(i) <= (others => '0');
-        elsif rising_edge(clk_i) then
-          if (onehot(i) = '1') then
-            regfile(i) <= rd_data_i;
+    guard_o_regfile: if GUARD_0 generate
+      regfile_gen:
+      for i in 1 to (2**AWIDTH)-1 generate
+        rf_write: process(rstn_i, clk_i)
+        begin
+          if (rstn_i = '0') then
+            regfile(i) <= (others => '0');
+          elsif rising_edge(clk_i) then
+            if (onehot(i) = '1') then
+              regfile(i) <= rd_data_i;
+            end if;
           end if;
-        end if;
-      end process;
+        end process;
+      end generate;
+      regfile(0) <= (others => '0'); -- x0 is hardwired to zero
     end generate;
-    regfile(0) <= (others => '0'); -- x0 is hardwired to zero
+
+    no_guard_o_regfile: if not GUARD_0 generate
+      regfile_gen:
+      for i in 0 to (2**AWIDTH)-1 generate
+        rf_write: process(rstn_i, clk_i)
+        begin
+          if (rstn_i = '0') then
+            regfile(i) <= (others => '0');
+          elsif rising_edge(clk_i) then
+            if (onehot(i) = '1') then
+              regfile(i) <= rd_data_i;
+            end if;
+          end if;
+        end process;
+      end generate;
+    end generate;
 
     -- synchronous read --
     rf_read: process(clk_i)
