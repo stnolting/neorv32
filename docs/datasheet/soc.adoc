@@ -388,7 +388,7 @@ At this time, the following modules are being considered for possible replacemen
 | <<_instruction_cache_icache,I-cache>>/<<_data_cache_dcache,d-cache>> data & tag memory | `rtl/core/neorv32_cache_ram.vhd` | `rtl/verilog/neorv32_cache_ram.v`
 | Custom functions subsystem (<<_custom_functions_subsystem_cfs,CFS>>)                   | `rtl/core/neorv32_cfs.vhd`       | `rtl/verilog/neorv32_cfs.v`
 3+^| **CPU Level**
-| Register file (<<_cpu_register_file,REGFILE>>)             | `rtl/core/neorv32_cpu_regfile.vhd` | `rtl/verilog/neorv32_cpu_regfile.v`
+| Register file (<<_cpu_register_file,REGFILE>>)             | `rtl/core/neorv32_cpu_regfile.vhd` | -
 | Custom functions unit (<<_custom_functions_unit_cfu,CFU>>) | `rtl/core/neorv32_cpu_alu_cfu.vhd` | `rtl/verilog/neorv32_cpu_alu_cfu.v`
 |=======================
 

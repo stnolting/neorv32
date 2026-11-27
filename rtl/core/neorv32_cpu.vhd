@@ -416,8 +416,10 @@ begin
   cpu_regfile_inst: neorv32_cpu_regfile -- component declaration in package file
   generic map (
     AWIDTH  => rf_awidth_c,     -- address width
+    DWIDTH  => 32,              -- register size
     ARCHSEL => CPU_RF_ARCH_SEL, -- architecture style select
-    RS3_EN  => rf_rs3_en_c      -- enable third read port
+    RS3_EN  => rf_rs3_en_c,     -- enable third read port
+    R0_ZERO => true             -- hardwire register 0 to zero
   )
   port map (
     -- global control --

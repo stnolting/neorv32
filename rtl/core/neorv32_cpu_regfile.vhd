@@ -27,8 +27,10 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_regfile is
   generic (
     AWIDTH  : natural range 4 to 5; -- address width
+    DWIDTH  : natural;              -- register size
     ARCHSEL : natural range 0 to 3; -- architecture style select
-    RS3_EN  : boolean               -- enable third read port
+    RS3_EN  : boolean;              -- enable third read port
+    R0_ZERO : boolean               -- hardwire register 0 to zero
   );
   port (
     -- global control --
@@ -36,31 +38,34 @@ entity neorv32_cpu_regfile is
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     zero_i     : in  std_ulogic; -- force write to x0 (for SRAM memory only)
     -- write port (rd) --
-    rd_we_i    : in  std_ulogic;                     -- write-enable
-    rd_addr_i  : in  std_ulogic_vector(4 downto 0);  -- address
-    rd_data_i  : in  std_ulogic_vector(31 downto 0); -- write data
+    rd_we_i    : in  std_ulogic;                           -- write-enable
+    rd_addr_i  : in  std_ulogic_vector(4 downto 0);        -- address
+    rd_data_i  : in  std_ulogic_vector(DWIDTH-1 downto 0); -- write data
     -- read port 1 (rs1) --
-    rs1_addr_i : in  std_ulogic_vector(4 downto 0);  -- address
-    rs1_data_o : out std_ulogic_vector(31 downto 0); -- read data
+    rs1_addr_i : in  std_ulogic_vector(4 downto 0);        -- address
+    rs1_data_o : out std_ulogic_vector(DWIDTH-1 downto 0); -- read data
     -- read port 2 (rs2) --
-    rs2_addr_i : in  std_ulogic_vector(4 downto 0);  -- address
-    rs2_data_o : out std_ulogic_vector(31 downto 0); -- read data
+    rs2_addr_i : in  std_ulogic_vector(4 downto 0);        -- address
+    rs2_data_o : out std_ulogic_vector(DWIDTH-1 downto 0); -- read data
     -- read port 3 (rs3) --
-    rs3_addr_i : in  std_ulogic_vector(4 downto 0);  -- address
-    rs3_data_o : out std_ulogic_vector(31 downto 0)  -- read data
+    rs3_addr_i : in  std_ulogic_vector(4 downto 0);        -- address
+    rs3_data_o : out std_ulogic_vector(DWIDTH-1 downto 0)  -- read data
   );
 end entity;
 
 architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
 
+  -- index of first read/write register --
+  constant first_reg_c : natural := sel_natural_f(R0_ZERO, 1, 0);
+
   -- access logic --
   signal rf_we  : std_ulogic;
   signal addr   : std_ulogic_vector(4 downto 0);
-  signal wdata  : std_ulogic_vector(31 downto 0);
-  signal onehot : std_ulogic_vector((2**AWIDTH)-1 downto 1);
+  signal wdata  : std_ulogic_vector(DWIDTH-1 downto 0);
+  signal onehot : std_ulogic_vector((2**AWIDTH)-1 downto first_reg_c);
 
   -- memory core --
-  type   regfile_t is array ((2**AWIDTH)-1 downto 0) of std_ulogic_vector(31 downto 0);
+  type   regfile_t is array ((2**AWIDTH)-1 downto 0) of std_ulogic_vector(DWIDTH-1 downto 0);
   signal regfile : regfile_t;
 
 begin
@@ -72,9 +77,18 @@ begin
 
     -- Register zero (x0) is just another physical register that has to be initialized by the CPU control.
     -- Writes to x0 are inhibited unless the control forces a write (writing zero) to re-initialize x0.
-    rf_we <= (rd_we_i and or_reduce_f(rd_addr_i(AWIDTH-1 downto 0))) or zero_i;
-    addr  <= (others => '0') when (zero_i  = '1') else -- force rd = zero
-             rd_addr_i       when (rd_we_i = '1') else rs1_addr_i; -- multiplexed rd/rs1
+    reg0_zero:
+    if R0_ZERO generate
+      rf_we <= (rd_we_i and or_reduce_f(rd_addr_i(AWIDTH-1 downto 0))) or zero_i;
+      addr  <= (others => '0') when (zero_i = '1') else rd_addr_i when (rd_we_i = '1') else rs1_addr_i;
+    end generate;
+
+    -- register 0 is just another read/write register --
+    reg0_register:
+    if not R0_ZERO generate
+      rf_we <= rd_we_i;
+      addr  <= rd_addr_i when (rd_we_i = '1') else rs1_addr_i;
+    end generate;
 
     -- synchronous write & read (SDPRAM) --
     rf_access: process(clk_i)
@@ -99,7 +113,6 @@ begin
 
   end generate;
 
-
   -- Architecture Style 1: Register-Based SRAM with Asynchronous Read -----------------------
   -- -------------------------------------------------------------------------------------------
   arch_sram_async:
@@ -122,18 +135,18 @@ begin
     rf_read: process(clk_i)
     begin
       if rising_edge(clk_i) then
-        if (rs1_addr_i = "00000") then -- reading x0
+        if R0_ZERO and (rs1_addr_i = "00000") then -- reading all-zero register
           rs1_data_o <= (others => '0');
         else
           rs1_data_o <= regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0))));
         end if;
-        if (rs2_addr_i = "00000") then -- reading x0
+        if R0_ZERO and (rs2_addr_i = "00000") then -- reading all-zero register
           rs2_data_o <= (others => '0');
         else
           rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
         end if;
         if RS3_EN then -- optional third read port
-          if (rs3_addr_i = "00000") then -- reading x0
+          if R0_ZERO and (rs3_addr_i = "00000") then -- reading all-zero register
             rs3_data_o <= (others => '0');
           else
             rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
@@ -151,7 +164,6 @@ begin
 
   end generate;
 
-
   -- Architecture Style 2: Register-Based with Hardware Reset -------------------------------
   -- -------------------------------------------------------------------------------------------
   arch_reg:
@@ -159,13 +171,13 @@ begin
 
     -- write select --
     onehot_gen:
-    for i in 1 to (2**AWIDTH)-1 generate
+    for i in first_reg_c to (2**AWIDTH)-1 generate
       onehot(i) <= rd_we_i when (unsigned(rd_addr_i(AWIDTH-1 downto 0)) = to_unsigned(i, AWIDTH)) else '0';
     end generate;
 
     -- individual registers with reset --
     regfile_gen:
-    for i in 1 to (2**AWIDTH)-1 generate
+    for i in first_reg_c to (2**AWIDTH)-1 generate
       rf_write: process(rstn_i, clk_i)
       begin
         if (rstn_i = '0') then
@@ -177,7 +189,12 @@ begin
         end if;
       end process;
     end generate;
-    regfile(0) <= (others => '0'); -- x0 is hardwired to zero
+
+    -- register 0 hardwired to zero? --
+    r0_terminate:
+    if R0_ZERO generate
+      regfile(0) <= (others => '0');
+    end generate;
 
     -- synchronous read --
     rf_read: process(clk_i)
@@ -199,7 +216,6 @@ begin
     wdata <= (others => '0');
 
   end generate;
-
 
   -- Architecture Style 3: Latch-Based ------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -225,13 +241,13 @@ begin
 
     -- write select --
     onehot_gen:
-    for i in 1 to (2**AWIDTH)-1 generate
+    for i in first_reg_c to (2**AWIDTH)-1 generate
       onehot(i) <= '1' when (unsigned(addr(AWIDTH-1 downto 0)) = to_unsigned(i, AWIDTH)) else '0';
     end generate;
 
     -- individual latches (transparent when clock is LOW) --
     regfile_gen:
-    for i in 1 to (2**AWIDTH)-1 generate
+    for i in first_reg_c to (2**AWIDTH)-1 generate
       rf_write: process(clk_i, onehot, wdata)
       begin
         if (clk_i = '0') and (onehot(i) = '1') then
@@ -239,7 +255,12 @@ begin
         end if;
       end process;
     end generate;
-    regfile(0) <= (others => '0'); -- x0 is hardwired to zero
+
+    -- register 0 hardwired to zero? --
+    r0_terminate:
+    if R0_ZERO generate
+      regfile(0) <= (others => '0');
+    end generate;
 
     -- synchronous read --
     rf_read: process(clk_i)
