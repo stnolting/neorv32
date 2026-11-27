@@ -1,0 +1,28 @@
+var searchData=
+[
+  ['dma_5fconf_5fbswap_0',['DMA_CONF_BSWAP',['../neorv32__dma_8h.html#a86bba66a74af202f79c32d8278ce58e4a57083ae8531392873205f978c7ae9428',1,'neorv32_dma.h']]],
+  ['dma_5fconf_5fdst0_1',['DMA_CONF_DST0',['../neorv32__dma_8h.html#a86bba66a74af202f79c32d8278ce58e4a58080fbefffeecd05c871bbb611e108d',1,'neorv32_dma.h']]],
+  ['dma_5fconf_5fdst1_2',['DMA_CONF_DST1',['../neorv32__dma_8h.html#a86bba66a74af202f79c32d8278ce58e4ab3269b355bcf2e46ac80fe3d3a3c937f',1,'neorv32_dma.h']]],
+  ['dma_5fconf_5fnum0_3',['DMA_CONF_NUM0',['../neorv32__dma_8h.html#a86bba66a74af202f79c32d8278ce58e4a06aa2b90e2ce9e38fcceb14a6593ba03',1,'neorv32_dma.h']]],
+  ['dma_5fconf_5fnum23_4',['DMA_CONF_NUM23',['../neorv32__dma_8h.html#a86bba66a74af202f79c32d8278ce58e4a64f4923fa0d1f4bbc7b3ab8669e8453c',1,'neorv32_dma.h']]],
+  ['dma_5fconf_5fsrc0_5',['DMA_CONF_SRC0',['../neorv32__dma_8h.html#a86bba66a74af202f79c32d8278ce58e4a1ee135c2c269ee2ca53df562ba4446ff',1,'neorv32_dma.h']]],
+  ['dma_5fconf_5fsrc1_6',['DMA_CONF_SRC1',['../neorv32__dma_8h.html#a86bba66a74af202f79c32d8278ce58e4aa299dff4b76f06877a71dd759e10daba',1,'neorv32_dma.h']]],
+  ['dma_5fctrl_5fack_7',['DMA_CTRL_ACK',['../neorv32__dma_8h.html#a6716eddb145b80ad38799da3b87cb2a4a4d09c44780a4658a6bf61e88bd926dcf',1,'neorv32_dma.h']]],
+  ['dma_5fctrl_5fbusy_8',['DMA_CTRL_BUSY',['../neorv32__dma_8h.html#a6716eddb145b80ad38799da3b87cb2a4a8e5ff34ac48eea4b352378bb2af47bcb',1,'neorv32_dma.h']]],
+  ['dma_5fctrl_5fdempty_9',['DMA_CTRL_DEMPTY',['../neorv32__dma_8h.html#a6716eddb145b80ad38799da3b87cb2a4a31253dc5c64a7ddab37c0fea8008e605',1,'neorv32_dma.h']]],
+  ['dma_5fctrl_5fdfifo0_10',['DMA_CTRL_DFIFO0',['../neorv32__dma_8h.html#a6716eddb145b80ad38799da3b87cb2a4a50bf625ccc7200a967dfd6997006f7db',1,'neorv32_dma.h']]],
+  ['dma_5fctrl_5fdfifo3_11',['DMA_CTRL_DFIFO3',['../neorv32__dma_8h.html#a6716eddb145b80ad38799da3b87cb2a4a86082d0fce5981e90a1f15ed523aaf80',1,'neorv32_dma.h']]],
+  ['dma_5fctrl_5fdfull_12',['DMA_CTRL_DFULL',['../neorv32__dma_8h.html#a6716eddb145b80ad38799da3b87cb2a4a327df5bbf02f24ac06b52863adb79db8',1,'neorv32_dma.h']]],
+  ['dma_5fctrl_5fdone_13',['DMA_CTRL_DONE',['../neorv32__dma_8h.html#a6716eddb145b80ad38799da3b87cb2a4a0d51df1bb87dc54d331891c5db787bcc',1,'neorv32_dma.h']]],
+  ['dma_5fctrl_5fen_14',['DMA_CTRL_EN',['../neorv32__dma_8h.html#a6716eddb145b80ad38799da3b87cb2a4a5f39deea0212f45423243c8100c40838',1,'neorv32_dma.h']]],
+  ['dma_5fctrl_5ferror_15',['DMA_CTRL_ERROR',['../neorv32__dma_8h.html#a6716eddb145b80ad38799da3b87cb2a4a2821da79b1176f0af46f834b89ed9f1c',1,'neorv32_dma.h']]],
+  ['dma_5fctrl_5fstart_16',['DMA_CTRL_START',['../neorv32__dma_8h.html#a6716eddb145b80ad38799da3b87cb2a4ad3f11a927cf251d439e300e508b1cd19',1,'neorv32_dma.h']]],
+  ['dma_5fstatus_5fbusy_17',['DMA_STATUS_BUSY',['../neorv32__dma_8h.html#a002cb188ea5156df0ba282e239a6e74bad0f66e962296f5451d73dc1cae1fdc0d',1,'neorv32_dma.h']]],
+  ['dma_5fstatus_5fdone_18',['DMA_STATUS_DONE',['../neorv32__dma_8h.html#a002cb188ea5156df0ba282e239a6e74bad74fe6f5b7682191bb3ff9b4d3ed0a1d',1,'neorv32_dma.h']]],
+  ['dma_5fstatus_5ferror_19',['DMA_STATUS_ERROR',['../neorv32__dma_8h.html#a002cb188ea5156df0ba282e239a6e74bab6d8be0ec8be1da61a66bd75ec698d25',1,'neorv32_dma.h']]],
+  ['dma_5fstatus_5fidle_20',['DMA_STATUS_IDLE',['../neorv32__dma_8h.html#a002cb188ea5156df0ba282e239a6e74bac9c380cd5729386e5f5673e20b86326f',1,'neorv32_dma.h']]],
+  ['dma_5ftype_5fconst_5fbyte_21',['DMA_TYPE_CONST_BYTE',['../neorv32__dma_8h.html#aed705c2cf92f100ebd30251ebabd481ea78d27061208b28951121af985368305b',1,'neorv32_dma.h']]],
+  ['dma_5ftype_5fconst_5fword_22',['DMA_TYPE_CONST_WORD',['../neorv32__dma_8h.html#aed705c2cf92f100ebd30251ebabd481eaf3d55333f005bb206d38b8b4dd19907e',1,'neorv32_dma.h']]],
+  ['dma_5ftype_5finc_5fbyte_23',['DMA_TYPE_INC_BYTE',['../neorv32__dma_8h.html#aed705c2cf92f100ebd30251ebabd481ea47a28d907b42d2c6ced7e352c2e2f5d2',1,'neorv32_dma.h']]],
+  ['dma_5ftype_5finc_5fword_24',['DMA_TYPE_INC_WORD',['../neorv32__dma_8h.html#aed705c2cf92f100ebd30251ebabd481ea5d297b5408032cd25e1edb6f0563eccd',1,'neorv32_dma.h']]]
+];
