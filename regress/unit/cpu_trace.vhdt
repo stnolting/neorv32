@@ -1,0 +1,35 @@
+--! dut neorv32_cpu_trace
+--! stim
+  tick(4);
+  for i in 1 to 4000 loop
+    ctrl_i.cnt_event <= randv(9);
+    ctrl_i.pc_cur <= randv(32);
+    ctrl_i.pc_nxt <= randv(32);
+    ctrl_i.rf_wb_en <= randv(1)(0);
+    ctrl_i.rf_rs1 <= randv(5);
+    ctrl_i.rf_rs2 <= randv(5);
+    ctrl_i.rf_rd <= randv(5);
+    ctrl_i.csr_addr <= randv(12);
+    ctrl_i.csr_we <= randv(1)(0);
+    ctrl_i.csr_re <= randv(1)(0);
+    ctrl_i.csr_wdata <= randv(32);
+    ctrl_i.ir_opcode <= randv(7);
+    ctrl_i.ir_funct3 <= randv(3);
+    ctrl_i.ir_funct12 <= randv(12);
+    ctrl_i.ir_rvc <= randv(16);
+    ctrl_i.cpu_exec <= bool_to_ulogic_f(rndn(3) = 0);
+    ctrl_i.cpu_priv <= randv(1)(0);
+    ctrl_i.cpu_trap <= bool_to_ulogic_f(rndn(15) = 0);
+    ctrl_i.cpu_sync_exc <= bool_to_ulogic_f(rndn(15) = 0);
+    ctrl_i.cpu_debug <= bool_to_ulogic_f(rndn(15) = 0);
+    ctrl_i.lsu_req <= bool_to_ulogic_f(rndn(3) = 0);
+    ctrl_i.lsu_rd <= randv(1)(0);
+    ctrl_i.lsu_wr <= randv(1)(0);
+    rs1_rdata_i <= randv(32);
+    rs2_rdata_i <= randv(32);
+    rd_wdata_i <= randv(32);
+    mem_ben_i <= randv(4);
+    mem_addr_i <= randv(32);
+    mem_wdata_i <= randv(32);
+    tick;
+  end loop;

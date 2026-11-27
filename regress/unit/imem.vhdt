@@ -1,0 +1,19 @@
+--! dut neorv32_imem
+--! generic AWIDTH=8
+--! generic OUTREG=false
+--! generic INITROM=false
+--! config imem_ram INITROM=false
+--! config imem_ram_outreg INITROM=false OUTREG=true
+--! config imem_rom INITROM=true CFG=1
+--! config imem_rom_outreg INITROM=true OUTREG=true CFG=1
+--! stim
+  tick(5);
+  for i in 0 to 15 loop
+    if CFG = 0 then
+      wr(std_ulogic_vector(to_unsigned(i * 4, 32)), randv(32), std_ulogic_vector(to_unsigned(i, 4)));
+    end if;
+    rd(std_ulogic_vector(to_unsigned(i * 4, 32)));
+  end loop;
+  if CFG = 0 then
+    fuzz(8, 300);
+  end if;

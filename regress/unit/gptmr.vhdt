@@ -1,0 +1,51 @@
+--! dut neorv32_gptmr
+--! generic NUM_SLICES=4
+--! config gptmr_0 NUM_SLICES=0
+--! config gptmr_1 NUM_SLICES=1
+--! config gptmr_4 NUM_SLICES=4
+--! config gptmr_16 NUM_SLICES=16
+--! stim
+  -- procs
+    constant ctrl : std_ulogic_vector(31 downto 0) := x"00000000";
+    constant irqr : std_ulogic_vector(31 downto 0) := x"00000004";
+    function sl(s, r : natural) return std_ulogic_vector is
+    begin
+      return std_ulogic_vector(to_unsigned(128 + s * 8 + r * 4, 32));
+    end function;
+  -- end procs
+  tick(5);
+  rd(ctrl);
+  rd(irqr);
+  if NUM_SLICES > 0 then
+    for s in 0 to NUM_SLICES-1 loop
+      wr(sl(s, 1), x"00000010"); -- threshold
+      rd(sl(s, 0));
+      rd(sl(s, 1));
+    end loop;
+    -- every prescaler, one-shot and continuous
+    for p in 0 to 7 loop
+      for m in 0 to 1 loop
+        wr(irqr, std_ulogic_vector(to_unsigned(p * 65536, 32)), "1100");
+        if m = 1 then
+          wr(ctrl, x"0000FFFF");
+        else
+          wr(ctrl, x"FFFFFFFF");
+        end if;
+        tick(40);
+        wr(ctrl, x"00000000");
+      end loop;
+    end loop;
+    for s in 0 to NUM_SLICES-1 loop
+      wr(sl(s, 1), x"00000003");
+    end loop;
+    wr(ctrl, x"FFFFFFFF");
+    tick(200);
+    rd(irqr);
+    wr(irqr, x"00000000");
+    wr(irqr, x"FFFFFFFF");
+    tick(20);
+    wr(ctrl, x"00000000");
+    rd(irqr);
+    wr(irqr, x"00000000");
+  end if;
+  fuzz(8, 600);

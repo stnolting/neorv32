@@ -1,0 +1,38 @@
+--! dut neorv32_cpu_alu_cfu
+--! stim
+  -- procs
+    procedure op(opcode : std_ulogic_vector(6 downto 0); f3 : std_ulogic_vector(2 downto 0);
+                 imm : std_ulogic_vector(11 downto 0); a, b : std_ulogic_vector(31 downto 0)) is
+    begin
+      inst_i <= imm & "00000" & f3 & "00000" & opcode;
+      rs1_i <= a;
+      rs2_i <= b;
+      start_i <= '1';
+      tick;
+      start_i <= '0';
+      for i in 0 to 60 loop
+        tick;
+        exit when valid_o = '1';
+      end loop;
+      tick;
+    end procedure;
+    constant r_c : std_ulogic_vector(6 downto 0) := "0001011";
+    constant i_c : std_ulogic_vector(6 downto 0) := "0101011";
+  -- end procs
+  tick(4);
+  for k in 0 to 3 loop
+    op(i_c, "001", std_ulogic_vector(to_unsigned(k, 12)), randv(32), x"00000000"); -- key write
+    op(i_c, "000", std_ulogic_vector(to_unsigned(k, 12)), x"00000000", x"00000000"); -- key read
+  end loop;
+  for t in 0 to 7 loop
+    for r in 0 to 3 loop
+      op(r_c, std_ulogic_vector(to_unsigned(t, 3)), x"000", randv(32), randv(32));
+    end loop;
+  end loop;
+  op(r_c, "100", x"000", x"9E3779B9", x"00000000"); -- init
+  for t in 0 to 3 loop
+    for r in 0 to 15 loop
+      op(r_c, std_ulogic_vector(to_unsigned(t, 3)), x"000", randv(32), randv(32));
+    end loop;
+  end loop;
+  op("0110011", "000", x"000", x"00000000", x"00000000"); -- not a CFU opcode

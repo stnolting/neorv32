@@ -1,0 +1,13 @@
+--! dut neorv32_cpu_decompressor
+--! clock tb_clk
+--! generic ZCB_EN=true
+--! generic ZCMOP_EN=true
+--! config decompressor_all @stop=2ms
+--! config decompressor_plain ZCB_EN=false ZCMOP_EN=false @stop=2ms
+--! stim
+  -- exhaustive
+  for i in 0 to 65535 loop
+    instr_i <= std_ulogic_vector(to_unsigned(i, 16));
+    tick;
+  end loop;
+  tick(2);

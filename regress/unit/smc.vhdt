@@ -1,0 +1,110 @@
+--! dut neorv32_smc
+--! generic BURST_EN=true
+--! generic BURST_SIZE=16
+--! generic MEM_BASE=x"E0000000"
+--! config smc_burst
+--! config smc_noburst BURST_EN=false
+--! decl
+  signal psram_data : std_logic_vector(3 downto 0);
+--! arch
+  psram_data(0) <= std_logic(smc_sdo_o);
+  smc_sdi_i     <= std_ulogic(psram_data(1));
+  psram_data    <= (others => 'L');
+  psram_0: entity neorv32.psram_model
+    generic map (MEM_BYTES => 8*1024)
+    port map (sck => std_logic(smc_sck_o), cs_n => std_logic(smc_csn_o(0)), sio => psram_data);
+  psram_1: entity neorv32.psram_model
+    generic map (MEM_BYTES => 8*1024)
+    port map (sck => std_logic(smc_sck_o), cs_n => std_logic(smc_csn_o(1)), sio => psram_data);
+--! stim
+  -- procs
+    procedure cw(a, d : std_ulogic_vector(31 downto 0)) is
+    begin
+      bus_xfer(clk_i, ctrl_req_i, ctrl_rsp_o, a, d, '1');
+    end procedure;
+    procedure cr(a : std_ulogic_vector(31 downto 0)) is
+    begin
+      bus_xfer(clk_i, ctrl_req_i, ctrl_rsp_o, a, x"00000000", '0');
+    end procedure;
+    procedure dx(a, d : std_ulogic_vector(31 downto 0); w : std_ulogic; b : std_ulogic_vector(3 downto 0) := "1111"; burst : std_ulogic := '0') is
+    begin
+      bus_xfer(clk_i, data_req_i, data_rsp_o, a, d, w, b, burst => burst, limit => 3000);
+    end procedure;
+    variable csr0 : std_ulogic_vector(31 downto 0);
+  -- end procs
+  tick(4);
+  cr(x"00000000");
+  cr(x"00000004");
+  -- cmd: read 0x03, write 0x02, no wait states, 1 MB, dual device
+  for div in 0 to 7 loop
+    for size in 0 to 3 loop
+      for dual in 0 to 1 loop
+        csr0 := x"02030000";
+        csr0(0) := '1';
+        csr0(1) := '1';
+        csr0(3) := std_ulogic'val(2 + dual);
+        csr0(8 downto 7) := std_ulogic_vector(to_unsigned(size, 2));
+        csr0(11 downto 9) := std_ulogic_vector(to_unsigned(div, 3));
+        cw(x"00000000", csr0);
+        cr(x"00000000");
+        dx(x"E0000010", x"12345678", '1');
+        dx(x"E0000010", x"00000000", '0');
+        dx(x"E0000011", x"000000A5", '1', "0010");
+        dx(x"E0000012", x"0000A5A5", '1', "1100");
+        dx(x"E0000010", x"00000000", '0', "0011");
+        dx(x"E0000010", x"0000BEEF", '1', "0011");
+        exit when div > 1;
+      end loop;
+    end loop;
+  end loop;
+  csr0 := x"02030003";
+  cw(x"00000000", csr0);
+  for b in 0 to 15 loop
+    dx(x"E0000020", randv(32), '1', std_ulogic_vector(to_unsigned(b, 4)));
+    dx(x"E0000020", x"00000000", '0', std_ulogic_vector(to_unsigned(b, 4)));
+  end loop;
+  -- disabled during a transfer
+  csr0 := x"02030E03";
+  cw(x"00000000", csr0);
+  for d in 20 to 40 loop
+    data_req_i <= (meta => "00000", addr => x"E0000010", data => x"00000000", ben => "1111", stb => '1', rw => '0', amo => '0', amoop => "0000", burst => '0', lock => '0');
+    tick;
+    data_req_i.stb <= '0';
+    tick(d);
+    cw(x"00000000", x"00000000");
+    tick(40);
+    csr0 := x"02030E03";
+    cw(x"00000000", csr0);
+  end loop;
+  cw(x"00000000", x"00000000");
+  tick(4);
+  -- read wait states, after the initialization of the memory has ended
+  csr0 := x"02033003";
+  cw(x"00000000", csr0);
+  tick(3000);
+  dx(x"E0000010", x"00000000", '0');
+  csr0(15 downto 12) := x"0";
+  cw(x"00000000", csr0);
+  -- bursts: one request, one response per word
+  for i in 0 to 3 loop
+    data_req_i <= (meta => "00000", addr => std_ulogic_vector(unsigned'(x"E0000040") + i * 4), data => randv(32), ben => "1111", stb => '1', rw => '1', amo => '0', amoop => "0000", burst => '1', lock => '0');
+    tick;
+    data_req_i.stb <= '0';
+    tick(3);
+  end loop;
+  tick(600);
+  data_req_i <= (meta => "00000", addr => x"E0000040", data => x"00000000", ben => "1111", stb => '1', rw => '0', amo => '0', amoop => "0000", burst => '1', lock => '0');
+  tick;
+  data_req_i.stb <= '0';
+  tick(600);
+  data_req_i.burst <= '0';
+  -- beyond the configured size
+  dx(x"EFFFFFF0", x"00000000", '0');
+  dx(x"EFFFFFF0", x"00000000", '1');
+  for r in 0 to 7 loop
+    cw(x"00000004", randv(32));
+    cr(x"00000004");
+  end loop;
+  cw(x"00000000", x"00000000");
+  dx(x"E0000010", x"00000000", '0');
+  cr(x"00000000");

@@ -1,0 +1,23 @@
+--! dut neorv32_bus_io_switch
+--! generic DEV_SIZE=16
+--! generic DEV_00_EN=true
+--! generic DEV_00_BASE=x"00000000"
+--! generic DEV_01_EN=true
+--! generic DEV_01_BASE=x"00000010"
+--! generic DEV_02_EN=true
+--! generic DEV_02_BASE=x"00000020"
+--! generic DEV_05_EN=true
+--! generic DEV_05_BASE=x"00000050"
+--! generic DEV_31_EN=true
+--! generic DEV_31_BASE=x"000001F0"
+--! arch
+  dev0: entity neorv32.regress_bus_mem port map (clk_i => clk_i, req_i => dev_00_req_o, rsp_o => dev_00_rsp_i);
+  dev1: entity neorv32.regress_bus_mem port map (clk_i => clk_i, req_i => dev_01_req_o, rsp_o => dev_01_rsp_i);
+  dev2: entity neorv32.regress_bus_mem port map (clk_i => clk_i, req_i => dev_02_req_o, rsp_o => dev_02_rsp_i);
+  dev5: entity neorv32.regress_bus_mem port map (clk_i => clk_i, req_i => dev_05_req_o, rsp_o => dev_05_rsp_i);
+  dev31: entity neorv32.regress_bus_mem port map (clk_i => clk_i, req_i => dev_31_req_o, rsp_o => dev_31_rsp_i);
+--! stim
+  tick(4);
+  for i in 1 to 400 loop
+    bus_xfer(clk_i, main_req_i, main_rsp_o, x"00000" & "000" & randv(9), randv(32), randv(1)(0), randv(4), limit => 8);
+  end loop;

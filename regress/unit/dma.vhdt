@@ -1,0 +1,93 @@
+--! dut neorv32_dma
+--! generic DSC_FIFO=4
+--! config dma_fifo4
+--! config dma_fifo16 DSC_FIFO=16
+--! decl
+  signal mem_err : std_ulogic := '0';
+--! arch
+  -- memory model: read data is a function of the address, 1 cycle latency
+  mem: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      dma_rsp_i.ack  <= dma_req_o.stb;
+      dma_rsp_i.err  <= dma_req_o.stb and mem_err;
+      dma_rsp_i.data <= (others => '0');
+      if (dma_req_o.stb = '1') and (dma_req_o.rw = '0') then
+        dma_rsp_i.data <= dma_req_o.addr xor x"5A5AC3C3";
+      end if;
+    end if;
+  end process;
+--! stim
+  -- procs
+    variable d : std_ulogic_vector(31 downto 0);
+    procedure wait_idle is
+    begin
+      loop
+        rd(x"00000000", d);
+        exit when d(31) = '0';
+        tick(4);
+      end loop;
+    end procedure;
+    procedure desc(src, dst : std_ulogic_vector(31 downto 0); s, t : natural; n : natural; bs : std_ulogic := '0') is
+      variable c : std_ulogic_vector(31 downto 0) := (others => '0');
+    begin
+      c(23 downto 0)  := std_ulogic_vector(to_unsigned(n, 24));
+      c(27)           := bs;
+      c(29 downto 28) := std_ulogic_vector(to_unsigned(s, 2));
+      c(31 downto 30) := std_ulogic_vector(to_unsigned(t, 2));
+      wr(x"00000004", src);
+      wr(x"00000004", dst);
+      wr(x"00000004", c);
+    end procedure;
+  -- end procs
+  tick(5);
+  rd(x"00000000");
+  wr(x"00000000", x"00000001");
+  rd(x"00000000");
+  -- every source type, destination type and alignment
+  for s in 0 to 3 loop
+    for t in 0 to 3 loop
+      for a in 0 to 3 loop
+        desc(std_ulogic_vector(to_unsigned(16#1000# + a, 32)), std_ulogic_vector(to_unsigned(16#2000# + (3 - a), 32)), s, t, 9, std_ulogic'val(2 + (a mod 2)));
+        wr(x"00000000", x"00000003");
+        wait_idle;
+        wr(x"00000000", x"04000001"); -- acknowledge
+      end loop;
+    end loop;
+  end loop;
+  rd(x"00000004");
+  -- fill the descriptor FIFO
+  for i in 1 to DSC_FIFO / 3 loop
+    desc(x"00003000", x"00004000", 2, 2, 2);
+    rd(x"00000000");
+  end loop;
+  wr(x"00000004", x"00003000"); -- part of one more descriptor
+  rd(x"00000000");
+  wr(x"00000000", x"00000003");
+  tick(4);
+  wr(x"00000004", x"00004000");
+  wr(x"00000004", x"A0000002");
+  wait_idle;
+  wr(x"00000000", x"04000001");
+  -- bus error
+  desc(x"00003000", x"00004000", 2, 2, 4);
+  mem_err <= '1';
+  wr(x"00000000", x"00000003");
+  wait_idle;
+  mem_err <= '0';
+  rd(x"00000000");
+  wr(x"00000000", x"04000001");
+  -- zero length means 2**24 transfers: abort
+  desc(x"00003000", x"00004000", 2, 2, 0);
+  wr(x"00000000", x"00000003");
+  tick(40);
+  wr(x"00000000", x"00000000");
+  tick(10);
+  wr(x"00000000", x"00000001");
+  -- disable while running
+  desc(x"00003000", x"00004000", 2, 2, 100);
+  wr(x"00000000", x"00000003");
+  tick(30);
+  wr(x"00000000", x"00000000");
+  tick(10);
+  rd(x"00000000");

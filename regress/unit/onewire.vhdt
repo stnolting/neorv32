@@ -1,0 +1,79 @@
+--! dut neorv32_onewire
+--! generic ONEWIRE_FIFO=4
+--! config onewire_fifo4
+--! config onewire_fifo1 ONEWIRE_FIFO=1
+--! decl
+  signal dev : std_ulogic := '1';
+--! arch
+  onewire_i <= onewire_o and dev;
+--! stim
+  -- procs
+    variable d : std_ulogic_vector(31 downto 0);
+    procedure wait_idle is
+    begin
+      loop
+        rd(x"00000000", d);
+        exit when d(31) = '0';
+        tick(8);
+      end loop;
+    end procedure;
+    constant c_bit  : std_ulogic_vector(31 downto 0) := x"00000100";
+    constant c_byte : std_ulogic_vector(31 downto 0) := x"00000200";
+    constant c_rst  : std_ulogic_vector(31 downto 0) := x"00000300";
+    constant en     : std_ulogic_vector(31 downto 0) := x"00000011"; -- enable, divider 1
+  -- end procs
+  tick(5);
+  rd(x"00000000");
+  wr(x"00000000", en);
+  rd(x"00000000");
+  wr(x"00000004", c_rst); -- no presence pulse
+  wait_idle;
+  rd(x"00000004");
+  -- reset with a presence pulse
+  wr(x"00000004", c_rst);
+  tick(200);
+  dev <= '0';
+  wait_idle;
+  dev <= '1';
+  rd(x"00000004");
+  -- single bits
+  wr(x"00000004", c_bit or x"00000001");
+  wait_idle;
+  rd(x"00000004");
+  wr(x"00000004", c_bit);
+  wait_idle;
+  rd(x"00000004");
+  -- bytes, device pulls low
+  wr(x"00000004", c_byte or x"000000FF");
+  tick(20);
+  dev <= '0';
+  wait_idle;
+  dev <= '1';
+  rd(x"00000004");
+  wr(x"00000004", c_byte or x"000000A5");
+  wait_idle;
+  rd(x"00000004");
+  -- all prescalers
+  for p in 0 to 3 loop
+    wr(x"00000000", std_ulogic_vector(to_unsigned(1 + p * 4 + 16, 32)));
+    wr(x"00000004", c_bit or x"00000001");
+    tick(200);
+    wr(x"00000000", x"00000000");
+    tick(3);
+  end loop;
+  -- a NOP command
+  wr(x"00000000", en);
+  wr(x"00000004", x"00000000");
+  tick(200);
+  wait_idle;
+  -- FIFO behaviour, clear
+  wr(x"00000000", en);
+  for i in 0 to 2 * ONEWIRE_FIFO + 1 loop
+    wr(x"00000004", c_bit or x"00000001");
+    rd(x"00000000");
+  end loop;
+  wr(x"00000000", en or x"00000002");
+  rd(x"00000000");
+  wait_idle;
+  wr(x"00000000", x"00000000");
+  fuzz(3, 100);

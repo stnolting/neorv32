@@ -1,0 +1,69 @@
+--! dut neorv32_cpu_hwtrig
+--! generic NUM_TRIGGERS=2
+--! generic RISCV_ISA_U=true
+--! config hwtrig_2
+--! config hwtrig_1 NUM_TRIGGERS=1
+--! config hwtrig_16 NUM_TRIGGERS=16
+--! config hwtrig_nou RISCV_ISA_U=false
+--! stim
+  -- procs
+  --! include ctrl_rand.inc
+    procedure csr(ad : std_ulogic_vector(11 downto 0); d : std_ulogic_vector(31 downto 0)) is
+    begin
+      ctrl_i.csr_addr <= ad;
+      ctrl_i.csr_wdata <= d;
+      ctrl_i.csr_we <= '1';
+      tick;
+      ctrl_i.csr_we <= '0';
+      tick;
+    end procedure;
+    constant list_c : csr_list_t := (csr_tselect_c, csr_tdata1_c, csr_tdata2_c, csr_tdata3_c, csr_tinfo_c, csr_tselect_c, csr_tdata1_c);
+  -- end procs
+  tick(4);
+  for a in 0 to 7 loop
+    ctrl_i.csr_addr <= std_ulogic_vector(unsigned(csr_tselect_c) + a);
+    tick;
+  end loop;
+  csr(csr_tdata2_c, x"11111111"); -- not from debug-mode: ignored
+  ctrl_i.cpu_debug <= '1';
+  for t in 0 to NUM_TRIGGERS loop
+    csr(csr_tselect_c, std_ulogic_vector(to_unsigned(t, 32)));
+    csr(csr_tdata2_c, std_ulogic_vector(to_unsigned(16#1000# + t, 32)));
+    csr(csr_tdata1_c, x"00000007");
+    ctrl_i.csr_addr <= csr_tdata1_c;
+    tick;
+    ctrl_i.csr_addr <= csr_tdata2_c;
+    tick;
+    ctrl_i.csr_addr <= csr_tinfo_c;
+    tick;
+    ctrl_i.cpu_debug <= '0';
+    -- execute, store and load match, each cleared by the debugger
+    ctrl_i.pc_cur <= std_ulogic_vector(to_unsigned(16#1000# + t, 32));
+    ctrl_i.cpu_exec <= '1';
+    tick(2);
+    ctrl_i.cpu_exec <= '0';
+    tick(2);
+    ctrl_i.cpu_debug <= '1';
+    tick;
+    csr(csr_tdata1_c, x"00000007");
+    ctrl_i.cpu_debug <= '0';
+    mar_i <= std_ulogic_vector(to_unsigned(16#1000# + t, 32));
+    ctrl_i.cnt_event(cnt_event_store_c) <= '1';
+    tick;
+    ctrl_i.cnt_event(cnt_event_store_c) <= '0';
+    tick(2);
+    ctrl_i.cpu_debug <= '1';
+    csr(csr_tdata1_c, x"00000007");
+    ctrl_i.cpu_debug <= '0';
+    ctrl_i.cnt_event(cnt_event_load_c) <= '1';
+    tick;
+    ctrl_i.cnt_event(cnt_event_load_c) <= '0';
+    tick(2);
+    ctrl_i.cpu_debug <= '1';
+    csr(csr_tdata1_c, x"00000000");
+  end loop;
+  for i in 1 to 2000 loop
+    ctrl_i.pc_cur <= x"0000000" & randv(4);
+    mar_i <= x"0000000" & randv(4);
+    ctrl_random(list_c);
+  end loop;

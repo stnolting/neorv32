@@ -1,0 +1,66 @@
+--! dut neorv32_spi
+--! generic IO_SPI_FIFO=4
+--! config spi_fifo4
+--! config spi_fifo1 IO_SPI_FIFO=1
+--! config spi_fifo16 IO_SPI_FIFO=16
+--! arch
+  spi_dat_i <= spi_dat_o;
+--! stim
+  -- procs
+    variable d : std_ulogic_vector(31 downto 0);
+    procedure wait_idle is
+    begin
+      loop
+        rd(x"00000000", d);
+        exit when d(31) = '0';
+        tick(4);
+      end loop;
+    end procedure;
+  -- end procs
+  tick(5);
+  rd(x"00000000");
+  for mode in 0 to 3 loop -- clock mode
+    wr(x"00000000", std_ulogic_vector(to_unsigned(1 + mode * 2, 32)));
+    rd(x"00000000");
+    wr(x"00000004", x"80000008"); -- chip select 0 on
+    wr(x"00000004", x"000000A5");
+    wr(x"00000004", x"0000005A");
+    wr(x"00000004", x"80000000"); -- chip select off
+    wait_idle;
+    rd(x"00000004");
+    rd(x"00000004");
+    rd(x"00000000");
+  end loop;
+  -- every chip select
+  for c in 0 to 7 loop
+    wr(x"00000004", std_ulogic_vector(to_unsigned(16#80000000# - 16#80000000# + 8 + c, 32)) or x"80000000");
+    wr(x"00000004", std_ulogic_vector(to_unsigned(c, 32)));
+    wr(x"00000004", x"80000000");
+    wait_idle;
+    rd(x"00000004");
+  end loop;
+  -- every prescaler, and two clock dividers
+  for p in 0 to 7 loop
+    for c in 0 to 1 loop
+      wr(x"00000000", std_ulogic_vector(to_unsigned(1 + p * 8 + c * 15 * 64, 32)));
+      wr(x"00000004", x"00000033");
+      tick(2 ** (p / 2 + 4));
+      wr(x"00000000", x"00000000");
+    end loop;
+  end loop;
+  wr(x"00000000", x"00000001");
+  -- FIFO full, read-out, disable in the middle
+  for i in 0 to 2 * IO_SPI_FIFO + 2 loop
+    wr(x"00000004", randv(32) and x"7FFFFFFF");
+    rd(x"00000000");
+  end loop;
+  wait_idle;
+  for i in 0 to IO_SPI_FIFO + 1 loop
+    rd(x"00000004");
+    rd(x"00000000");
+  end loop;
+  wr(x"00000004", x"000000AA");
+  tick(4);
+  wr(x"00000000", x"00000000");
+  tick(10);
+  fuzz(3, 400);

@@ -1,0 +1,73 @@
+--! dut neorv32_cpu_pmp
+--! generic NUM_REGIONS=4
+--! generic GRANULARITY=4
+--! generic TOR_EN=true
+--! generic NAP_EN=true
+--! config pmp_4
+--! config pmp_16 NUM_REGIONS=16
+--! config pmp_1 NUM_REGIONS=1
+--! config pmp_gran64 GRANULARITY=64
+--! config pmp_notor TOR_EN=false
+--! config pmp_nonap NAP_EN=false
+--! config pmp_off TOR_EN=false NAP_EN=false
+--! stim
+  -- procs
+  --! include ctrl_rand.inc
+    variable a : std_ulogic_vector(31 downto 0);
+    procedure csr(ad : std_ulogic_vector(11 downto 0); d : std_ulogic_vector(31 downto 0)) is
+    begin
+      ctrl_i.csr_addr <= ad;
+      ctrl_i.csr_wdata <= d;
+      ctrl_i.csr_we <= '1';
+      tick;
+      ctrl_i.csr_we <= '0';
+      tick;
+    end procedure;
+    constant list_c : csr_list_t := (csr_pmpcfg0_c, csr_pmpcfg1_c, csr_pmpcfg2_c, csr_pmpcfg3_c, csr_pmpaddr0_c, csr_pmpaddr1_c,
+      csr_pmpaddr2_c, csr_pmpaddr3_c, csr_pmpaddr4_c, csr_pmpaddr7_c, csr_pmpaddr8_c, csr_pmpaddr12_c, csr_pmpaddr15_c, csr_mstatus_c);
+    procedure probe(n : natural) is
+    begin
+      for i in 1 to n loop
+        a := randv(32) and x"000FFFFF";
+        i_addr_i <= a;
+        d_addr_i <= randv(32) and x"000FFFFF";
+        i_priv_i <= randv(1)(0);
+        d_priv_i <= randv(1)(0);
+        ctrl_i.lsu_rd <= randv(1)(0);
+        ctrl_i.lsu_wr <= randv(1)(0);
+        ctrl_i.cpu_debug <= bool_to_ulogic_f(rndn(15) = 0);
+        tick;
+      end loop;
+    end procedure;
+  -- end procs
+  tick(4);
+  -- all region modes and permissions, addresses in a small window so that they hit
+  for r in 1 to 60 loop
+    for i in 0 to 15 loop
+      csr(std_ulogic_vector(unsigned(csr_pmpaddr0_c) + i), x"000" & "00" & randv(18));
+    end loop;
+    for i in 0 to 3 loop
+      csr(std_ulogic_vector(unsigned(csr_pmpcfg0_c) + i), randv(32) and x"1F1F1F1F");
+      rd_cfg: for k in 0 to 0 loop
+        ctrl_i.csr_addr <= std_ulogic_vector(unsigned(csr_pmpcfg0_c) + i);
+        tick;
+      end loop;
+    end loop;
+    probe(100);
+  end loop;
+  -- lock everything, then try to change it
+  for i in 0 to 3 loop
+    csr(std_ulogic_vector(unsigned(csr_pmpcfg0_c) + i), x"8F8F8F8F");
+    csr(std_ulogic_vector(unsigned(csr_pmpcfg0_c) + i), x"00000000");
+  end loop;
+  for i in 0 to 15 loop
+    csr(std_ulogic_vector(unsigned(csr_pmpaddr0_c) + i), x"00000000");
+    ctrl_i.csr_addr <= std_ulogic_vector(unsigned(csr_pmpaddr0_c) + i);
+    tick;
+  end loop;
+  -- W without R is reserved
+  csr(csr_pmpcfg0_c, x"02020202");
+  probe(20);
+  for i in 1 to 500 loop
+    ctrl_random(list_c);
+  end loop;

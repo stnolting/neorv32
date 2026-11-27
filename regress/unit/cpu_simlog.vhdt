@@ -1,0 +1,70 @@
+--! dut neorv32_cpu_trace_simlog
+--! generic LOG_FILE="neorv32_simlog.txt"
+--! stim
+  -- procs
+    variable w : std_ulogic_vector(31 downto 0);
+    constant opcodes_c : suv32_list_t := (
+      x"00000037", x"00000017", x"0000006F", x"00000067", x"00000063", x"00000003", x"00000023", x"00000013",
+      x"00000033", x"0000000F", x"00000073", x"0000002F", x"00000053", x"0000000B", x"0000002B", x"0000003B", x"0000001B");
+  -- end procs
+  tick(4);
+  -- metadata: every mode flag
+  for i in 1 to 1000 loop
+    trace_i.valid <= '1';
+    trace_i.order <= std_ulogic_vector(to_unsigned(i, 64));
+    trace_i.trap <= bool_to_ulogic_f(rndn(7) = 0);
+    trace_i.halt <= bool_to_ulogic_f(rndn(7) = 0);
+    trace_i.intr <= bool_to_ulogic_f(rndn(7) = 0);
+    trace_i.mode <= randv(1) & randv(1);
+    trace_i.debug <= bool_to_ulogic_f(rndn(7) = 0);
+    trace_i.compr <= randv(1)(0);
+    trace_i.pc_rdata <= randv(32);
+    trace_i.pc_wdata <= randv(32);
+    trace_i.rd_addr <= randv(5);
+    trace_i.rd_wdata <= randv(32);
+    trace_i.csr_addr <= randv(12);
+    trace_i.csr_rdata <= randv(32);
+    trace_i.csr_wdata <= randv(32);
+    trace_i.mem_addr <= randv(32);
+    trace_i.mem_rmask <= randv(4);
+    trace_i.mem_wmask <= randv(4);
+    trace_i.mem_rdata <= randv(32);
+    trace_i.mem_wdata <= randv(32);
+    w := randv(32);
+    w(6 downto 0) := opcodes_c(rndn(16))(6 downto 0);
+    trace_i.cmd32 <= w;
+    trace_i.insn <= w;
+    tick;
+    trace_i.valid <= '0';
+    if rndn(3) = 0 then
+      tick;
+    end if;
+  end loop;
+  -- every funct7/funct3 pair of each opcode, so that all mnemonics are reached
+  for o in opcodes_c'range loop
+    for f7 in 0 to 127 loop
+      for f3 in 0 to 7 loop
+        for s in 0 to 1 loop
+          w := std_ulogic_vector(to_unsigned(f7, 7)) & randv(5) & randv(5) & std_ulogic_vector(to_unsigned(f3, 3)) & randv(5) & opcodes_c(o)(6 downto 0);
+          if s = 1 then
+            w(24 downto 20) := std_ulogic_vector(to_unsigned(f7 mod 32, 5));
+          end if;
+          trace_i.valid <= '1';
+          trace_i.cmd32 <= w;
+          trace_i.insn <= w;
+          tick;
+        end loop;
+      end loop;
+    end loop;
+  end loop;
+  -- every CSR, as a CSR instruction
+  for a in 0 to 4095 loop
+    w := std_ulogic_vector(to_unsigned(a, 12)) & "00001" & "010" & "00010" & "1110011";
+    trace_i.valid <= '1';
+    trace_i.cmd32 <= w;
+    trace_i.insn <= w;
+    trace_i.csr_addr <= w(31 downto 20);
+    tick;
+  end loop;
+  trace_i.valid <= '0';
+  tick(3);

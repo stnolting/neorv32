@@ -1,0 +1,12 @@
+--! dut neorv32_dmem
+--! generic AWIDTH=8
+--! generic OUTREG=false
+--! config dmem_plain OUTREG=false
+--! config dmem_outreg OUTREG=true
+--! stim
+  tick(5);
+  for i in 0 to 15 loop
+    wr(std_ulogic_vector(to_unsigned(i * 4, 32)), randv(32), std_ulogic_vector(to_unsigned(i, 4)));
+    rd(std_ulogic_vector(to_unsigned(i * 4, 32)));
+  end loop;
+  fuzz(8, 300);

@@ -1,0 +1,13 @@
+--! dut neorv32_cfs
+--! stim
+  tick(5);
+  for i in 0 to 15 loop
+    wr(std_ulogic_vector(to_unsigned(i * 4, 32)), randv(32), "1111");
+    rd(std_ulogic_vector(to_unsigned(i * 4, 32)));
+  end loop;
+  for i in 0 to 15 loop
+    wr(std_ulogic_vector(to_unsigned(i * 4, 32)), randv(32), std_ulogic_vector(to_unsigned(i, 4)));
+    rd(std_ulogic_vector(to_unsigned(i * 4, 32)));
+  end loop;
+  cfs_in_i <= randv(256);
+  fuzz(8, 400);

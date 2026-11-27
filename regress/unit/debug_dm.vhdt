@@ -1,0 +1,155 @@
+--! dut neorv32_debug_dm
+--! generic NUM_HARTS=2
+--! generic AUTHENTICATOR=false
+--! config dm_plain
+--! config dm_auth AUTHENTICATOR=true
+--! config dm_one NUM_HARTS=1
+--! config dm_four NUM_HARTS=4
+--! stim
+  -- procs
+    variable d : std_ulogic_vector(31 downto 0);
+    procedure dmi(op : std_ulogic_vector(1 downto 0); a : std_ulogic_vector(6 downto 0); v : std_ulogic_vector(31 downto 0)) is
+    begin
+      dmi_req_i <= (op => op, addr => a, data => v);
+      tick;
+      dmi_req_i.op <= dmi_op_nop_c;
+      for i in 0 to 20 loop
+        tick;
+        exit when dmi_rsp_o.ack = '1';
+      end loop;
+      tick;
+    end procedure;
+    procedure dwr(a : std_ulogic_vector(6 downto 0); v : std_ulogic_vector(31 downto 0)) is
+    begin
+      dmi(dmi_op_wr_c, a, v);
+    end procedure;
+    procedure drd(a : std_ulogic_vector(6 downto 0)) is
+    begin
+      dmi(dmi_op_rd_c, a, x"00000000");
+    end procedure;
+    constant dmcontrol   : std_ulogic_vector(6 downto 0) := "0010000";
+    constant dmstatus    : std_ulogic_vector(6 downto 0) := "0010001";
+    constant hartinfo    : std_ulogic_vector(6 downto 0) := "0010010";
+    constant abstractcs  : std_ulogic_vector(6 downto 0) := "0010110";
+    constant command     : std_ulogic_vector(6 downto 0) := "0010111";
+    constant authdata    : std_ulogic_vector(6 downto 0) := "0110000";
+    -- the hart side: bus accesses in debug mode, the byte enable selects the status flag
+    constant sreg : std_ulogic_vector(31 downto 0) := x"000000C0";
+    procedure hart(h : natural; flag : natural) is
+    begin
+      bus_req_i.meta <= std_ulogic_vector(to_unsigned(h, 2)) & "100";
+      wr(sreg, x"00000000", std_ulogic_vector(to_unsigned(2 ** flag, 4)));
+    end procedure;
+  -- end procs
+  tick(4);
+  for a in 0 to 127 loop
+    drd(std_ulogic_vector(to_unsigned(a, 7)));
+  end loop;
+  dwr(dmcontrol, x"00000001");
+  dwr(authdata, x"00000001");
+  drd(authdata);
+  drd(dmstatus);
+  for a in 0 to 127 loop
+    drd(std_ulogic_vector(to_unsigned(a, 7)));
+  end loop;
+  bus_req_i.meta <= "00100"; -- debug mode
+  rd(sreg);
+  -- every hart
+  for h in 0 to NUM_HARTS-1 loop
+    dwr(dmcontrol, x"80000001" or std_ulogic_vector(to_unsigned(h * 65536, 32))); -- haltreq
+    drd(dmstatus);
+    hart(h, 0); -- halted
+    drd(dmstatus);
+    dwr(dmcontrol, x"00000001" or std_ulogic_vector(to_unsigned(h * 65536, 32)));
+    drd(dmstatus);
+    -- abstract command on a halted hart: success, exception, access while busy
+    dwr(command, x"00231008");
+    drd(abstractcs);
+    bus_req_i.meta <= std_ulogic_vector(to_unsigned(h, 2)) & "100";
+    rd(sreg);
+    hart(h, 2); -- starts executing
+    dwr("0000100", x"12345678"); -- illegal write to data0 while busy
+    drd("0000100");
+    dwr(command, x"00231008");
+    drd(abstractcs);
+    hart(h, 0); -- halted again
+    drd(abstractcs);
+    dwr(abstractcs, x"00000700"); -- clear error
+    dwr(command, x"00271009");
+    hart(h, 2);
+    hart(h, 3); -- exception
+    hart(h, 0);
+    drd(abstractcs);
+    dwr(abstractcs, x"00000700");
+    dwr(command, x"00000000"); -- transfer off
+    hart(h, 2);
+    hart(h, 0);
+    dwr(command, x"FF000000"); -- unsupported
+    drd(abstractcs);
+    dwr(abstractcs, x"00000700");
+    dwr(command, x"00221000"); -- unsupported register
+    drd(abstractcs);
+    dwr(abstractcs, x"00000700");
+    dwr(command, x"00331008"); -- unsupported size
+    drd(abstractcs);
+    dwr(abstractcs, x"00000700");
+    -- auto-execution
+    dwr("0011000", x"00030001"); -- abstractauto
+    drd("0011000");
+    drd("0000100");
+    hart(h, 2);
+    hart(h, 0);
+    dwr("0100000", x"00100073");
+    hart(h, 2);
+    hart(h, 0);
+    dwr("0100001", x"00000013");
+    hart(h, 2);
+    hart(h, 0);
+    drd("0100000");
+    drd("0100001");
+    dwr("0011000", x"00000000");
+    dwr(abstractcs, x"00000700");
+    -- resume
+    dwr(dmcontrol, x"40000001" or std_ulogic_vector(to_unsigned(h * 65536, 32)));
+    drd(dmstatus);
+    bus_req_i.meta <= std_ulogic_vector(to_unsigned(h, 2)) & "100";
+    rd(sreg);
+    hart(h, 1); -- resuming
+    drd(dmstatus);
+    dwr(command, x"00231008"); -- not halted
+    drd(abstractcs);
+    dwr(abstractcs, x"00000700");
+    dwr(dmcontrol, x"10000001" or std_ulogic_vector(to_unsigned(h * 65536, 32))); -- ackhavereset
+    dwr(dmcontrol, x"00000003" or std_ulogic_vector(to_unsigned(h * 65536, 32))); -- ndmreset
+    drd(dmcontrol);
+    drd(dmstatus);
+    dwr(dmcontrol, x"00000001");
+    drd(dmstatus);
+  end loop;
+  dwr(dmcontrol, x"00070001"); -- no such hart
+  drd(dmstatus);
+  drd(hartinfo);
+  dwr(dmcontrol, x"00000001");
+  -- bus side read-back of code ROM, program buffer and data
+  for a in 0 to 255 loop
+    rd(std_ulogic_vector(to_unsigned(a * 4, 32)));
+  end loop;
+  wr(x"00000080", x"12345678");
+  rd(x"00000080");
+  -- no debug mode: the access is not answered
+  bus_req_i.meta <= "00000";
+  bus_req_i.addr <= x"00000000";
+  bus_req_i.stb <= '1';
+  tick;
+  bus_req_i.stb <= '0';
+  tick(3);
+  for i in 1 to 800 loop
+    bus_req_i.meta <= randv(2) & "100";
+    if rndn(1) = 1 then
+      dmi(randv(2), randv(7), randv(32));
+    elsif randv(1)(0) = '1' then
+      wr(x"000000" & randv(6) & "00", randv(32), randv(4));
+    else
+      rd(x"000000" & randv(6) & "00");
+    end if;
+  end loop;
