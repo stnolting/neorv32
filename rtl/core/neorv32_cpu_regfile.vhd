@@ -55,11 +55,14 @@ end entity;
 
 architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
 
+  -- index of first read/write register --
+  constant first_reg_c : natural := sel_natural_f(R0_ZERO, 1, 0);
+
   -- access logic --
   signal rf_we  : std_ulogic;
   signal addr   : std_ulogic_vector(4 downto 0);
   signal wdata  : std_ulogic_vector(DWIDTH-1 downto 0);
-  signal onehot : std_ulogic_vector((2**AWIDTH)-1 downto 0);
+  signal onehot : std_ulogic_vector((2**AWIDTH)-1 downto first_reg_c);
 
   -- memory core --
   type   regfile_t is array ((2**AWIDTH)-1 downto 0) of std_ulogic_vector(DWIDTH-1 downto 0);
@@ -261,13 +264,13 @@ begin
 
     -- write select --
     onehot_gen:
-    for i in 1 to (2**AWIDTH)-1 generate
+    for i in first_reg_c to (2**AWIDTH)-1 generate
       onehot(i) <= '1' when (unsigned(addr(AWIDTH-1 downto 0)) = to_unsigned(i, AWIDTH)) else '0';
     end generate;
 
     -- individual latches (transparent when clock is LOW) --
     regfile_gen:
-    for i in 1 to (2**AWIDTH)-1 generate
+    for i in first_reg_c to (2**AWIDTH)-1 generate
       rf_write: process(clk_i, onehot, wdata)
       begin
         if (clk_i = '0') and (onehot(i) = '1') then
@@ -275,7 +278,12 @@ begin
         end if;
       end process;
     end generate;
-    regfile(0) <= (others => '0'); -- x0 is hardwired to zero
+
+    -- register 0 hardwired to zero? --
+    r0_terminate:
+    if R0_ZERO generate
+      regfile(0) <= (others => '0');
+    end generate;
 
     -- synchronous read --
     rf_read: process(clk_i)
