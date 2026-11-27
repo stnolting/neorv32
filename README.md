@@ -1,4 +1,6 @@
-# The NEORV32 RISC-V Processor
+<img src="docs/figures/neorv32_logo_riscv_small.png" alt="neorv32 logo" width="200" align="right">
+
+## The NEORV32 RISC-V Processor
 
 [![datasheet (pdf)](https://img.shields.io/badge/Data%20Sheet-PDF-ffbd00?longCache=true&style=flat&logo=asciidoctor&colorA=273274)](https://github.com/stnolting/neorv32/releases/download/nightly_release/NEORV32-nightly.pdf)
 [![datasheet (html)](https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat)](https://stnolting.github.io/neorv32)
@@ -12,7 +14,7 @@
 ![Verilog Conversion](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/verilog.yml?branch=main&longCache=true&style=flat-square&label=Verilog%20Conversion&logo=Github%20Actions&logoColor=fff)
 ![RISC-V ACT](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/riscv-act.yml?branch=main&longCache=true&style=flat-square&label=RISC-V%20ACT&logo=Github%20Actions&logoColor=fff)
 
-The NEORV32 processor is a **customizable microcontroller-like system on chip (SoC)** built around the NEORV32
+NEORV32 is a **customizable microcontroller-like system on chip (SoC)** built around a custom
 [RISC-V](https://riscv.org/) CPU that is written in **platform-independent VHDL**. The processor is intended as an auxiliary
 controller in larger SoC designs or as tiny and customized microcontroller. The project is intended to work _out of the box_
 and targets digital design / RISC-V beginners as well as experienced users.
@@ -22,11 +24,10 @@ and targets digital design / RISC-V beginners as well as experienced users.
 ### Key Highlights
 
 - [x] all-in-one package: **CPU** + **SoC** + **Software Framework** + **Test Infrastructure**
-- [x] fully self-contained - no external dependencies
-- [x] completely described in behavioral, platform-independent VHDL - **no** primitives, macros, attributes, etc.
-- [x] technology friendly; e.g. all internal memories can be mapped to FPGA or ASIC primitives
+- [x] fully self-contained core without external dependencies
+- [x] completely described in behavioral, platform-independent VHDL - no primitives, macros, attributes, etc.
+- [x] technology friendly (e.g. internal memories can be mapped to FPGA or ASIC primitives)
 - [x] extensive CPU & SoC configuration options for adapting to application requirements
-- [x] aims to be as small as possible while being as RISC-V-compliant as possible
 - [x] optimized for high clock frequencies to ease integration and timing closure
 - [x] from zero to `printf("hello world");` - completely open-source and documented
 - [x] easy to use – intended to work _out of the box_
