@@ -182,7 +182,7 @@ int main() {
 
   // prepare counters
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all counters
-  if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U)) {
+  if ((neorv32_cpu_csr_read(CSR_MISA) >> CSR_MISA_U) & 1U) {
     neorv32_cpu_csr_write(CSR_MCOUNTEREN, -1); // allow counter access from user-mode code
   }
 
@@ -446,7 +446,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] mcounteren CSR ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U)) {
+  if ((neorv32_cpu_csr_read(CSR_MISA) >> CSR_MISA_U) & 1U) {
     neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
     cnt_test++;
 
@@ -522,7 +522,7 @@ int main() {
   PRINT("[%i] CNT priv-mode filtering ", cnt_test);
   neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
 
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_SMCNTRPMF)) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) >> CSR_MXISA_SMCNTRPMF) & 1U) {
     cnt_test++;
 
     neorv32_cpu_csr_write(CSR_MCYCLECFGH,   1 << CSR_MCYCLECFGH_UINH);   // inhibit cycle when in user-mode
@@ -570,7 +570,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] MRET in U-mode ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U)) {
+  if ((neorv32_cpu_csr_read(CSR_MISA) >> CSR_MISA_U) & 1U) {
     neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
     cnt_test++;
 
@@ -596,7 +596,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] Ext. memory (@0x%x) ", cnt_test, (uint32_t)EXT_FMEM_DATA_BASE);
 
-  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) && neorv32_sysinfo_is_sim()) {
+  if (((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_XBUS) & 1U) && neorv32_sysinfo_is_sim()) {
     neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
     cnt_test++;
 
@@ -636,7 +636,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] D-cache write-back error ", cnt_test);
 
-  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_DCACHE)) && neorv32_sysinfo_is_sim()) {
+  if (((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_DCACHE) & 1U) && neorv32_sysinfo_is_sim()) {
     cnt_test++;
     tmp_a = 0;
 
@@ -800,8 +800,8 @@ int main() {
   PRINT("[%i] IF unaligned access EXC ", cnt_test);
 
   // skip if C ISA is not implemented
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_C)) &&
-      (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) && neorv32_sysinfo_is_sim()) {
+  if (((neorv32_cpu_csr_read(CSR_MISA) >> CSR_MISA_C) & 1U) &&
+      ((NEORV32_SYSINFO->SOC >> SYSINFO_SOC_XBUS) & 1U) && neorv32_sysinfo_is_sim()) {
     neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
     cnt_test++;
 
@@ -1021,7 +1021,7 @@ int main() {
   asm volatile ("ecall");
 
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MENV_CALL) &&
-      ((neorv32_cpu_csr_read(CSR_MSTATUS) & (1 << CSR_MSTATUS_MIE)) == 0)) { // MIE should still be cleared
+      (((neorv32_cpu_csr_read(CSR_MSTATUS) >> CSR_MSTATUS_MIE) & 1U) == 0)) { // MIE should still be cleared
     test_ok();
   }
   else {
@@ -1033,7 +1033,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] ENVCALL U EXC ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U)) {
+  if ((neorv32_cpu_csr_read(CSR_MISA) >> CSR_MISA_U) & 1U) {
     neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
     cnt_test++;
 
@@ -1156,7 +1156,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] IRQ entry timing ", cnt_test);
 
-  if (neorv32_clint_available() && (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U))) {
+  if (neorv32_clint_available() && ((neorv32_cpu_csr_read(CSR_MISA) >> CSR_MISA_U) & 1U)) {
     cnt_test++;
 
     tmp_a = 0; // expected address
@@ -1799,7 +1799,7 @@ int main() {
     // write test data to SDI
     neorv32_sdi_put_nonblocking(0xe1);
 
-    // enable fast interrupt
+    // enable interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << SDI_FIRQ_ENABLE);
 
     // trigger SDI IRQ by sending data via SPI
@@ -2123,7 +2123,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] User-mode WFI (wake-up via MTI) ", cnt_test);
 
-  if ((neorv32_clint_available()) && (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U))) {
+  if ((neorv32_clint_available()) && ((neorv32_cpu_csr_read(CSR_MISA) >> CSR_MISA_U) & 1U)) {
     neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
     cnt_test++;
 
@@ -2196,7 +2196,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] WFI (not allowed in u-mode) ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U)) {
+  if ((neorv32_cpu_csr_read(CSR_MISA) >> CSR_MISA_U) & 1U) {
     neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
     cnt_test++;
 
@@ -2225,7 +2225,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] Invalid CSR access from U-mode ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U)) {
+  if ((neorv32_cpu_csr_read(CSR_MISA) >> CSR_MISA_U) & 1U) {
     neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
     cnt_test++;
 
@@ -2253,7 +2253,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] AMO LR/SC ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) >> CSR_MXISA_ZALRSC) & 1U) {
     neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
     cnt_test++;
 
@@ -2283,7 +2283,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] AMO RMW ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) >> CSR_MXISA_ZALRSC) & 1U) {
     neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
     cnt_test++;
 
@@ -2516,7 +2516,7 @@ int main() {
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all counters
   PRINT("\n\nHPM counters\n");
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIHPM)) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) >> CSR_MXISA_ZIHPM) & 1U) {
     PRINT(
       "[HPM3]  Clock cycles : %u\n"
       "[HPM4]  Instructions : %u\n"
