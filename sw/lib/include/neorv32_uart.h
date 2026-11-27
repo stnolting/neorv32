@@ -97,7 +97,6 @@ void neorv32_uart_printf(neorv32_uart_t *uartx, const char *format, ...);
 int  neorv32_uart_scan(neorv32_uart_t *uartx, char *buffer, int max_size, int echo);
 /**@}*/
 
-
 /**********************************************************************//**
  * Get UART RX FIFO depth.
  * @param[in,out] uartx UART hardware struct.
@@ -140,7 +139,7 @@ static inline int __attribute__((always_inline)) neorv32_uart_tx_irq(neorv32_uar
  * @return Non-zero if data available, zero if no data available.
  **************************************************************************/
 static inline int __attribute__((always_inline)) neorv32_uart_rx_avail(neorv32_uart_t *uartx) {
-  return (int)((~uartx->CTRL >> UART_CTRL_RX_EMPTY) & 1U);
+  return ~(int)((uartx->CTRL >> UART_CTRL_RX_EMPTY) & 1U);
 }
 
 /**********************************************************************//**
@@ -182,7 +181,7 @@ static inline char __attribute__((always_inline)) neorv32_uart_rx_get(neorv32_ua
 
 /**********************************************************************//**
  * Check for RX overflow. Must be executed before reading from RX FIFO.
- * @param[in,out] uartx UART hardware struct..
+ * @param[in,out] uartx UART hardware struct.
  * @return Error bits: Non-zero if RX overflow, zero if no RX overflow.
  **************************************************************************/
 static inline int __attribute__((always_inline)) neorv32_uart_rx_overflow(neorv32_uart_t *uartx) {
