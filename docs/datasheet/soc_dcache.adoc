@@ -19,9 +19,9 @@
 
 **Key Features**
 
-* Direct-mapped, _write-back_ and _write-allocate_
+* Direct-mapped, write-back and write-allocate
 * Configurable number of blocks and block size
-* Bypass for _uncached_ and atomic accesses
+* Bypass for uncached and atomic accesses
 * Synchronization via `fence` (`r`/`w` bits)
 * Tag and data RAM mapped to memory primitives
 
