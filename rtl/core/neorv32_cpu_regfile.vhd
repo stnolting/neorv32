@@ -38,17 +38,17 @@ entity neorv32_cpu_regfile is
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     zero_i     : in  std_ulogic; -- force write to x0 (for SRAM memory only)
     -- write port (rd) --
-    rd_we_i    : in  std_ulogic;                     -- write-enable
-    rd_addr_i  : in  std_ulogic_vector(4 downto 0);  -- address
+    rd_we_i    : in  std_ulogic;                           -- write-enable
+    rd_addr_i  : in  std_ulogic_vector(4 downto 0);        -- address
     rd_data_i  : in  std_ulogic_vector(DWIDTH-1 downto 0); -- write data
     -- read port 1 (rs1) --
-    rs1_addr_i : in  std_ulogic_vector(4 downto 0);  -- address
+    rs1_addr_i : in  std_ulogic_vector(4 downto 0);        -- address
     rs1_data_o : out std_ulogic_vector(DWIDTH-1 downto 0); -- read data
     -- read port 2 (rs2) --
-    rs2_addr_i : in  std_ulogic_vector(4 downto 0);  -- address
+    rs2_addr_i : in  std_ulogic_vector(4 downto 0);        -- address
     rs2_data_o : out std_ulogic_vector(DWIDTH-1 downto 0); -- read data
     -- read port 3 (rs3) --
-    rs3_addr_i : in  std_ulogic_vector(4 downto 0);  -- address
+    rs3_addr_i : in  std_ulogic_vector(4 downto 0);        -- address
     rs3_data_o : out std_ulogic_vector(DWIDTH-1 downto 0)  -- read data
   );
 end entity;
@@ -108,7 +108,6 @@ begin
 
   end generate;
 
-
   -- Architecture Style 1: Register-Based SRAM with Asynchronous Read -----------------------
   -- -------------------------------------------------------------------------------------------
   arch_sram_async:
@@ -139,7 +138,6 @@ begin
             rs1_data_o <= regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0))));
           end if;
         else
-        ---------------------------------------
           rs1_data_o <= regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0))));
         end if;
 
@@ -151,7 +149,6 @@ begin
             rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
           end if;
         else
-        ---------------------------------------
           rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
         end if;
 
@@ -164,7 +161,6 @@ begin
               rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
             end if;
           else
-          ---------------------------------------
             rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
           end if;
         else
@@ -179,7 +175,6 @@ begin
     onehot <= (others => '0');
 
   end generate;
-
 
   -- Architecture Style 2: Register-Based with Hardware Reset -------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -256,7 +251,6 @@ begin
     wdata <= (others => '0');
 
   end generate;
-
 
   -- Architecture Style 3: Latch-Based ------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
