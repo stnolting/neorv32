@@ -132,36 +132,19 @@ begin
     rf_read: process(clk_i)
     begin
       if rising_edge(clk_i) then
-        if GUARD_0 then
-        ---------------------------------------
-          if (rs1_addr_i = "00000") then -- reading x0
-            rs1_data_o <= (others => '0');
-          else
-            rs1_data_o <= regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0))));
-          end if;
+        if R0_ZERO and (rs1_addr_i = "00000") then -- reading all-zero register
+          rs1_data_o <= (others => '0');
         else
           rs1_data_o <= regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0))));
         end if;
-
-        if GUARD_0 then
-        ---------------------------------------
-          if (rs2_addr_i = "00000") then -- reading x0
-            rs2_data_o <= (others => '0');
-          else
-            rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
-          end if;
+        if R0_ZERO and (rs2_addr_i = "00000") then -- reading all-zero register
+          rs2_data_o <= (others => '0');
         else
           rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
         end if;
-
         if RS3_EN then -- optional third read port
-          if GUARD_0 then
-          ---------------------------------------
-            if (rs3_addr_i = "00000") then -- reading x0
-              rs3_data_o <= (others => '0');
-            else
-              rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
-            end if;
+          if R0_ZERO and (rs3_addr_i = "00000") then -- reading all-zero register
+            rs3_data_o <= (others => '0');
           else
             rs3_data_o <= regfile(to_integer(unsigned(rs3_addr_i(AWIDTH-1 downto 0))));
           end if;
