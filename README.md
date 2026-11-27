@@ -1,6 +1,6 @@
 <img src="docs/figures/neorv32_logo_riscv_small.png" alt="neorv32 logo" width="200" align="right">
 
-## The NEORV32 RISC-V Processor
+# The NEORV32 RISC-V Processor
 
 [![datasheet (pdf)](https://img.shields.io/badge/Data%20Sheet-PDF-ffbd00?longCache=true&style=flat&logo=asciidoctor&colorA=273274)](https://github.com/stnolting/neorv32/releases/download/nightly_release/NEORV32-nightly.pdf)
 [![datasheet (html)](https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat)](https://stnolting.github.io/neorv32)
