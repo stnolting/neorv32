@@ -170,53 +170,30 @@ begin
   if (ARCHSEL = 2) generate
 
     -- write select --
-    guard_o_oneshot: if GUARD_0 generate
-      onehot_gen:
-      for i in 1 to (2**AWIDTH)-1 generate
-        onehot(i) <= rd_we_i when (unsigned(rd_addr_i(AWIDTH-1 downto 0)) = to_unsigned(i, AWIDTH)) else '0';
-      end generate;
-      onehot(0) <= '0';
-    end generate;
-
-    no_guard_o_oneshot: if not GUARD_0 generate
-      onehot_gen:
-      for i in 0 to (2**AWIDTH)-1 generate
-        onehot(i) <= rd_we_i when (unsigned(rd_addr_i(AWIDTH-1 downto 0)) = to_unsigned(i, AWIDTH)) else '0';
-      end generate;
+    onehot_gen:
+    for i in first_reg_c to (2**AWIDTH)-1 generate
+      onehot(i) <= rd_we_i when (unsigned(rd_addr_i(AWIDTH-1 downto 0)) = to_unsigned(i, AWIDTH)) else '0';
     end generate;
 
     -- individual registers with reset --
-    guard_o_regfile: if GUARD_0 generate
-      regfile_gen:
-      for i in 1 to (2**AWIDTH)-1 generate
-        rf_write: process(rstn_i, clk_i)
-        begin
-          if (rstn_i = '0') then
-            regfile(i) <= (others => '0');
-          elsif rising_edge(clk_i) then
-            if (onehot(i) = '1') then
-              regfile(i) <= rd_data_i;
-            end if;
+    regfile_gen:
+    for i in first_reg_c to (2**AWIDTH)-1 generate
+      rf_write: process(rstn_i, clk_i)
+      begin
+        if (rstn_i = '0') then
+          regfile(i) <= (others => '0');
+        elsif rising_edge(clk_i) then
+          if (onehot(i) = '1') then
+            regfile(i) <= rd_data_i;
           end if;
-        end process;
-      end generate;
-      regfile(0) <= (others => '0'); -- x0 is hardwired to zero
+        end if;
+      end process;
     end generate;
 
-    no_guard_o_regfile: if not GUARD_0 generate
-      regfile_gen:
-      for i in 0 to (2**AWIDTH)-1 generate
-        rf_write: process(rstn_i, clk_i)
-        begin
-          if (rstn_i = '0') then
-            regfile(i) <= (others => '0');
-          elsif rising_edge(clk_i) then
-            if (onehot(i) = '1') then
-              regfile(i) <= rd_data_i;
-            end if;
-          end if;
-        end process;
-      end generate;
+    -- register 0 hardwired to zero? --
+    r0_terminate:
+    if R0_ZERO generate
+      regfile(0) <= (others => '0');
     end generate;
 
     -- synchronous read --
