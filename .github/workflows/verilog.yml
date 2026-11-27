@@ -8,14 +8,12 @@ env:
     neorv32_cfs.vhd
     neorv32_cache_ram.vhd
     neorv32_cpu_alu_cfu.vhd
-    neorv32_cpu_regfile.vhd
   VERILOG_SRC: >-
     modules/neorv32_dmem.v
     modules/neorv32_imem.v
     modules/neorv32_cfs.v
     modules/neorv32_cache_ram.v
     modules/neorv32_cpu_alu_cfu.v
-    modules/neorv32_cpu_regfile.v
 
 on:
   push:
