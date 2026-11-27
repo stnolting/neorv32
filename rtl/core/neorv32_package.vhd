@@ -1270,7 +1270,7 @@ package neorv32_package is
     DWIDTH  : natural;
     ARCHSEL : natural range 0 to 3;
     RS3_EN  : boolean;
-    GUARD_0 : boolean
+    R0_ZERO : boolean
   );
   port (
     clk_i      : in  std_ulogic;

@@ -30,7 +30,7 @@ entity neorv32_cpu_regfile is
     DWIDTH  : natural;              -- register size
     ARCHSEL : natural range 0 to 3; -- architecture style select
     RS3_EN  : boolean;              -- enable third read port
-    GUARD_0 : boolean               -- isolate x0 register
+    R0_ZERO : boolean               -- hardwire register 0 to zero
   );
   port (
     -- global control --
@@ -74,13 +74,15 @@ begin
 
     -- Register zero (x0) is just another physical register that has to be initialized by the CPU control.
     -- Writes to x0 are inhibited unless the control forces a write (writing zero) to re-initialize x0.
-    guard_o: if GUARD_0 generate
+    reg0_zero:
+    if R0_ZERO generate
       rf_we <= (rd_we_i and or_reduce_f(rd_addr_i(AWIDTH-1 downto 0))) or zero_i;
-      addr  <= (others => '0') when (zero_i  = '1') else -- force rd = zero
-               rd_addr_i       when (rd_we_i = '1') else rs1_addr_i; -- multiplexed rd/rs1
+      addr  <= (others => '0') when (zero_i = '1') else rd_addr_i when (rd_we_i = '1') else rs1_addr_i;
     end generate;
 
-    no_guard_o: if not GUARD_0 generate
+    -- register 0 is just another read/write register --
+    reg0_register:
+    if not R0_ZERO generate
       rf_we <= rd_we_i;
       addr  <= rd_addr_i when (rd_we_i = '1') else rs1_addr_i;
     end generate;

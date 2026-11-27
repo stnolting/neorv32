@@ -419,7 +419,7 @@ begin
     DWIDTH  => 32,              -- register size
     ARCHSEL => CPU_RF_ARCH_SEL, -- architecture style select
     RS3_EN  => rf_rs3_en_c,     -- enable third read port
-    GUARD_0 => true             -- isolate x0 register
+    R0_ZERO => true             -- hardwire register 0 to zero
   )
   port map (
     -- global control --
