@@ -286,10 +286,10 @@ architecture neorv32_top_rtl of neorv32_top is
   constant cc_reg_en_c     : boolean := DUAL_CORE_EN and ICACHE_EN and DCACHE_EN;
 
   -- make sure physical memory sizes are a power of two --
-  constant log2_imem_size_c : natural := index_size_f(IMEM_SIZE);
-  constant log2_dmem_size_c : natural := index_size_f(DMEM_SIZE);
-  constant imem_size_c      : natural := 2**log2_imem_size_c;
-  constant dmem_size_c      : natural := 2**log2_dmem_size_c;
+  constant imem_awidth_c : natural := index_size_f(IMEM_SIZE);
+  constant dmem_awidth_c : natural := index_size_f(DMEM_SIZE);
+  constant imem_size_c   : natural := 2**imem_awidth_c;
+  constant dmem_size_c   : natural := 2**dmem_awidth_c;
 
   -- reset nets --
   signal rstn_wdt, rstn_sys, rstn_ext : std_ulogic;
@@ -337,12 +337,12 @@ architecture neorv32_top_rtl of neorv32_top is
     FIRQ_GPIO, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_SLINK, FIRQ_TRNG, FIRQ_TRACEBUF
   );
   type firq_t is array (firq_enum_t) of std_ulogic;
-  signal firq     : firq_t;
+  signal firq : firq_t;
   signal cpu_firq : std_ulogic_vector(15 downto 0);
   signal mti, msi : std_ulogic_vector(num_cores_c-1 downto 0);
 
   -- system time --
-  signal mtime    : std_ulogic_vector(63 downto 0);
+  signal mtime : std_ulogic_vector(63 downto 0);
   signal mtime_lo : std_ulogic_vector(31 downto 0);
 
 begin
@@ -498,7 +498,7 @@ begin
   cpu_firq(14) <= firq(FIRQ_SLINK);
   cpu_firq(15) <= firq(FIRQ_TRNG);
 
-  -- CPU Core Complex -----------------------------------------------------------------------
+  -- Core Complex ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   core_complex_gen:
   for i in 0 to num_cores_c-1 generate
@@ -779,7 +779,7 @@ begin
     if IMEM_EN generate
       imem_inst: neorv32_imem -- component declaration in package file
       generic map (
-        AWIDTH  => log2_imem_size_c,
+        AWIDTH  => imem_awidth_c,
         INITROM => imem_as_rom_c,
         OUTREG  => IMEM_OUTREG_EN
       )
@@ -808,7 +808,7 @@ begin
     if DMEM_EN generate
       dmem_inst: neorv32_dmem -- component declaration in package file
       generic map (
-        AWIDTH => log2_dmem_size_c,
+        AWIDTH => dmem_awidth_c,
         OUTREG => DMEM_OUTREG_EN
       )
       port map (
