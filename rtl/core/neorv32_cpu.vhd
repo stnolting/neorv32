@@ -148,6 +148,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal lsu_wait    : std_ulogic;                     -- wait for current data bus access
   signal csr_rdata   : std_ulogic_vector(31 downto 0); -- CSR read data
   signal irq_machine : std_ulogic_vector(2 downto 0);  -- RISC-V standard machine-level interrupts
+  signal xs          : std_ulogic_vector(1 downto 0);  -- custom extensions context status
   signal trace       : trace_port_t;                   -- execution trace port
 
   -- external CSR interface read-back --
@@ -318,6 +319,7 @@ begin
     fenced_i      => fenced_i,    -- fence operation completed
     ic_miss_i     => ic_miss_i,   -- instruction cache miss
     dc_miss_i     => dc_miss_i,   -- data cache miss
+    xs_i          => xs,          -- custom extensions context status
     -- data path interface --
     alu_cp_done_i => alu_cp_done, -- ALU iterative operation done
     alu_cmp_i     => alu_cmp,     -- comparator status
@@ -486,6 +488,7 @@ begin
     add_o  => alu_add,    -- address computation result
     csr_o  => xcsr_alu,   -- CSR read data
     -- status --
+    xs_o   => xs,         -- custom extensions context status
     done_o => alu_cp_done -- iterative processing units done?
   );
 

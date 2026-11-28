@@ -56,7 +56,8 @@ entity neorv32_cpu_alu is
     add_o  : out std_ulogic_vector(31 downto 0); -- address computation result
     csr_o  : out std_ulogic_vector(31 downto 0); -- CSR read data
     -- status --
-    done_o : out std_ulogic -- co-processor operation done?
+    xs_o   : out std_ulogic_vector(1 downto 0); -- custom extensions context status
+    done_o : out std_ulogic                     -- co-processor operation done?
   );
 end entity;
 
@@ -289,6 +290,7 @@ begin
       -- global control --
       clk_i    => clk_i,             -- global clock, rising edge
       rstn_i   => rstn_i,            -- global reset, low-active, async
+      status_o => xs_o,              -- CFU context status
       -- request
       start_i  => ctrl_i.alu_cp_cfu, -- start trigger, single-shot
       inst_i   => cfu_inst,          -- instruction word
@@ -328,6 +330,7 @@ begin
 
   cpu_alu_cfu_disabled:
   if not RISCV_ISA_Xcfu generate
+    xs_o         <= (others => '0');
     cfu_inst     <= (others => '0');
     cfu_res      <= (others => '0');
     cfu_done     <= '0';
