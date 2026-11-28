@@ -1,5 +1,5 @@
 // ================================================================================ //
-// NEORV32 - ALU Custom Functions Unit (CFU) - Verilog Version                      //
+// NEORV32 CPU - ALU Custom Functions Unit (CFU) - Verilog Version                  //
 // -------------------------------------------------------------------------------- //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
@@ -12,6 +12,7 @@ module neorv32_cpu_alu_cfu (
   // global control
   input         clk_i,    // global clock, rising edge
   input         rstn_i,   // global reset, low-active, async
+  output  [1:0] status_o, // CFU context status
   // request
   input         start_i,  // start trigger, single-shot
   input  [31:0] inst_i,   // full instruction word
@@ -161,5 +162,16 @@ module neorv32_cpu_alu_cfu (
 
   assign result_o = result;
   assign valid_o  = valid;
+
+  // Context Status -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------------
+  // Report the state of persistent CFU context.
+  // 00: All off, 01: None dirty or clean, some on, 10: None dirty, some clean, 11: Some dirty
+  //
+  // A stateless CFU can report "00". A stateful CFU must report "11" whenever its persistent
+  // context may have changed. Only report "clean" when the context actually satisfies the
+  // corresponding condition. The current context status is available via the mstatus.XS and
+  // mstatus.SD CSR flags.
+  assign status_o = 2'b11; // conservative default: always dirty
 
 endmodule
