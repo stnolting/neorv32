@@ -72,7 +72,7 @@ static void __neorv32_rte_panic(void) {
   }
 
   // privilege level of the CPU when the trap occurred
-  if (neorv32_cpu_csr_read(CSR_MSTATUS) & (3U << CSR_MSTATUS_MPP_L)) {
+  if (neorv32_cpu_csr_read(CSR_MSTATUS) & (3U << CSR_MSTATUS_MPP0)) {
     __neorv32_rte_puts("M] "); // machine-mode
   }
   else {
@@ -294,7 +294,7 @@ void neorv32_rte_setup(void) {
   int i;
 
   // clear mstatus, set previous privilege level to machine-mode
-  neorv32_cpu_csr_write(CSR_MSTATUS, (1U<<CSR_MSTATUS_MPP_H) | (1U<<CSR_MSTATUS_MPP_L));
+  neorv32_cpu_csr_write(CSR_MSTATUS, 3U << CSR_MSTATUS_MPP0);
 
   // disable all IRQ channels
   neorv32_cpu_csr_write(CSR_MIE, 0);
