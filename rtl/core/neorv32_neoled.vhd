@@ -50,7 +50,7 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
   constant ctrl_tx_busy_c  : natural := 31; -- r/-: serial PHY busy or TX FIFO not empty yet
 
   -- helpers --
-  constant log2_fifo_size_c : natural := index_size_f(FIFO_DEPTH);
+  constant fifo_awidth_c : natural := index_size_f(FIFO_DEPTH);
 
   -- bus interface --
   signal bus_ack, bus_rden : std_ulogic;
@@ -133,7 +133,7 @@ begin
       bus_rdata(ctrl_t_tot4_c downto ctrl_t_tot0_c)   <= ctrl.t_total;
       bus_rdata(ctrl_t_0h4_c downto ctrl_t_0h0_c)     <= ctrl.t0_high;
       bus_rdata(ctrl_t_1h4_c downto ctrl_t_1h0_c)     <= ctrl.t1_high;
-      bus_rdata(ctrl_fifo3_c downto ctrl_fifo0_c)     <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
+      bus_rdata(ctrl_fifo3_c downto ctrl_fifo0_c)     <= std_ulogic_vector(to_unsigned(fifo_awidth_c, 4));
       bus_rdata(ctrl_tx_empty_c)                      <= not tx_fifo.avail;
       bus_rdata(ctrl_tx_full_c)                       <= not tx_fifo.free;
       bus_rdata(ctrl_tx_busy_c)                       <= busy or tx_fifo.avail;
@@ -150,7 +150,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   data_buffer: entity neorv32.neorv32_prim_fifo
   generic map (
-    AWIDTH  => log2_fifo_size_c,
+    AWIDTH  => fifo_awidth_c,
     DWIDTH  => 34,
     OUTGATE => false,
     ASYNCRD => false

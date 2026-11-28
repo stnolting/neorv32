@@ -2436,7 +2436,7 @@ int main() {
 
     // make M-mode load/store accesses use U-mode rights
     neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MPRV); // set MPRV: M uses U permissions for load/stores
-    neorv32_cpu_csr_clr(CSR_MSTATUS, 3 << CSR_MSTATUS_MPP_L); // clear MPP: use U as effective privilege mode
+    neorv32_cpu_csr_clr(CSR_MSTATUS, 3 << CSR_MSTATUS_MPP0); // clear MPP: use U as effective privilege mode
 
     neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access[4]), 0); // store access -> should fail
 
@@ -2590,7 +2590,7 @@ void global_trap_handler(void) {
   }
 
   // hack: always come back in MACHINE MODE
-  neorv32_cpu_csr_set(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));
+  neorv32_cpu_csr_set(CSR_MSTATUS, 3U << CSR_MSTATUS_MPP0);
 }
 
 /**********************************************************************//**
@@ -2609,7 +2609,7 @@ void rte_service_handler(void) {
   }
 
   // hack: return in MACHINE MODE
-  neorv32_cpu_csr_set(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));
+  neorv32_cpu_csr_set(CSR_MSTATUS, 3U << CSR_MSTATUS_MPP0);
 }
 
 /**********************************************************************//**

@@ -162,6 +162,7 @@ co-processor. A simple interface is used to communicate operands, operation defi
 4+^| **Global**
 | `clk_i`    |  in |  1 | CPU clock, registers trigger on a rising-edge
 | `rstn_i`   |  in |  1 | CPU reset, low-active, asynchronous
+| `status_o` | out |  2 | <<_cfu_context_status>>
 4+^| **Request**
 | `start_i`  |  in |  1 | Trigger CFU operation; high for exactly one cycle
 | `inst_i`   |  in | 32 | CFU instruction word
@@ -204,3 +205,18 @@ one performs a multi-cycle operation and is completed after several clock cycles
   edge: ['a~>b', 'c~>d']
 }
 ----
+
+===== CFU Context Status
+
+The CFU `status_o` output reports the state of persistent CFU context:
+
+* `00` - All off
+* `01` - None dirty or clean, some on
+* `10` - None dirty, some clean
+* `11` - Some dirty
+
+A stateless CFU can always report `01` or `10`. A stateful CFU must report `11` whenever its context may have
+changed. The status output does not provide context switching, access control, or instruction trapping. If
+tasks share a stateful CFU, the implementation and software must provide a way to save and restore all
+persistent context. They must also protect sensitive state, such as cryptographic keys.
+Software can retrieve the current CFU context status via he `XS` and `SD` flags of the <<_mstatus>> CSR.

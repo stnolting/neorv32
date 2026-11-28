@@ -296,7 +296,7 @@ void system_app_boot(void) {
   }
 
   // start application in machine mode; disable interrupts
-  neorv32_cpu_csr_write(CSR_MSTATUS, (1U << CSR_MSTATUS_MPP_H) + (1U << CSR_MSTATUS_MPP_L));
+  neorv32_cpu_csr_write(CSR_MSTATUS, 3U << CSR_MSTATUS_MPP0);
 
   // shut down heart beat LED
 #if (STATUS_LED_EN == 1)

@@ -46,7 +46,7 @@
  * The instruction prototypes as well as the OPCODES available for the CFU are defined in
  * "sw/lib/neorv32_intrinsics.h".
  *
- * So far, two RISC-V instruction formats are available: R-type instructions and I-type instructions.
+ * So far, two RISC-V instruction formats are available:
  *
  * R-type instructions require 5 arguments:
  * - opcode : The 7-bit OPCODE that identifies the instruction.
@@ -60,6 +60,14 @@
  * - funct3 : A 3-bit immediate for function select.
  * - rs1    : The 1st register source operand.
  * - imm12  : A 12-bit immediate operand.
+ *
+ * R4-type instructions require 4 arguments:
+ * - opcode : The 7-bit OPCODE that identifies the instruction.
+ * - funct3 : A 3-bit immediate for function select.
+ * - funct2 : A 2-bit immediate operand.
+ * - rs1    : The 1st register source operand.
+ * - rs2    : The 2nd register source operand.
+ * - rs3    : The 3rd register source operand.
  *
  * Each instruction returns a 32-bit data word of type uint32_t that represents
  * the processing result of the according instruction.
@@ -179,11 +187,28 @@ int main() {
   }
 
   // intro
-  neorv32_uart0_printf("\n<<< NEORV32 Custom Functions Unit (CFU) - Custom Instructions Example >>>\n\n");
+  neorv32_uart0_printf(
+    "\n<<< NEORV32 Custom Functions Unit (CFU) - Custom Instructions Example >>>\n\n"
+  );
 
-  neorv32_uart0_printf("[NOTE] This program assumes the default CFU hardware in\n"
-                       "       rtl/core/neorv32_cpu_cp_cfu.vhd that implements\n"
-                       "       the Extended Tiny Encryption Algorithm (XTEA).\n\n");
+  neorv32_uart0_printf(
+    "[NOTE] This program assumes the default CFU hardware in\n"
+    "       rtl/core/neorv32_cpu_cp_cfu.vhd that implements\n"
+    "       the Extended Tiny Encryption Algorithm (XTEA).\n\n"
+  );
+
+  // ----------------------------------------------------------
+  // Check CFU context status (from CFU's status_o)
+  // ----------------------------------------------------------
+  neorv32_uart0_printf("CFU context status: ");
+  switch ((neorv32_cpu_csr_read(CSR_MSTATUS) >> CSR_MSTATUS_XS0) & 3U) {
+    case 0: neorv32_uart0_printf("all off\n"); break;
+    case 1: neorv32_uart0_printf("none dirty or clean, some on\n"); break;
+    case 2: neorv32_uart0_printf("none dirty, some clean\n"); break;
+    case 3: neorv32_uart0_printf("some dirty\n"); break;
+    default: neorv32_uart0_printf("undefined\n"); break;
+  }
+  neorv32_uart0_printf("\n");
 
   // ----------------------------------------------------------
   // XTEA example
@@ -196,11 +221,10 @@ int main() {
   xtea_key_write(3, key[3]);
 
   // read-back CSRs and print key
-  neorv32_uart0_printf("XTEA key: 0x%x%x%x%x\n\n",
-                       xtea_key_read(0),
-                       xtea_key_read(1),
-                       xtea_key_read(2),
-                       xtea_key_read(3));
+  neorv32_uart0_printf(
+    "XTEA key: 0x%x%x%x%x\n\n",
+    xtea_key_read(0), xtea_key_read(1), xtea_key_read(2), xtea_key_read(3)
+  );
 
   // generate "random" data for the plain text
   for (i=0; i<DATA_NUM; i++) {
@@ -311,6 +335,17 @@ int main() {
   neorv32_uart0_printf("\nExecuting not-implemented CFU instruction (raise ILLEGAL INSTRUCTION exception)...\n");
   xtea_hw_illegal_inst();
 
+  // ----------------------------------------------------------
+  // Check CFU context status (from CFU's status_o)
+  // ----------------------------------------------------------
+  neorv32_uart0_printf("CFU context status: ");
+  switch ((neorv32_cpu_csr_read(CSR_MSTATUS) >> CSR_MSTATUS_XS0) & 3U) {
+    case 0: neorv32_uart0_printf("all off\n"); break;
+    case 1: neorv32_uart0_printf("none dirty or clean, some on\n"); break;
+    case 2: neorv32_uart0_printf("none dirty, some clean\n"); break;
+    case 3: neorv32_uart0_printf("some dirty\n"); break;
+    default: neorv32_uart0_printf("undefined\n"); break;
+  }
 
   neorv32_uart0_printf("\nCFU demo program completed.\n");
   return 0;

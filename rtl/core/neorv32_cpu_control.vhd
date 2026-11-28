@@ -75,6 +75,7 @@ entity neorv32_cpu_control is
     fenced_i      : in  std_ulogic;                     -- fence operation completed
     ic_miss_i     : in  std_ulogic;                     -- instruction cache miss
     dc_miss_i     : in  std_ulogic;                     -- data cache miss
+    xs_i          : in  std_ulogic_vector(1 downto 0);  -- custom extensions context status
     -- data path interface --
     alu_cp_done_i : in  std_ulogic;                     -- ALU iterative operation done
     alu_cmp_i     : in  std_ulogic_vector(1 downto 0);  -- comparator status
@@ -1250,8 +1251,11 @@ begin
             csr_rdata(7)  <= csr.mstatus_mpie;
             csr_rdata(11) <= csr.mstatus_mpp;
             csr_rdata(12) <= csr.mstatus_mpp;
+            csr_rdata(15) <= xs_i(0) and bool_to_ulogic_f(RISCV_ISA_Xcfu);
+            csr_rdata(16) <= xs_i(1) and bool_to_ulogic_f(RISCV_ISA_Xcfu);
             csr_rdata(17) <= csr.mstatus_mprv;
             csr_rdata(21) <= csr.mstatus_tw and bool_to_ulogic_f(RISCV_ISA_U);
+            csr_rdata(31) <= and_reduce_f(xs_i) and bool_to_ulogic_f(RISCV_ISA_Xcfu);
 
           when csr_misa_c => -- ISA and extensions
             csr_rdata(0)  <= bool_to_ulogic_f(RISCV_ISA_A);

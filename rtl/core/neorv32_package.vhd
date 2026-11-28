@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130805"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130806"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -1291,6 +1291,7 @@ package neorv32_package is
   port (
     clk_i    : in  std_ulogic;
     rstn_i   : in  std_ulogic;
+    status_o : out std_ulogic_vector(1 downto 0);
     start_i  : in  std_ulogic;
     inst_i   : in  std_ulogic_vector(31 downto 0);
     rs1_i    : in  std_ulogic_vector(31 downto 0);

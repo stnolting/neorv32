@@ -21,8 +21,9 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_alu_cfu is
   port (
     -- global control --
-    clk_i    : in  std_ulogic; -- global clock, rising edge
-    rstn_i   : in  std_ulogic; -- global reset, low-active, async
+    clk_i    : in  std_ulogic;                     -- global clock, rising edge
+    rstn_i   : in  std_ulogic;                     -- global reset, low-active, async
+    status_o : out std_ulogic_vector(1 downto 0);  -- CFU context status
     -- request --
     start_i  : in  std_ulogic;                     -- start trigger, single-shot
     inst_i   : in  std_ulogic_vector(31 downto 0); -- full instruction word
@@ -100,7 +101,6 @@ begin
   funct3 <= inst_i(14 downto 12); -- type function select
   imm12  <= inst_i(31 downto 20); -- i-type 12-bit immediate
 
-
   -- XTEA Processing Core ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   xtea_core: process(rstn_i, clk_i)
@@ -160,7 +160,6 @@ begin
            key_mem(to_integer(unsigned(xtea.sum(12 downto 11)))); -- key[(sum >> 11) & 3]
   tmp_r <= std_ulogic_vector(unsigned(tmp_x xor tmp_y) + unsigned(tmp_a)) xor std_ulogic_vector(unsigned(xtea.sum) + unsigned(tmp_z));
 
-
   -- Function Result Select -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   result_select: process(itype, funct3, imm12, xtea, key_mem)
@@ -184,5 +183,16 @@ begin
       valid_o  <= '1'; -- pure-combinatorial, so we are done "immediately"
     end if;
   end process;
+
+  -- Context Status -------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- Report the state of persistent CFU context.
+  -- 00: All off; 01: None dirty or clean, some on; 10: None dirty, some clean; 11: Some dirty
+  --
+  -- A stateless CFU can report "00". A stateful CFU must report "11" whenever its persistent
+  -- context may have changed. Only report "clean" when the context actually satisfies the
+  -- corresponding condition. The current context status is available via the mstatus.XS and
+  -- mstatus.SD CSR flags.
+  status_o <= "11"; -- conservative default: always dirty
 
 end architecture;

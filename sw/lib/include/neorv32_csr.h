@@ -316,12 +316,15 @@ enum NEORV32_CSR_MCOUNTEREN_enum {
  * mstatus CSR (r/w): Machine status - low word
  **************************************************************************/
 enum NEORV32_CSR_MSTATUS_enum {
-  CSR_MSTATUS_MIE   =  3, /**< mstatus CSR  (3): MIE - Machine interrupt enable bit (r/w) */
-  CSR_MSTATUS_MPIE  =  7, /**< mstatus CSR  (7): MPIE - Machine previous interrupt enable bit (r/w) */
-  CSR_MSTATUS_MPP_L = 11, /**< mstatus CSR (11): MPP_L - Machine previous privilege mode bit low (r/w) */
-  CSR_MSTATUS_MPP_H = 12, /**< mstatus CSR (12): MPP_H - Machine previous privilege mode bit high (r/w) */
-  CSR_MSTATUS_MPRV  = 17, /**< mstatus CSR (17): MPRV - Use MPP as effective privilege for M-mode load/stores when set (r/w) */
-  CSR_MSTATUS_TW    = 21  /**< mstatus CSR (21): TW - Disallow execution of wfi instruction in user mode when set (r/w) */
+  CSR_MSTATUS_MIE  =  3, /**< mstatus CSR  (3): MIE - Machine interrupt enable bit (r/w) */
+  CSR_MSTATUS_MPIE =  7, /**< mstatus CSR  (7): MPIE - Machine previous interrupt enable bit (r/w) */
+  CSR_MSTATUS_MPP0 = 11, /**< mstatus CSR (11): MPP[0] - Machine previous privilege mode (r/w) */
+  CSR_MSTATUS_MPP1 = 12, /**< mstatus CSR (12): MPP[1] - Machine previous privilege mode (r/w) */
+  CSR_MSTATUS_XS0  = 15, /**< mstatus CSR (15): XS[0] - Custom extensions status (r/-) */
+  CSR_MSTATUS_XS1  = 16, /**< mstatus CSR (16): XS[1] - Custom extensions status (r/-) */
+  CSR_MSTATUS_MPRV = 17, /**< mstatus CSR (17): MPRV - Use MPP as effective privilege for M-mode load/stores when set (r/w) */
+  CSR_MSTATUS_TW   = 21, /**< mstatus CSR (21): TW - Disallow execution of wfi instruction in user mode when set (r/w) */
+  CSR_MSTATUS_SD   = 31  /**< mstatus CSR (31): SD - Set if any extension reports "dirty" status (r/-) */
 };
 
 /**********************************************************************//**
@@ -417,16 +420,16 @@ enum NEORV32_CSR_MIP_enum {
  * misa CSR (r/-): Machine instruction set extensions
  **************************************************************************/
 enum NEORV32_CSR_MISA_enum {
-  CSR_MISA_A      =  0, /**< misa CSR  (0): A: Atomic memory accesses CPU extension available (r/-)*/
-  CSR_MISA_B      =  1, /**< misa CSR  (1): B: Bit manipulation CPU extension available (r/-)*/
-  CSR_MISA_C      =  2, /**< misa CSR  (2): C: Compressed instructions CPU extension available (r/-)*/
-  CSR_MISA_E      =  4, /**< misa CSR  (4): E: Embedded CPU extension available (r/-) */
-  CSR_MISA_I      =  8, /**< misa CSR  (8): I: Base integer ISA CPU extension available (r/-) */
-  CSR_MISA_M      = 12, /**< misa CSR (12): M: Multiplier/divider CPU extension available (r/-)*/
-  CSR_MISA_U      = 20, /**< misa CSR (20): U: User mode CPU extension available (r/-)*/
-  CSR_MISA_X      = 23, /**< misa CSR (23): X: Non-standard CPU extension available (r/-) */
-  CSR_MISA_MXL_LO = 30, /**< misa CSR (30): MXL.lo: CPU data width (r/-) */
-  CSR_MISA_MXL_HI = 31  /**< misa CSR (31): MXL.Hi: CPU data width (r/-) */
+  CSR_MISA_A    =  0, /**< misa CSR  (0): A: Atomic memory accesses CPU extension available (r/-)*/
+  CSR_MISA_B    =  1, /**< misa CSR  (1): B: Bit manipulation CPU extension available (r/-)*/
+  CSR_MISA_C    =  2, /**< misa CSR  (2): C: Compressed instructions CPU extension available (r/-)*/
+  CSR_MISA_E    =  4, /**< misa CSR  (4): E: Embedded CPU extension available (r/-) */
+  CSR_MISA_I    =  8, /**< misa CSR  (8): I: Base integer ISA CPU extension available (r/-) */
+  CSR_MISA_M    = 12, /**< misa CSR (12): M: Multiplier/divider CPU extension available (r/-)*/
+  CSR_MISA_U    = 20, /**< misa CSR (20): U: User mode CPU extension available (r/-)*/
+  CSR_MISA_X    = 23, /**< misa CSR (23): X: Non-standard CPU extension available (r/-) */
+  CSR_MISA_MXL0 = 30, /**< misa CSR (30): MXL[0]: CPU data width (r/-) */
+  CSR_MISA_MXL1 = 31  /**< misa CSR (31): MXL[1]: CPU data width (r/-) */
 };
 
 /**********************************************************************//**

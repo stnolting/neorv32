@@ -28,6 +28,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 28.11.2026 | 1.13.8.6 | CFU: add context status; `mstatus` CSR: add `XS` and `SD` bits | [#1706](https://github.com/stnolting/neorv32/pull/1706) |
 | 22.11.2026 | 1.13.8.5 | HPMs: add i-cache and d-cache miss events (for runtime cache performance benchmarking) | [#1701](https://github.com/stnolting/neorv32/pull/1701) |
 | 22.11.2026 | 1.13.8.4 | :lock: prevent I/O address aliasing | [#1700](https://github.com/stnolting/neorv32/pull/1700) |
 | 21.11.2026 | 1.13.8.3 | minor rtl edits and cleanups | [#1697](https://github.com/stnolting/neorv32/pull/1697) <
